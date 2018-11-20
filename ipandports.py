@@ -20,7 +20,7 @@ class IP():
         '''
         Return a tuple of an ECS:(ip, rpcPort, listenerPort).
         '''
-        assert self._currentPort < self._maxPayload
+        assert self._currentPort < self._maxPayload, "full loaded"
         result = (self._ip, self._rpcPorts[self._currentPort], self._listenerPorts[self._currentPort])
         self._currentPort += 1
         return result
@@ -30,7 +30,7 @@ class IP():
 
     def isFullLoaded(self):
         '''
-        Decide whether the ECS is full loaded.
+        Decide whether the server is full loaded.
         '''
         return self._currentPort >= self._maxPayload
 
@@ -73,6 +73,9 @@ class IPList():
         if self._ips[self._currentIP].isFullLoaded():
             self._currentIP += 1
         return result
+
+    def releaseAll(self):
+        self._currentIP = 0
 
 
 
