@@ -18,32 +18,29 @@ class SingleChain():
         self.nodeCount = nodeCount
         self.threshold = threshold
         self._blockchainid = blockchainid
+        self._iplist = IPlist
         self._passwd = passwd
         self._nodes = []
         self._ifSetNumber = False
         self._ifSetLevel = False
         self._ifSetID = False
-    def SinglechainStart(self, name, level, nodeCount, threshold, blockchainid, IPlist, passwd='Blockchain17'):
+    def SinglechainStart(self):
         '''
         run a singlechain
         '''
         threadlist = []
-        for index in range(nodeCount):
+        for index in range(self.nodeCount):
             pbftid = index
             nodeindex = index + 1
-            tmp = GethNode(IPlist, pbftid, nodeindex, self._blockchainid, self._passwd)
-            '''
-            xq start a thread， target stand for a function that you want to run ,args stand for the parameters
-            '''
-            t = threading.Thread(target=tmp.start,args=(IPlist, pbftid, nodeindex, self._blockchainid, self._passwd))
+            tmp = GethNode(self._iplist, pbftid, nodeindex, self._blockchainid, self._passwd)
+            # xq start a thread， target stand for a function that you want to run ,args stand for the parameters
+            t = threading.Thread(target=tmp.start)
             threadlist.append(t)
             self._nodes.append(tmp)
             t.start()
-            
+
         for t in threadlist:
-            '''
-            xq threads must run the join function ,because the resources of main thread is needed
-            '''
+            # xq threads must run the join function ,because the resources of main thread is needed
             t.join()
     def getID(self):
         '''
@@ -147,7 +144,7 @@ class SingleChain():
 if __name__ == "__main__":
     IPlist = IPList('ip.txt')
     c = SingleChain('1', 1, 7, 5, 121, IPlist)
-    c.SinglechainStart('1', 1, 7, 5, 121, IPlist)
+    c.SinglechainStart()
     c.constructChain()
     p = c.getPrimer()
     print(p.getPeerCount())

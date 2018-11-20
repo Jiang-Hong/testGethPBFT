@@ -14,10 +14,6 @@ class GethNode():
     '''
 
     def __init__(self, IPlist, pbftid, nodeindex, blockchainid, passwd='Blockchain17'):
-        '''
-        Start a geth-pbft node on remote server.
-        '''
-
         self._id = nodeindex
         self._ip, self._rpcPort, self._listenerPort = IPlist.getNewPort()
         self._pbftid = pbftid
@@ -27,14 +23,14 @@ class GethNode():
         self._headers = {'Content-Type': 'application/json'}
         self._passwd = passwd
 
-    def start(self, IPlist, pbftid, nodeindex, blockchainid, passwd='Blockchain17'):
+    def start(self):
         '''
-        docker command to run on remote server.
+        Start a geth-pbft node on remote server.
         '''
         RUN_DOCKER = ('docker run -p %d:8545 -p %d:30303 --rm --name %s rkdghd/geth-pbft --rpcapi admin,eth,miner,web3,net '
                        '--rpc --rpcaddr \"0.0.0.0\" --datadir /root/abc --pbftid %d --nodeindex %d '
-                       '--blockchainid %d &') % (self._rpcPort, self._listenerPort, self._name, pbftid, nodeindex, blockchainid)
-
+                       '--blockchainid %d &') % (self._rpcPort, self._listenerPort, self._name,
+                                            self._pbftid, self._nodeindex, self._blockchainid)
         # print(RUN_DOCKER)
         ssh = paramiko.SSHClient()
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -217,6 +213,7 @@ class GethNode():
 if __name__ == "__main__":
     IPlist = IPList('ip.txt')
     n = GethNode(IPlist, 0, 1, 121)
+    n.start()
     enode = n.getEnode()
     print(enode)
     n.stop()
