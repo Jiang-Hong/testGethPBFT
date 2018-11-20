@@ -2,17 +2,17 @@
 # -*- coding: utf-8 -*-
 
 from gethnode import GethNode
+from ipandports import IPList
 
 class SingleChain():
     '''
     Data structure for a set of Geth-pbft clients for a single blockchain.
     '''
 
-    def __init__(self, name, level, nodeCount, threshold, blockchainid, IPs, rpcPorts, listenerPorts, passwd='Blockchain17'):
+    def __init__(self, name, level, nodeCount, threshold, blockchainid, IPlist, passwd='Blockchain17'):
         '''
         Setup a set of geth-pbft nodes for one blockchain.
         '''
-        assert len(IPs) ==len(rpcPorts) == len(listenerPorts) == nodeCount, "number of nodes doesn't match the number of IPs"
         self._level = level
         self._id = name
         self.nodeCount = nodeCount
@@ -23,12 +23,10 @@ class SingleChain():
         self._ifSetNumber = False
         self._ifSetLevel = False
         self._ifSetID = False
-        for index, ip in enumerate(IPs):
+        for index in range(nodeCount):
             pbftid = index
             nodeindex = index + 1
-            rpcPort = rpcPorts[index]
-            listenerPort = listenerPorts[index]
-            tmp = GethNode(ip, pbftid, nodeindex, self._blockchainid, rpcPort, listenerPort, self._passwd)
+            tmp = GethNode(IPlist, pbftid, nodeindex, self._blockchainid, self._passwd)
             self._nodes.append(tmp)
 
     def getID(self):
@@ -113,3 +111,12 @@ class SingleChain():
                 node.setID(self._id)
         self._ifSetID = True
 
+
+
+if __name__ == "__main__":
+    IPlist = IPList('ip.txt')
+    c = SingleChain('1', 1, 7, 5, 121, IPlist)
+    c.constructChain()
+    p = c.getPrimer()
+    print(p.getPeerCount())
+    c.destructChain()

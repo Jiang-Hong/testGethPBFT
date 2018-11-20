@@ -5,6 +5,7 @@
 import paramiko
 import requests
 import json
+from ipandports import IPList
 from time import sleep
 
 class GethNode():
@@ -12,31 +13,29 @@ class GethNode():
     Data structure for Geth-pbft client.
     '''
 
-    def __init__(self, ip, pbftid, nodeindex, blockchainid, rpcPort=8515, listenerPort=30313, passwd='Blockchain17'):
+    def __init__(self, IPlist, pbftid, nodeindex, blockchainid, passwd='Blockchain17'):
         '''
         Start a geth-pbft node on remote server.
         '''
 
         self._id = nodeindex
-        self._ip = ip
-        self._rpcPort = rpcPort
-        self._listenerPort = listenerPort
+        self._ip, self._rpcPort, self._listenerPort = IPlist.getNewPort()
         self._pbftid = pbftid
         self._nodeindex = nodeindex
         self._blockchainid = blockchainid
-        self._name = 'geth-pbft' + str(rpcPort)
+        self._name = 'geth-pbft' + str(self._rpcPort)
         self._headers = {'Content-Type': 'application/json'}
         self._passwd = passwd
 
         # docker command to run on remote server.
         RUN_DOCKER = ('docker run -p %d:8545 -p %d:30303 --rm --name %s rkdghd/geth-pbft --rpcapi admin,eth,miner,web3,net '
                        '--rpc --rpcaddr \"0.0.0.0\" --datadir /root/abc --pbftid %d --nodeindex %d '
-                       '--blockchainid %d &') % (rpcPort, listenerPort, self._name, pbftid, nodeindex, blockchainid)
+                       '--blockchainid %d &') % (self._rpcPort, self._listenerPort, self._name, pbftid, nodeindex, blockchainid)
 
         # print(RUN_DOCKER)
         ssh = paramiko.SSHClient()
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        ssh.connect(hostname=ip, port=22, username='root', password=self._passwd)
+        ssh.connect(hostname=self._ip, port=22, username='root', password=self._passwd)
         try:
             stdin, stdout, stderr = ssh.exec_command(RUN_DOCKER)
             result = stdout.read()
@@ -207,3 +206,12 @@ class GethNode():
             return True if result else False
         except Exception as e:
             print("stop", e)
+
+
+
+if __name__ == "__main__":
+    IPlist = IPList('ip.txt')
+    n = GethNode(IPlist, 0, 1, 121)
+    enode = n.getEnode()
+    print(enode)
+    n.stop()

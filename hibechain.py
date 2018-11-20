@@ -2,13 +2,14 @@
 # -*- coding: utf-8 -*-
 
 from singlechain import SingleChain
+from ipandports import IPList
 
 class HIBEChain():
     '''
     Data structure for a Hierarchical IBE Chain.
     '''
-    def __init__(self, IDList, threshList, IPList, rpcPortList, listenerPortList, passwd='Blockchain17'):
-        assert len(IDList) == len(threshList) == len(IPList) == len(rpcPortList) == len(listenerPortList)
+    def __init__(self, IDList, threshList, IPlist, passwd='Blockchain17'):
+        assert len(IDList) == len(threshList) <=  IPlist.getFullCount()
         self._chains = []
         self._IDList = IDList
         self._maxLevel = len(IDList[-1])
@@ -19,10 +20,7 @@ class HIBEChain():
             level = len(name)
             nodeCount, threshold = threshList[index][0], threshList[index][1]
             blockchainid = 120 + index
-            IPs = IPList[index]
-            rpcPorts = rpcPortList[index]
-            listenerPorts = listenerPortList[index]
-            tmp = SingleChain(name, level, nodeCount, threshold, blockchainid, IPs, rpcPorts, listenerPorts)
+            tmp = SingleChain(name, level, nodeCount, threshold, blockchainid, IPlist, passwd)
             tmp.constructChain()
             self._chains.append(tmp)
 
@@ -76,3 +74,18 @@ class HIBEChain():
 
 
 
+if __name__ == "__main__":
+    IPlist = IPList('ip.txt')
+    IDList = ["", "1", "2"]
+    threshList = [(3, 2), (3, 2), (1, 1)]
+    hibe = HIBEChain(IDList, threshList, IPlist)
+    hibe.constructHIBEChain()
+    a, b, c = hibe.getChain(''), hibe.getChain('1'), hibe.getChain('2')
+    ap1 = a.getPrimer()
+    bp1 = b.getPrimer()
+    cp1 = c.getPrimer()
+    hibe.setNumber()
+    hibe.setLevel()
+    hibe.setID()
+    print(ap1.getPeerCount(), bp1.getPeerCount(), cp1.getPeerCount())
+    hibe.destructHIBEChain()
