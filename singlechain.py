@@ -66,9 +66,8 @@ class SingleChain():
         '''
         primer = self.getPrimer()
         pEnode = primer.getEnode()
-        '''
-        xq add peers for each node
-        '''
+
+        # xq add peers for each node
         threadlist = []
         for node in self._nodes[1:]:
             t = threading.Thread(target=node.addPeer,args=(pEnode,0))
@@ -81,9 +80,7 @@ class SingleChain():
         '''
         Remove all the nodes in the chain.
         '''
-        '''
-        xq start threads to stop gethnodes
-        '''
+        # xq start threads to stop gethnodes
         threadlist = []
         for node in self._nodes:
             t = threading.Thread(target=node.stop,args=())

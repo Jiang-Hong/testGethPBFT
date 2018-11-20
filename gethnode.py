@@ -64,7 +64,6 @@ class GethNode():
         '''
         Return enode information from admin.nodeInfo.
         '''
-
         sleep(3)
         msg = self.__msg("admin_nodeInfo", [])
         url = "http://{}:{}".format(self._ip, self._rpcPort)
@@ -108,7 +107,7 @@ class GethNode():
         '''
         admin.addPeer()
         '''
-        #sleep(2)
+        sleep(2)
         msg = self.__msg("admin_addPeer", param)
         url = "http://{}:{}".format(self._ip, self._rpcPort)
         try:
@@ -123,7 +122,7 @@ class GethNode():
         #########################
         '''
         assert n >= t, "n should be no less than t"
-        #sleep(1)
+        sleep(1)
         msg = self.__msg("admin_setNumber", [n, t])
         url = "http://{}:{}".format(self._ip, self._rpcPort)
         try:
@@ -137,7 +136,7 @@ class GethNode():
         admin.setLevel()raise
         '''
         assert maxLevel >= level, "level should be no larger than maxLevel"
-        #sleep(1)
+        sleep(1)
         msg = self.__msg("admin_setLevel", [maxLevel, level])
         url = "http://{}:{}".format(self._ip, self._rpcPort)
         try:
@@ -149,7 +148,6 @@ class GethNode():
     def setID(self, id):
         '''
         admin.setID()
-        ##########################
         '''
         sleep(1)
         msg = self.__msg("admin_setID", ['%d'.format(id)])
@@ -176,7 +174,6 @@ class GethNode():
     def isRunning(self):
         '''
         Check if the client is running.
-        ####################
         '''
         sleep(1)
         msg = self.__msg("admin_nodeInfo", [])
