@@ -8,6 +8,7 @@ import json
 from ipandports import IPList
 from time import sleep
 
+
 class GethNode():
     '''
     Data structure for Geth-pbft client.
@@ -107,7 +108,7 @@ class GethNode():
         '''
         admin.addPeer()
         '''
-        sleep(2)
+        sleep(1)
         msg = self.__msg("admin_addPeer", param)
         url = "http://{}:{}".format(self._ip, self._rpcPort)
         try:
