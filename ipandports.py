@@ -3,6 +3,9 @@
 
 
 class IP():
+    '''
+    ip是创建一个ip对象，它包含了rpc端口和listen端口，一一对应，maxPayload是最多有多少端口对。
+    '''
     def __init__(self, ip, currentPort=0):
         self._maxPayload = 8
         self._currentPort = currentPort
@@ -16,6 +19,7 @@ class IP():
     def getNewPort(self):
         '''
         Return a tuple of an ECS:(ip, rpcPort, listenerPort).
+        如果本ip端口对未用完，返回一个元组，包含本ip，rpc端口，listen端口。端口对下标+1（最初为0）
         '''
         assert self._currentPort < self._maxPayload
         result = (self._ip, self._rpcPorts[self._currentPort], self._listenerPorts[self._currentPort])
@@ -38,10 +42,12 @@ class IP():
 class IPList():
     '''
     Manage IPs and ports.
+    一个ip列表
     '''
     def __init__(self, ipFile, currentIP=0):
         '''
         Read IPs from a file.
+        读取该文件中的ip
         '''
         self._currentIP = currentIP
         self._ips = []

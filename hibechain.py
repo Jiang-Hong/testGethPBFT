@@ -1,91 +1,222 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from singlechain import SingleChain
+
+import paramiko
+import requests
+import json
 from ipandports import IPList
+from time import sleep
 
-class HIBEChain():
+class GethNode():
     '''
-    Data structure for a Hierarchical IBE Chain.
+    Data structure for Geth-pbft client.
     '''
-    def __init__(self, IDList, threshList, IPlist, passwd='Blockchain17'):
-        assert len(IDList) == len(threshList) <=  IPlist.getFullCount()
-        self._chains = []
-        self._IDList = IDList
-        self._maxLevel = len(IDList[-1])
-        self._ifSetNumber = False
-        self._ifSetLevel = False
-        self._ifSetID = False
-        for index, name in enumerate(IDList):
-            level = len(name)
-            nodeCount, threshold = threshList[index][0], threshList[index][1]
-            blockchainid = 120 + index
-            tmp = SingleChain(name, level, nodeCount, threshold, blockchainid, IPlist, passwd)
-            tmp.constructChain()
-            self._chains.append(tmp)
 
-    def constructHIBEChain(self):
+    def __init__(self, IPlist, pbftid, nodeindex, blockchainid, passwd='Blockchain17'):
         '''
-        Construct the hierarchical construction of the HIBEChain.
-        Connect blockchain nodes with its parent blockchain nodes.
+        Start a geth-pbft node on remote server.
         '''
-        for chain in self._chains[::-1]:
-            if chain.getID() != '':
-                parentChain = self._chains[self._IDList.index(chain.getID()[:-1])]
-                parentChain.connectLowerChain(chain)
 
-    def destructHIBEChain(self):
-        '''
-        Stop all the nodes in the HIBEChain.
-        '''
-        for chain in self._chains:
-            chain.destructChain()
+        self._id = nodeindex
+        self._ip, self._rpcPort, self._listenerPort = IPlist.getNewPort()
+        self._pbftid = pbftid
+        self._nodeindex = nodeindex
+        self._blockchainid = blockchainid
+        self._name = 'geth-pbft' + str(self._rpcPort)
+        self._headers = {'Content-Type': 'application/json'}
+        self._passwd = passwd
 
-    def getChain(self, ID):
+    def start(self, IPlist, pbftid, nodeindex, blockchainid, passwd='Blockchain17'):
         '''
-        Return a list of blockchain nodes with a given ID.
+        docker command to run on remote server.
         '''
+        RUN_DOCKER = ('docker run -p %d:8545 -p %d:30303 --rm --name %s rkdghd/geth-pbft --rpcapi admin,eth,miner,web3,net '
+                       '--rpc --rpcaddr \"0.0.0.0\" --datadir /root/abc --pbftid %d --nodeindex %d '
+                       '--blockchainid %d &') % (self._rpcPort, self._listenerPort, self._name, pbftid, nodeindex, blockchainid)
+
+        # print(RUN_DOCKER)
+        ssh = paramiko.SSHClient()
+        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        ssh.connect(hostname=self._ip, port=22, username='root', password=self._passwd)
         try:
-            index = self._IDList.index(ID)
-            return self._chains[index]
-        except ValueError:
-            print("ID %s is not in the HIBEChain" % ID)
+            stdin, stdout, stderr = ssh.exec_command(RUN_DOCKER)
+            result = stdout.read()
+            if result:
+                print('node at %s:%s started' % (self._ip, self._listenerPort))
+            else:
+                print(stderr)
+            # result = stdout.read()
+            # print(result)
+            ssh.close()
+        except Exception as e:
+            print(e)
 
-    def setNumber(self):
+    def __msg(self, method, params):
         '''
-        set (n, t) value for all the chains in HIBEChain.
+        Return json string used in HTTP requests.
         '''
-        for chain in self._chains:
-            chain.setNumber()
 
-    def setLevel(self):
-        '''
-        set level value for all the chains in HIBEChain.
-        '''
-        for chain in self._chains:
-            chain.setLevel(self._maxLevel)
+        return json.dumps({
+               "jsonrpc": "2.0",
+               "method": method,
+               "params": params,
+               "id": self._id
+               })
 
-    def setID(self):
+    def getEnode(self):
         '''
-        set ID for all the chains in HIBEChain.
+        Return enode information from admin.nodeInfo.
         '''
-        for chain in self._chains:
-            chain.setID()
+
+        sleep(3)
+        msg = self.__msg("admin_nodeInfo", [])
+        url = "http://{}:{}".format(self._ip, self._rpcPort)
+        try:
+            response = requests.post(url, headers=self._headers, data=msg)
+            enode = json.loads(response.content.decode(encoding='utf-8'))['result']['enode'].split('@')[0]
+            return '{}@{}:{}'.format(enode, self._ip, self._listenerPort)
+        except Exception as e:
+            print("getEnode", e)
+
+    def getPeerCount(self):
+        '''
+        net.peerCount
+        '''
+
+        sleep(1)
+        msg = self.__msg("net_peerCount", [])
+        url = "http://{}:{}".format(self._ip, self._rpcPort)
+        try:
+            response = requests.post(url, headers=self._headers, data=msg)
+            count = int(json.loads(response.content.decode(encoding='utf-8'))['result'], 16)
+            return count
+        except Exception as e:
+            print("getPeerCount", e)
+
+    def getPeers(self):
+        '''
+        admin.peers
+        '''
+        sleep(1)
+        msg = self.__msg("admin_peers", [])
+        url = "http://{}:{}".format(self._ip, self._rpcPort)
+        try:
+            response = requests.post(url, headers=self._headers, data=msg)
+            peers = json.loads(response.content.decode(encoding='utf-8'))
+            return peers
+        except Exception as e:
+            print("getPeers", e)
+
+    def addPeer(self, *param):
+        '''
+        admin.addPeer()
+        '''
+        #sleep(2)
+        msg = self.__msg("admin_addPeer", param)
+        url = "http://{}:{}".format(self._ip, self._rpcPort)
+        try:
+            requests.post(url, headers=self._headers, data=msg)
+            # print(response.content)
+        except Exception as e:
+            print("addPeer", e)
+
+    def setNumber(self, n, t):
+        '''
+        admin.setNumber()
+        #########################
+        '''
+        assert n >= t, "n should be no less than t"
+        #sleep(1)
+        msg = self.__msg("admin_setNumber", [n, t])
+        url = "http://{}:{}".format(self._ip, self._rpcPort)
+        try:
+            response = requests.post(url, headers=self._headers, data=msg)
+            print(response.content)
+        except Exception as e:
+            print("setNumber", e)
+
+    def setLevel(self, level, maxLevel):
+        '''
+        admin.setLevel()raise
+        '''
+        assert maxLevel >= level, "level should be no larger than maxLevel"
+        #sleep(1)
+        msg = self.__msg("admin_setLevel", [maxLevel, level])
+        url = "http://{}:{}".format(self._ip, self._rpcPort)
+        try:
+            response = requests.post(url, headers=self._headers, data=msg)
+            print(response.content)
+        except Exception as e:
+            print("setLevel", e)
+
+    def setID(self, id):
+        '''
+        admin.setID()
+        ##########################
+        '''
+        sleep(1)
+        msg = self.__msg("admin_setID", ['%d'.format(id)])
+        url = "http://{}:{}".format(self._ip, self._rpcPort)
+        try:
+            response = requests.post(url, headers=self._headers, data=msg)
+            print(response.content)
+        except Exception as e:
+            print("setID", e)
+
+    def testHIBE(self, txString):
+        '''
+        admin.testhibe()
+        '''
+        sleep(2)
+        msg = self.__msg("admin_testhibe", ['%d'.format(txString)])
+        url = "http://{}:{}".format(self._ip, self._rpcPort)
+        try:
+            response = requests.post(url, headers=self._headers, data=msg)
+            print(response.content)
+        except Exception as e:
+            print("testHIBE", e)
+
+    def isRunning(self):
+        '''
+        Check if the client is running.
+        ####################
+        '''
+        sleep(1)
+        msg = self.__msg("admin_nodeInfo", [])
+        url = "http://{}:{}".format(self._ip, self._rpcPort)
+        try:
+            response = requests.post(url, headers=self._headers, data=msg)
+            return True if response else False
+        except Exception as e:
+            print("isRunning", e)
+
+    def stop(self):
+        '''
+        Remove the geth-pbft node container on remote server.
+        '''
+        sleep(1)
+        ssh = paramiko.SSHClient()
+        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        ssh.connect(hostname=self._ip, port=22, username='root', password=self._passwd)
+        STOP_CONTAINER = "docker stop %s" % self._name
+        try:
+            stdin, stdout, stderr = ssh.exec_command(STOP_CONTAINER)
+            result = stdout.read()
+            ssh.close()
+            if result:
+                print('node at %s:%s stopped' % (self._ip, self._listenerPort))
+            elif not stderr:
+                print(stderr)
+            return True if result else False
+        except Exception as e:
+            print("stop", e)
 
 
 
 if __name__ == "__main__":
     IPlist = IPList('ip.txt')
-    IDList = ["", "1", "2"]
-    threshList = [(3, 2), (3, 2), (1, 1)]
-    hibe = HIBEChain(IDList, threshList, IPlist)
-    hibe.constructHIBEChain()
-    a, b, c = hibe.getChain(''), hibe.getChain('1'), hibe.getChain('2')
-    ap1 = a.getPrimer()
-    bp1 = b.getPrimer()
-    cp1 = c.getPrimer()
-    hibe.setNumber()
-    hibe.setLevel()
-    hibe.setID()
-    print(ap1.getPeerCount(), bp1.getPeerCount(), cp1.getPeerCount())
-    hibe.destructHIBEChain()
+    n = GethNode(IPlist, 0, 1, 121)
+    enode = n.getEnode()
+    print(enode)
+    n.stop()

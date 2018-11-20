@@ -3,7 +3,7 @@
 
 from gethnode import GethNode
 from ipandports import IPList
-
+import threading
 class SingleChain():
     '''
     Data structure for a set of Geth-pbft clients for a single blockchain.
@@ -11,7 +11,7 @@ class SingleChain():
 
     def __init__(self, name, level, nodeCount, threshold, blockchainid, IPlist, passwd='Blockchain17'):
         '''
-        Setup a set of geth-pbft nodes for one blockchain.
+        init a set of geth-pbft nodes for one blockchain.
         '''
         self._level = level
         self._id = name
@@ -23,12 +23,28 @@ class SingleChain():
         self._ifSetNumber = False
         self._ifSetLevel = False
         self._ifSetID = False
+    def SinglechainStart(self, name, level, nodeCount, threshold, blockchainid, IPlist, passwd='Blockchain17'):
+        '''
+        run a singlechain
+        '''
+        threadlist = []
         for index in range(nodeCount):
             pbftid = index
             nodeindex = index + 1
             tmp = GethNode(IPlist, pbftid, nodeindex, self._blockchainid, self._passwd)
+            '''
+            xq start a thread， target stand for a function that you want to run ,args stand for the parameters
+            '''
+            t = threading.Thread(target=tmp.start,args=(IPlist, pbftid, nodeindex, self._blockchainid, self._passwd))
+            threadlist.append(t)
             self._nodes.append(tmp)
-
+            t.start()
+            
+        for t in threadlist:
+            '''
+            xq threads must run the join function ,because the resources of main thread is needed
+            '''
+            t.join()
     def getID(self):
         '''
         return ID of the chain.
@@ -53,16 +69,31 @@ class SingleChain():
         '''
         primer = self.getPrimer()
         pEnode = primer.getEnode()
+        '''
+        xq add peers for each node
+        '''
+        threadlist = []
         for node in self._nodes[1:]:
-            node.addPeer(pEnode, 0)
+            t = threading.Thread(target=node.addPeer,args=(pEnode,0))
+            t.start()
+            threadlist.append(t)
+        for t in threadlist:
+            t.join()
 
     def destructChain(self):
         '''
         Remove all the nodes in the chain.
         '''
+        '''
+        xq start threads to stop gethnodes
+        '''
+        threadlist = []
         for node in self._nodes:
-            node.stop()
-
+            t = threading.Thread(target=node.stop,args=())
+            t.start()
+            threadlist.append(t)
+        for t in threadlist:
+            t.join()
     def connectLowerChain(self, otherChain):
         '''
         Connect to a lower single chain.
@@ -116,6 +147,7 @@ class SingleChain():
 if __name__ == "__main__":
     IPlist = IPList('ip.txt')
     c = SingleChain('1', 1, 7, 5, 121, IPlist)
+    c.SinglechainStart('1', 1, 7, 5, 121, IPlist)
     c.constructChain()
     p = c.getPrimer()
     print(p.getPeerCount())

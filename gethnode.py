@@ -27,7 +27,10 @@ class GethNode():
         self._headers = {'Content-Type': 'application/json'}
         self._passwd = passwd
 
-        # docker command to run on remote server.
+    def start(self, IPlist, pbftid, nodeindex, blockchainid, passwd='Blockchain17'):
+        '''
+        docker command to run on remote server.
+        '''
         RUN_DOCKER = ('docker run -p %d:8545 -p %d:30303 --rm --name %s rkdghd/geth-pbft --rpcapi admin,eth,miner,web3,net '
                        '--rpc --rpcaddr \"0.0.0.0\" --datadir /root/abc --pbftid %d --nodeindex %d '
                        '--blockchainid %d &') % (self._rpcPort, self._listenerPort, self._name, pbftid, nodeindex, blockchainid)
@@ -66,7 +69,7 @@ class GethNode():
         Return enode information from admin.nodeInfo.
         '''
 
-        sleep(2.5)
+        sleep(3)
         msg = self.__msg("admin_nodeInfo", [])
         url = "http://{}:{}".format(self._ip, self._rpcPort)
         try:
@@ -81,7 +84,7 @@ class GethNode():
         net.peerCount
         '''
 
-        sleep(2)
+        sleep(1)
         msg = self.__msg("net_peerCount", [])
         url = "http://{}:{}".format(self._ip, self._rpcPort)
         try:
@@ -95,7 +98,7 @@ class GethNode():
         '''
         admin.peers
         '''
-        sleep(2)
+        sleep(1)
         msg = self.__msg("admin_peers", [])
         url = "http://{}:{}".format(self._ip, self._rpcPort)
         try:
@@ -109,8 +112,7 @@ class GethNode():
         '''
         admin.addPeer()
         '''
-
-        sleep(3)
+        #sleep(2)
         msg = self.__msg("admin_addPeer", param)
         url = "http://{}:{}".format(self._ip, self._rpcPort)
         try:
@@ -122,9 +124,10 @@ class GethNode():
     def setNumber(self, n, t):
         '''
         admin.setNumber()
+        #########################
         '''
         assert n >= t, "n should be no less than t"
-        sleep(2)
+        #sleep(1)
         msg = self.__msg("admin_setNumber", [n, t])
         url = "http://{}:{}".format(self._ip, self._rpcPort)
         try:
@@ -138,7 +141,7 @@ class GethNode():
         admin.setLevel()raise
         '''
         assert maxLevel >= level, "level should be no larger than maxLevel"
-        sleep(2)
+        #sleep(1)
         msg = self.__msg("admin_setLevel", [maxLevel, level])
         url = "http://{}:{}".format(self._ip, self._rpcPort)
         try:
@@ -150,8 +153,9 @@ class GethNode():
     def setID(self, id):
         '''
         admin.setID()
+        ##########################
         '''
-        sleep(2)
+        sleep(1)
         msg = self.__msg("admin_setID", ['%d'.format(id)])
         url = "http://{}:{}".format(self._ip, self._rpcPort)
         try:
@@ -176,6 +180,7 @@ class GethNode():
     def isRunning(self):
         '''
         Check if the client is running.
+        ####################
         '''
         sleep(1)
         msg = self.__msg("admin_nodeInfo", [])
