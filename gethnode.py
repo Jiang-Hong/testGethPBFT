@@ -134,7 +134,7 @@ class GethNode():
 
     def setLevel(self, level, maxLevel):
         '''
-        admin.setLevel()raise
+        admin.setLevel()
         '''
         if maxLevel < level:
             raise ValueError("level should be no larger than maxLevel")

@@ -35,6 +35,7 @@ class HIBEChain():
             self._chains.append(tmp)
         for t in threadlist:
             t.join()
+
     def constructHIBEChain(self):
         '''
         Construct the hierarchical construction of the HIBEChain.
