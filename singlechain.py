@@ -1,11 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-
 from gethnode import GethNode
-from ipandports import IPList
+from ips import IPList
 import threading
-
 
 class SingleChain():
     '''
@@ -68,7 +66,7 @@ class SingleChain():
         Construct a single chain.
         '''
         primer = self.getPrimer()
-        pEnode = primer.getEnode()
+        pEnode = primer.Enode
 
         # xq add peers for each node
         threadlist = []
@@ -83,7 +81,6 @@ class SingleChain():
         '''
         Remove all the nodes in the chain.
         '''
-        # xq start threads to stop gethnodes
         threadlist = []
         for node in self._nodes:
             t = threading.Thread(target=node.stop,args=())
@@ -97,8 +94,17 @@ class SingleChain():
         '''
         p1 = self.getPrimer()
         p2 = otherChain.getPrimer()
-        ep2 = p2.getEnode()
+        ep2 = p2.Enode
         p1.addPeer(ep2, 1)
+
+    def connectUpperChain(self, otherChain):
+        '''
+        Connect to an upper single chain.
+        '''
+        p1 = self.getPrimer()
+        p2 = otherChain.getPrimer()
+        ep2 = p2.Enode
+        p1.addPeer(ep2, 2)
 
 
     def getNodeCount(self):

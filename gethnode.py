@@ -1,20 +1,18 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-
 import paramiko
 import requests
 import json
-from ipandports import IPList
+from ips import IPList
 from time import sleep
-
 
 class GethNode():
     '''
     Data structure for Geth-pbft client.
     '''
-
     def __init__(self, IPlist, pbftid, nodeindex, blockchainid, passwd='Blockchain17'):
+        self.Enode = ''
         self._id = nodeindex
         self._ip, self._rpcPort, self._listenerPort = IPlist.getNewPort()
         self._pbftid = pbftid
@@ -41,6 +39,16 @@ class GethNode():
             result = stdout.read()
             if result:
                 print('node at %s:%s started' % (self._ip, self._listenerPort))
+
+                sleep(2.5)
+                msg = self.__msg("admin_nodeInfo", [])
+                url = "http://{}:{}".format(self._ip, self._rpcPort)
+                try:
+                    response = requests.post(url, headers=self._headers, data=msg)
+                    enode = json.loads(response.content.decode(encoding='utf-8'))['result']['enode'].split('@')[0]
+                    self.Enode = '{}@{}:{}'.format(enode, self._ip, self._listenerPort)
+                except Exception as e:
+                    print("getEnode", e)
             else:
                 print(stderr)
             # result = stdout.read()
@@ -65,22 +73,13 @@ class GethNode():
         '''
         Return enode information from admin.nodeInfo.
         '''
-        sleep(3)
-        msg = self.__msg("admin_nodeInfo", [])
-        url = "http://{}:{}".format(self._ip, self._rpcPort)
-        try:
-            response = requests.post(url, headers=self._headers, data=msg)
-            enode = json.loads(response.content.decode(encoding='utf-8'))['result']['enode'].split('@')[0]
-            return '{}@{}:{}'.format(enode, self._ip, self._listenerPort)
-        except Exception as e:
-            print("getEnode", e)
+        return self.Enode
 
     def getPeerCount(self):
         '''
         net.peerCount
         '''
-
-        sleep(1)
+        sleep(0.5)
         msg = self.__msg("net_peerCount", [])
         url = "http://{}:{}".format(self._ip, self._rpcPort)
         try:
@@ -94,7 +93,7 @@ class GethNode():
         '''
         admin.peers
         '''
-        sleep(1)
+        sleep(0.5)
         msg = self.__msg("admin_peers", [])
         url = "http://{}:{}".format(self._ip, self._rpcPort)
         try:
@@ -108,7 +107,7 @@ class GethNode():
         '''
         admin.addPeer()
         '''
-        sleep(1)
+        sleep(0.5)
         msg = self.__msg("admin_addPeer", param)
         url = "http://{}:{}".format(self._ip, self._rpcPort)
         try:
@@ -120,7 +119,6 @@ class GethNode():
     def setNumber(self, n, t):
         '''
         admin.setNumber()
-        #########################
         '''
         assert n >= t, "n should be no less than t"
         sleep(1)
@@ -128,7 +126,8 @@ class GethNode():
         url = "http://{}:{}".format(self._ip, self._rpcPort)
         try:
             response = requests.post(url, headers=self._headers, data=msg)
-            print(response.content)
+            result = json.loads(response.content.decode(encoding='utf-8'))
+            print("node at %s:%d setNumber result: %s" % (self._ip, self._listenerPort, result["result"]))
         except Exception as e:
             print("setNumber", e)
 
@@ -142,7 +141,8 @@ class GethNode():
         url = "http://{}:{}".format(self._ip, self._rpcPort)
         try:
             response = requests.post(url, headers=self._headers, data=msg)
-            print(response.content)
+            result = json.loads(response.content.decode(encoding='utf-8'))
+            print("node at %s:%d setLevel result: %s" % (self._ip, self._listenerPort, result["result"]))
         except Exception as e:
             print("setLevel", e)
 
@@ -155,7 +155,8 @@ class GethNode():
         url = "http://{}:{}".format(self._ip, self._rpcPort)
         try:
             response = requests.post(url, headers=self._headers, data=msg)
-            print(response.content)
+            result = json.loads(response.content.decode(encoding='utf-8'))
+            print("node at %s:%d setID result: %s" % (self._ip, self._listenerPort, result["result"]))
         except Exception as e:
             print("setID", e)
 
@@ -176,7 +177,7 @@ class GethNode():
         '''
         Check if the client is running.
         '''
-        sleep(1)
+        sleep(0.5)
         msg = self.__msg("admin_nodeInfo", [])
         url = "http://{}:{}".format(self._ip, self._rpcPort)
         try:
@@ -189,7 +190,7 @@ class GethNode():
         '''
         Remove the geth-pbft node container on remote server.
         '''
-        sleep(1)
+        sleep(0.5)
         ssh = paramiko.SSHClient()
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         ssh.connect(hostname=self._ip, port=22, username='root', password=self._passwd)
@@ -212,6 +213,6 @@ if __name__ == "__main__":
     IPlist = IPList('ip.txt')
     n = GethNode(IPlist, 0, 1, 121)
     n.start()
-    enode = n.getEnode()
+    enode = n.Enode
     print(enode)
     n.stop()
