@@ -18,9 +18,10 @@ class IP():
 
     def getNewPort(self):
         '''
-        Return a tuple of an ECS:(ip, rpcPort, listenerPort).
+        Return a tuple of a remote server:(ip, rpcPort, listenerPort).
         '''
-        assert self._currentPort < self._maxPayload, "full loaded"
+        if self._currentPort >= self._maxPayload:
+            raise ValueError("full loaded")
         result = (self._ip, self._rpcPorts[self._currentPort], self._listenerPorts[self._currentPort])
         self._currentPort += 1
         return result
@@ -68,7 +69,8 @@ class IPList():
         '''
         Get a new rpcPort and a new listenerPort from an IP addr.
         '''
-        assert self._currentIP < len(self._ips)
+        if self._currentIP >= len(self._ips):
+            raise ValueError("full loaded")
         result = self._ips[self._currentIP].getNewPort()
         if self._ips[self._currentIP].isFullLoaded():
             self._currentIP += 1

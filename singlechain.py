@@ -54,12 +54,14 @@ class SingleChain():
         Return the primer node of the set of Geth-pbft clients.
         '''
         return self._nodes[0]
+
     def getNode(self, nodeindex):
         '''
         Return the node of a given index.
         '''
-        assert nodeindex > 0
-        return self._nodes[nodeindex]
+        if nodeindex <= 0 or nodeindex > len(self._nodes):
+            raise ValueError("nodeindex out of range")
+        return self._nodes[nodeindex-1]
 
     def constructChain(self):
         '''
@@ -68,7 +70,7 @@ class SingleChain():
         primer = self.getPrimer()
         pEnode = primer.Enode
 
-        # xq add peers for each node
+        # add peer for each node
         threadlist = []
         for node in self._nodes[1:]:
             t = threading.Thread(target=node.addPeer,args=(pEnode,0))
@@ -88,6 +90,7 @@ class SingleChain():
             threadlist.append(t)
         for t in threadlist:
             t.join()
+
     def connectLowerChain(self, otherChain):
         '''
         Connect to a lower single chain.
@@ -136,7 +139,10 @@ class SingleChain():
         '''
         Set ID for the blockchain.
         '''
-        assert self._ifSetNumber and self._ifSetLevel and len(self._id) ==  self._level
+        if not self._ifSetNumber and self._ifSetLevel:
+            raise RuntimeError("number and level info should be set previously")
+        if len(self._id) != self._level:
+            raise ValueError("length of id should match level number")
         if self._level == 0:
             p = self.getPrimer()
             p.setID("")
