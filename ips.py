@@ -21,7 +21,7 @@ class IP():
         Return a tuple of a remote server:(ip, rpcPort, listenerPort).
         '''
         if self._currentPort >= self._maxPayload:
-            raise ValueError("full loaded")
+            raise ValueError("over load")
         result = (self._ip, self._rpcPorts[self._currentPort], self._listenerPorts[self._currentPort])
         self._currentPort += 1
         return result
@@ -70,7 +70,7 @@ class IPList():
         Get a new rpcPort and a new listenerPort from an IP addr.
         '''
         if self._currentIP >= len(self._ips):
-            raise ValueError("full loaded")
+            raise ValueError("over load")
         result = self._ips[self._currentIP].getNewPort()
         if self._ips[self._currentIP].isFullLoaded():
             self._currentIP += 1

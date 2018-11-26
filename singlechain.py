@@ -43,6 +43,7 @@ class SingleChain():
         for t in threadlist:
             # xq threads must run the join function ,because the resources of main thread is needed
             t.join()
+
     def getID(self):
         '''
         return ID of the chain.
@@ -124,6 +125,8 @@ class SingleChain():
             p = self.getPrimer()
             p.setNumber(self.nodeCount, self.threshold)
             self._ifSetNumber = True
+        else:
+            raise RuntimeError("number of chain %s already set" % self._id)
 
     def setLevel(self, maxLevel):
         '''
@@ -133,6 +136,8 @@ class SingleChain():
             for node in self._nodes:
                 node.setLevel(self._level, maxLevel)
             self._ifSetLevel = True
+        else:
+            raise RuntimeError("level of chain %s already set" % self._id)
 
 
     def setID(self):
@@ -143,14 +148,16 @@ class SingleChain():
             raise RuntimeError("number and level info should be set previously")
         if len(self._id) != self._level:
             raise ValueError("length of id should match level number")
-        if self._level == 0:
-            p = self.getPrimer()
-            p.setID("")
+        if not self._ifSetID:
+            if self._level == 0:
+                p = self.getPrimer()
+                p.setID("")
+            else:
+                for node in self._nodes:
+                    node.setID(self._id)
+            self._ifSetID = True
         else:
-            for node in self._nodes:
-                node.setID(self._id)
-        self._ifSetID = True
-
+            raise RuntimeError("ID of chain %s already set" % self._id)
 
 
 if __name__ == "__main__":

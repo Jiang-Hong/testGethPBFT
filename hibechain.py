@@ -94,7 +94,7 @@ class HIBEChain():
 if __name__ == "__main__":
     IPlist = IPList('ip.txt')
     IDList = ["", "1", "11", "112"]
-    threshList = [(2, 2), (2, 2), (3, 2), (1,1)]
+    threshList = [(2, 2), (2, 2), (3, 2), (2,1)]
     hibe = HIBEChain(IDList, threshList, IPlist)
     hibe.constructHIBEChain()
     a, b, c, d = hibe.getChain(''), hibe.getChain('1'), hibe.getChain('11'), hibe.getChain("112")
