@@ -7,7 +7,7 @@ class IP():
     Create an IP object with a list of rpc ports and a list of listener ports.
     '''
     def __init__(self, ip, currentPort=0):
-        self._maxPayload = 8    # maximum number of clients running on one server
+        self._maxPayload = 9    # maximum number of clients running on one server
         self._currentPort = currentPort
         self._ip = ip
         self._rpcPorts = range(8515, 8515 + self._maxPayload * 10, 10)
