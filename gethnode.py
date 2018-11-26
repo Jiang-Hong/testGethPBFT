@@ -107,7 +107,7 @@ class GethNode():
         '''
         admin.addPeer()
         '''
-        sleep(0.5)
+        sleep(1)
         msg = self.__msg("admin_addPeer", param)
         url = "http://{}:{}".format(self._ip, self._rpcPort)
         try:
@@ -122,7 +122,7 @@ class GethNode():
         '''
         if n < t:
             raise ValueError("nodeCount should be no less than threshold value")
-        sleep(1)
+        sleep(1.5)
         msg = self.__msg("admin_setNumber", [n, t])
         url = "http://{}:{}".format(self._ip, self._rpcPort)
         try:
@@ -138,7 +138,7 @@ class GethNode():
         '''
         if maxLevel < level:
             raise ValueError("level should be no larger than maxLevel")
-        sleep(1)
+        sleep(1.5)
         msg = self.__msg("admin_setLevel", [maxLevel, level])
         url = "http://{}:{}".format(self._ip, self._rpcPort)
         try:
@@ -152,7 +152,7 @@ class GethNode():
         '''
         admin.setID()
         '''
-        sleep(1)
+        sleep(1.5)
         msg = self.__msg("admin_setID", ['%d'.format(id)])
         url = "http://{}:{}".format(self._ip, self._rpcPort)
         try:
