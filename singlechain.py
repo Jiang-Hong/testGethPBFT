@@ -133,14 +133,14 @@ class SingleChain():
         Set level info for each node.
         '''
         if not self._ifSetLevel:
-            for node in self._nodes:
+            for node in self._nodes:      #TODO
                 node.setLevel(self._level, maxLevel)
             self._ifSetLevel = True
         else:
             raise RuntimeError("level of chain %s already set" % self._id)
 
 
-    def setID(self):
+    def setID(self):  #TODO
         '''
         Set ID for the blockchain.
         '''
@@ -153,7 +153,7 @@ class SingleChain():
                 p = self.getPrimer()
                 p.setID("")
             else:
-                for node in self._nodes:
+                for node in self._nodes:   #TODO
                     node.setID(self._id)
             self._ifSetID = True
         else:
