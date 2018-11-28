@@ -132,9 +132,15 @@ class SingleChain():
         '''
         Set level info for each node.
         '''
+        threadlist = []
         if not self._ifSetLevel:
             for node in self._nodes:      #TODO
-                node.setLevel(self._level, maxLevel)
+                # node.setLevel(self._level, maxLevel)
+                t = threading.Thread(target = node.setLevel,args=(self._level,maxLevel))
+                t.start()
+                threadlist.append(t)
+            for t in threadlist:
+                t.join()
             self._ifSetLevel = True
         else:
             raise RuntimeError("level of chain %s already set" % self._id)
@@ -153,8 +159,14 @@ class SingleChain():
                 p = self.getPrimer()
                 p.setID("")
             else:
+                theadlist = []
                 for node in self._nodes:   #TODO
-                    node.setID(self._id)
+                    # node.setID(self._id)
+                    t = threading.Thread(target=node.setID,args=(self._id,))
+                    t.start()
+                    theadlist.append(t)
+                for t in theadlist:
+                    t.join()
             self._ifSetID = True
         else:
             raise RuntimeError("ID of chain %s already set" % self._id)

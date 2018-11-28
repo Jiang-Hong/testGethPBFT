@@ -41,18 +41,26 @@ class HIBEChain():
         Construct the hierarchical construction of the HIBEChain.
         Connect blockchain nodes with their parent blockchain nodes.
         '''
+        threadlist = []
         for chain in self._chains[::-1]:
             if chain.getID() != '':
                 parentChain = self._chains[self._IDList.index(chain.getID()[:-1])]
-                parentChain.connectLowerChain(chain)
-
+                # parentChain.connectLowerChain(chain)
+                t = threading.Thread(target=parentChain.connectLowerChain,args=(chain,))
+                t.start()
+        for t in threadlist:
+            t.join()
     def destructHIBEChain(self):  #TODO
         '''
         Stop all the nodes in the HIBEChain.
         '''
+        threadlist = []
         for chain in self._chains:
-            chain.destructChain()
-
+            t = threading.Thread(target=chain.destructChain,args=())
+            t.start()
+            threadlist.append(t)
+        for t in threadlist:
+            t.join()
     def getChain(self, ID):
         '''
         Return a list of blockchain nodes with a given ID.
@@ -67,16 +75,28 @@ class HIBEChain():
         '''
         set (n, t) value for all the chains in HIBEChain.
         '''
+        threadlist = []
         for chain in self._chains:
-            chain.setNumber()
+            t = threading.Thread(target = chain.setNumber,args = ())
+            t.start()
+            threadlist.append(t)
+            # chain.setNumber()
+        for t in threadlist:
+            t.join()
         self._ifSetNumber = True
 
     def setLevel(self):  #TODO
         '''
         set level value for all the chains in HIBEChain.
         '''
+        threadlist = []
         for chain in self._chains:
-            chain.setLevel(self._maxLevel)
+            # chain.setLevel(self._maxLevel)
+            t = threading.Thread(target=chain.setLevel,args=(self._maxLevel,))
+            t.start()
+            threadlist.append(t)
+        for t in threadlist:
+            t.join()
         self._ifSetLevel = True
 
     def setID(self):  #TODO
@@ -85,10 +105,14 @@ class HIBEChain():
         '''
         if not self._ifSetNumber and self._ifSetLevel:
             raise RuntimeError("number and level info should be set previously")
+        threadlist = []
         for chain in self._chains:
-            chain.setID()
+            t = threading.Thread(target=chain.setID,args=())
+            t.start()
+            threadlist.append(t)
+        for t in threadlist:
+            t.join()
         self._ifSetID = True
-
 
 
 if __name__ == "__main__":
