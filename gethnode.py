@@ -138,7 +138,7 @@ class GethNode():
         '''
         if maxLevel < level:
             raise ValueError("level should be no larger than maxLevel")
-        sleep(1.5)
+        sleep(2)
         msg = self.__msg("admin_setLevel", [maxLevel, level])
         url = "http://{}:{}".format(self._ip, self._rpcPort)
         try:
@@ -152,7 +152,7 @@ class GethNode():
         '''
         admin.setID()
         '''
-        sleep(1.5)
+        sleep(2)
         msg = self.__msg("admin_setID", ['%d'.format(id)])
         url = "http://{}:{}".format(self._ip, self._rpcPort)
         try:
