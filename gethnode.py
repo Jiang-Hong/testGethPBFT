@@ -40,7 +40,7 @@ class GethNode():
             if result:
                 print('node at %s:%s started' % (self._ip, self._listenerPort))
 
-                sleep(2.5)
+                sleep(3)
                 msg = self.__msg("admin_nodeInfo", [])
                 url = "http://{}:{}".format(self._ip, self._rpcPort)
                 try:

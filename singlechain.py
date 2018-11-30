@@ -25,6 +25,7 @@ class SingleChain():
         self._ifSetNumber = False
         self._ifSetLevel = False
         self._ifSetID = False
+        
     def SinglechainStart(self):
         '''
         run a singlechain
@@ -134,8 +135,7 @@ class SingleChain():
         '''
         threadlist = []
         if not self._ifSetLevel:
-            for node in self._nodes:      #TODO
-                # node.setLevel(self._level, maxLevel)
+            for node in self._nodes:
                 t = threading.Thread(target = node.setLevel,args=(self._level,maxLevel))
                 t.start()
                 threadlist.append(t)
@@ -146,7 +146,7 @@ class SingleChain():
             raise RuntimeError("level of chain %s already set" % self._id)
 
 
-    def setID(self):  #TODO
+    def setID(self):
         '''
         Set ID for the blockchain.
         '''
@@ -160,8 +160,7 @@ class SingleChain():
                 p.setID("")
             else:
                 theadlist = []
-                for node in self._nodes:   #TODO
-                    # node.setID(self._id)
+                for node in self._nodes:
                     t = threading.Thread(target=node.setID,args=(self._id,))
                     t.start()
                     theadlist.append(t)

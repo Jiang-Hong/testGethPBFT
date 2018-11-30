@@ -36,7 +36,7 @@ class HIBEChain():
         for t in threadlist:
             t.join()
 
-    def constructHIBEChain(self):  #TODO
+    def constructHIBEChain(self):
         '''
         Construct the hierarchical construction of the HIBEChain.
         Connect blockchain nodes with their parent blockchain nodes.
@@ -50,7 +50,7 @@ class HIBEChain():
                 t.start()
         for t in threadlist:
             t.join()
-    def destructHIBEChain(self):  #TODO
+    def destructHIBEChain(self):
         '''
         Stop all the nodes in the HIBEChain.
         '''
@@ -71,7 +71,7 @@ class HIBEChain():
         except ValueError:
             print("ID %s is not in the HIBEChain" % ID)
 
-    def setNumber(self):  #TODO
+    def setNumber(self):
         '''
         set (n, t) value for all the chains in HIBEChain.
         '''
@@ -85,7 +85,7 @@ class HIBEChain():
             t.join()
         self._ifSetNumber = True
 
-    def setLevel(self):  #TODO
+    def setLevel(self):
         '''
         set level value for all the chains in HIBEChain.
         '''
@@ -99,7 +99,7 @@ class HIBEChain():
             t.join()
         self._ifSetLevel = True
 
-    def setID(self):  #TODO
+    def setID(self):
         '''
         set ID for all the chains in HIBEChain.
         '''
