@@ -3,3 +3,4 @@ main.py
 ip.txt
 __pycache__/
 .vscode/
+*.pyc
