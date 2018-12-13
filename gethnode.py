@@ -26,21 +26,23 @@ class GethNode():
         '''
         Start a geth-pbft node on remote server.
         '''
-        RUN_DOCKER = ('docker run -p %d:8545 -p %d:30303 --rm --name %s rkdghd/geth-pbft --rpcapi admin,eth,miner,web3,net '
-                       '--rpc --rpcaddr \"0.0.0.0\" --datadir /root/abc --pbftid %d --nodeindex %d '
-                       '--blockchainid %d &') % (self._rpcPort, self._listenerPort, self._name,
-                                            self._pbftid, self._nodeindex, self._blockchainid)
-        # print(RUN_DOCKER)
+
+        RUN_DOCKER = ('docker run -p %d:8545 -p %d:30303 --rm --name %s rkdghd/geth-pbft --rpcapi admin,eth,miner,web3,'
+                      'net,personal --rpc --rpcaddr \"0.0.0.0\" --datadir /root/abc --pbftid %d --nodeindex %d '
+                      '--blockchainid %d --syncmode \"full\" &') % (self._rpcPort, self._listenerPort, self._name,
+                                                                    self._pbftid, self._nodeindex, self._blockchainid)
+#        print(RUN_DOCKER)
         ssh = paramiko.SSHClient()
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         ssh.connect(hostname=self._ip, port=22, username='root', password=self._passwd)
+        sleep(0.3)
         try:
             stdin, stdout, stderr = ssh.exec_command(RUN_DOCKER)
             result = stdout.read()
             if result:
                 print('node at %s:%s started' % (self._ip, self._listenerPort))
 
-                sleep(3)
+                sleep(4)
                 msg = self.__msg("admin_nodeInfo", [])
                 url = "http://{}:{}".format(self._ip, self._rpcPort)
                 try:
@@ -50,12 +52,12 @@ class GethNode():
                 except Exception as e:
                     print("getEnode", e)
             else:
-                print(stderr)
+                print('%s@%s' % (self._ip, self._listenerPort), stderr, "start step")
             # result = stdout.read()
             # print(result)
-            ssh.close()
         except Exception as e:
             print(e)
+        ssh.close()
 
     def __msg(self, method, params):
         '''
@@ -98,16 +100,59 @@ class GethNode():
         url = "http://{}:{}".format(self._ip, self._rpcPort)
         try:
             response = requests.post(url, headers=self._headers, data=msg)
-            peers = json.loads(response.content.decode(encoding='utf-8'))
+            peers = json.loads(response.content.decode(encoding='utf-8'))['result']
             return peers
         except Exception as e:
             print("getPeers", e)
+
+    def newAccount(self, password):
+        '''
+        personal.newAccount(password)
+        '''
+        sleep(0.5)
+        msg = self.__msg("personal_newAccount", [password])
+        url = "http://{}:{}".format(self._ip, self._rpcPort)
+        try:
+            response = requests.post(url, headers=self._headers, data=msg)
+            result = json.loads(response.content.decode(encoding='utf-8'))['result']
+            return result
+        except Exception as e:
+            print("newAccount", e)
+
+    def unlockAccount(self, account, password, duration=86400):
+        '''
+        personal.unlockAccount()
+        '''
+        sleep(0.5)
+        msg = self.__msg("personal_unlockAccount", [account, password, duration])
+        url = "http://{}:{}".format(self._ip, self._rpcPort)
+        try:
+            response = requests.post(url, headers=self._headers, data=msg)
+            result = json.loads(response.content.decode(encoding='utf-8'))['result']
+            return result
+        except Exception as e:
+            print("unlockAccount", e)
+
+    def getAccounts(self):
+        '''
+        eth.accounts
+        '''
+        sleep(0.5)
+        msg = self.__msg("eth_accounts", [])
+        url = "http://{}:{}".format(self._ip, self._rpcPort)
+        try:
+            response = requests.post(url, headers=self._headers, data=msg)
+            accounts = json.loads(response.content.decode(encoding='utf-8'))['result']
+            return accounts
+        except Exception as e:
+            print("getAccounts", e)
+
 
     def addPeer(self, *param):
         '''
         admin.addPeer()
         '''
-        sleep(1)
+        sleep(4)
         msg = self.__msg("admin_addPeer", param)
         url = "http://{}:{}".format(self._ip, self._rpcPort)
         try:
@@ -122,7 +167,7 @@ class GethNode():
         '''
         if n < t:
             raise ValueError("nodeCount should be no less than threshold value")
-        sleep(1.5)
+        sleep(3)
         msg = self.__msg("admin_setNumber", [n, t])
         url = "http://{}:{}".format(self._ip, self._rpcPort)
         try:
@@ -138,7 +183,7 @@ class GethNode():
         '''
         if maxLevel < level:
             raise ValueError("level should be no larger than maxLevel")
-        sleep(2)
+        sleep(3)
         msg = self.__msg("admin_setLevel", [maxLevel, level])
         url = "http://{}:{}".format(self._ip, self._rpcPort)
         try:
@@ -152,7 +197,7 @@ class GethNode():
         '''
         admin.setID()
         '''
-        sleep(2)
+        sleep(3)
         msg = self.__msg("admin_setID", ['%d'.format(id)])
         url = "http://{}:{}".format(self._ip, self._rpcPort)
         try:
@@ -200,16 +245,39 @@ class GethNode():
         try:
             stdin, stdout, stderr = ssh.exec_command(STOP_CONTAINER)
             result = stdout.read()
-            ssh.close()
             if result:
                 print('node at %s:%s stopped' % (self._ip, self._listenerPort))
             elif not stderr:
-                print(stderr)
+                print('%s@%s' % (self._ip, self._listenerPort), stderr, "stop step")
             return True if result else False
         except Exception as e:
             print("stop", e)
+        ssh.close()
 
-
+def stopAll(IP, passwd='Blockchain17'):
+    ssh = paramiko.SSHClient()
+    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    ssh.connect(hostname=IP, port=22, username='root', password=passwd)
+    try:
+        NAMES = "docker ps --format '{{.Names}}'"
+        stdin, stdout, stderr = ssh.exec_command(NAMES)
+        result = stdout.read()
+        if result:
+            result = result.decode(encoding='utf-8', errors='strict').split()
+            print(' '.join(result))
+            STOP = 'docker stop %s' % ' '.join(result)
+            stdin, stdout, stderr = ssh.exec_command(STOP)
+            result = stdout.read()
+            if result:
+                print("all nodes at %s have stopped" % IP)
+            elif not stderr:
+                print(stderr)
+#            return True if result else False
+        elif not stderr:
+            print(stderr)
+    except Exception as e:
+        print('stopAll', e)
+    ssh.close()
 
 if __name__ == "__main__":
     IPlist = IPList('ip.txt')
@@ -217,4 +285,7 @@ if __name__ == "__main__":
     n.start()
     enode = n.Enode
     print(enode)
+    passwd = "root"
+    print(n.newAccount(passwd))
+    print(n.getAccounts())
     n.stop()

@@ -4,6 +4,7 @@
 from singlechain import SingleChain
 from ips import IPList
 import threading
+import time
 
 class HIBEChain():
     '''
@@ -119,15 +120,20 @@ if __name__ == "__main__":
     IPlist = IPList('ip.txt')
     IDList = ["", "1", "11", "112"]
     threshList = [(2, 2), (2, 2), (3, 2), (2,1)]
+    startTime = time.time()
     hibe = HIBEChain(IDList, threshList, IPlist)
     hibe.constructHIBEChain()
+    hibe.setNumber()
+    hibe.setLevel()
+    hibe.setID()
+    endTime = time.time()
+
     a, b, c, d = hibe.getChain(''), hibe.getChain('1'), hibe.getChain('11'), hibe.getChain("112")
     ap1 = a.getPrimer()
     bp1 = b.getPrimer()
     cp1 = c.getPrimer()
     dp1 = d.getPrimer()
-    hibe.setNumber()
-    hibe.setLevel()
-    hibe.setID()
-    print(ap1.getPeerCount(), bp1.getPeerCount(), cp1.getPeerCount(), dp1.getPeerCount())
+    print(ap1.getPeerCount(), bp1.getPeerCount(), cp1.getPeerCount(), dp1.getPeerCount()) # 3 6 6 4
     hibe.destructHIBEChain()
+
+    print("HIBEChain construction time:", endTime - startTime)

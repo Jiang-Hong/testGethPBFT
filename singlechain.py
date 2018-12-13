@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from gethnode import GethNode
+from gethnode import GethNode, stopAll
 from ips import IPList
 import threading
+from time import sleep
 
 class SingleChain():
     '''
@@ -14,6 +15,9 @@ class SingleChain():
         '''
         init a set of geth-pbft nodes for one blockchain.
         '''
+        if nodeCount > IPlist.getFullCount():
+            raise ValueError("not enough IPs")
+
         self._level = level
         self._id = name
         self.nodeCount = nodeCount
@@ -25,7 +29,7 @@ class SingleChain():
         self._ifSetNumber = False
         self._ifSetLevel = False
         self._ifSetID = False
-        
+
     def SinglechainStart(self):
         '''
         run a singlechain
@@ -70,12 +74,12 @@ class SingleChain():
         Construct a single chain.
         '''
         primer = self.getPrimer()
-        pEnode = primer.Enode
+#        pEnode = primer.Enode
 
         # add peer for each node
         threadlist = []
         for node in self._nodes[1:]:
-            t = threading.Thread(target=node.addPeer,args=(pEnode,0))
+            t = threading.Thread(target=primer.addPeer,args=(node.getEnode(),0))
             t.start()
             threadlist.append(t)
         for t in threadlist:
@@ -97,6 +101,7 @@ class SingleChain():
         '''
         Connect to a lower single chain.
         '''
+        sleep(3)
         p1 = self.getPrimer()
         p2 = otherChain.getPrimer()
         ep2 = p2.Enode
@@ -106,6 +111,7 @@ class SingleChain():
         '''
         Connect to an upper single chain.
         '''
+        sleep(3)
         p1 = self.getPrimer()
         p2 = otherChain.getPrimer()
         ep2 = p2.Enode
@@ -173,9 +179,13 @@ class SingleChain():
 
 if __name__ == "__main__":
     IPlist = IPList('ip.txt')
-    c = SingleChain('1', 1, 7, 5, 121, IPlist)
+    nodeNum = 9
+    c = SingleChain('1', 1, nodeNum, 5, 121, IPlist)
     c.SinglechainStart()
     c.constructChain()
     p = c.getPrimer()
     print(p.getPeerCount())
+    for i in range(1, nodeNum+1):
+        node = c.getNode(i)
+        print(node.getPeerCount())
     c.destructChain()
