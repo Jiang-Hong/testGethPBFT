@@ -101,7 +101,7 @@ class SingleChain():
         '''
         Connect to a lower single chain.
         '''
-        sleep(3)
+        sleep(1)
         p1 = self.getPrimer()
         p2 = otherChain.getPrimer()
         ep2 = p2.Enode
@@ -111,7 +111,7 @@ class SingleChain():
         '''
         Connect to an upper single chain.
         '''
-        sleep(3)
+        sleep(1)
         p1 = self.getPrimer()
         p2 = otherChain.getPrimer()
         ep2 = p2.Enode
@@ -180,11 +180,11 @@ class SingleChain():
 if __name__ == "__main__":
     IPlist = IPList('ip.txt')
     nodeNum = 9
-    c = SingleChain('1', 1, nodeNum, 5, 121, IPlist)
+    c = SingleChain('1', 1, nodeNum, nodeNum*3//4, 121, IPlist)
     c.SinglechainStart()
     c.constructChain()
-    p = c.getPrimer()
-    print(p.getPeerCount())
+#    p = c.getPrimer()
+#    print(p.getPeerCount())
     for i in range(1, nodeNum+1):
         node = c.getNode(i)
         print(node.getPeerCount())

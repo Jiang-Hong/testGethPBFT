@@ -119,7 +119,7 @@ class HIBEChain():
 if __name__ == "__main__":
     IPlist = IPList('ip.txt')
     IDList = ["", "1", "11", "112"]
-    threshList = [(2, 2), (2, 2), (3, 2), (2,1)]
+    threshList = [(2, 1), (2, 1), (3, 2), (2,1)]
     startTime = time.time()
     hibe = HIBEChain(IDList, threshList, IPlist)
     hibe.constructHIBEChain()

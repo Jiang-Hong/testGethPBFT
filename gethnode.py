@@ -35,14 +35,14 @@ class GethNode():
         ssh = paramiko.SSHClient()
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         ssh.connect(hostname=self._ip, port=22, username='root', password=self._passwd)
-        sleep(0.3)
         try:
             stdin, stdout, stderr = ssh.exec_command(RUN_DOCKER)
-            result = stdout.read()
-            if result:
-                print('node at %s:%s started' % (self._ip, self._listenerPort))
+            err = stderr.read().strip()
+            if not err:
+                print('-----', stdout.read().strip())
+                print('node %s of blockchain %s at %s:%s started' % (self._nodeindex, self._blockchainid, self._ip, self._listenerPort))
 
-                sleep(4)
+                sleep(3)
                 msg = self.__msg("admin_nodeInfo", [])
                 url = "http://{}:{}".format(self._ip, self._rpcPort)
                 try:
@@ -152,7 +152,7 @@ class GethNode():
         '''
         admin.addPeer()
         '''
-        sleep(4)
+        sleep(3)
         msg = self.__msg("admin_addPeer", param)
         url = "http://{}:{}".format(self._ip, self._rpcPort)
         try:
@@ -167,7 +167,7 @@ class GethNode():
         '''
         if n < t:
             raise ValueError("nodeCount should be no less than threshold value")
-        sleep(3)
+        sleep(2)
         msg = self.__msg("admin_setNumber", [n, t])
         url = "http://{}:{}".format(self._ip, self._rpcPort)
         try:
@@ -183,7 +183,7 @@ class GethNode():
         '''
         if maxLevel < level:
             raise ValueError("level should be no larger than maxLevel")
-        sleep(3)
+        sleep(2)
         msg = self.__msg("admin_setLevel", [maxLevel, level])
         url = "http://{}:{}".format(self._ip, self._rpcPort)
         try:
@@ -197,7 +197,7 @@ class GethNode():
         '''
         admin.setID()
         '''
-        sleep(3)
+        sleep(2)
         msg = self.__msg("admin_setID", ['%d'.format(id)])
         url = "http://{}:{}".format(self._ip, self._rpcPort)
         try:
@@ -246,13 +246,20 @@ class GethNode():
             stdin, stdout, stderr = ssh.exec_command(STOP_CONTAINER)
             result = stdout.read()
             if result:
-                print('node at %s:%s stopped' % (self._ip, self._listenerPort))
+                print('node %s of blockchain %s at %s:%s stopped' % (self._nodeindex, self._blockchainid, self._ip, self._listenerPort))
             elif not stderr:
                 print('%s@%s' % (self._ip, self._listenerPort), stderr, "stop step")
             return True if result else False
         except Exception as e:
             print("stop", e)
         ssh.close()
+
+def execCommand(cmd, ip, port=22, username='root', password='Blockchain17'):
+    client = paramiko.SSHClient()
+    client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    client.connect(ip, port, username, password)
+    stdin, stdout, stderr = client.exec_command(cmd)
+    return True if not stderr.read().strip() else False
 
 def stopAll(IP, passwd='Blockchain17'):
     ssh = paramiko.SSHClient()
