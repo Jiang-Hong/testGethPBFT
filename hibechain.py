@@ -15,7 +15,7 @@ class HIBEChain():
         # Check if the input params are legal
         if not len(IDList) == len(threshList) <=  IPlist.getFullCount():
             raise ValueError("length of IDList should match length of threshList")
-        if not sum(nodeCount for (nodeCount, _) in threshList) <= IPlist.getFullCount():
+        if sum(nodeCount for (nodeCount, _) in threshList) > IPlist.getFullCount():
             raise ValueError("not enough IPs")
 
         self._chains = []
@@ -55,13 +55,16 @@ class HIBEChain():
         '''
         Stop all the nodes in the HIBEChain.
         '''
-        threadlist = []
+#        threadlist = []
+#        for chain in self._chains:
+#            t = threading.Thread(target=chain.destructChain,args=())
+#            t.start()
+#            threadlist.append(t)
+#        for t in threadlist:
+#            t.join()
         for chain in self._chains:
-            t = threading.Thread(target=chain.destructChain,args=())
-            t.start()
-            threadlist.append(t)
-        for t in threadlist:
-            t.join()
+            chain.destructChain()
+
     def getChain(self, ID):
         '''
         Return a list of blockchain nodes with a given ID.
@@ -118,8 +121,8 @@ class HIBEChain():
 
 if __name__ == "__main__":
     IPlist = IPList('ip.txt')
-    IDList = ["", "1", "11", "112"]
-    threshList = [(2, 1), (2, 1), (3, 2), (2,1)]
+    IDList = ["", "1", "11", "12", "13"]
+    threshList = [(3, 2), (2, 1), (1, 1), (1,1), (1,1)]
     startTime = time.time()
     hibe = HIBEChain(IDList, threshList, IPlist)
     hibe.constructHIBEChain()
@@ -128,12 +131,18 @@ if __name__ == "__main__":
     hibe.setID()
     endTime = time.time()
 
-    a, b, c, d = hibe.getChain(''), hibe.getChain('1'), hibe.getChain('11'), hibe.getChain("112")
+    a, b, c, d = hibe.getChain(''), hibe.getChain('1'), hibe.getChain('11'), hibe.getChain("12")
     ap1 = a.getPrimer()
     bp1 = b.getPrimer()
     cp1 = c.getPrimer()
     dp1 = d.getPrimer()
-    print(ap1.getPeerCount(), bp1.getPeerCount(), cp1.getPeerCount(), dp1.getPeerCount()) # 3 6 6 4
-    hibe.destructHIBEChain()
+    print(ap1.getPeerCount(), bp1.getPeerCount(), cp1.getPeerCount(), dp1.getPeerCount()) # 4 7 2 2
+
+
+    a1 = cp1.newAccount()
+    a2 = dp1.newAccount()
+    cp1.unlockAccount(a1)
+    dp1.unlockAccount(a2)
+#    hibe.destructHIBEChain()
 
     print("HIBEChain construction time:", endTime - startTime)

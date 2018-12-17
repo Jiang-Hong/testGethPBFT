@@ -77,13 +77,16 @@ class SingleChain():
 #        pEnode = primer.Enode
 
         # add peer for each node
-        threadlist = []
+#        threadlist = []
+#        for node in self._nodes[1:]:
+#            t = threading.Thread(target=primer.addPeer,args=(node.getEnode(),0))
+#            t.start()
+#            threadlist.append(t)
+#        for t in threadlist:
+#            t.join()
         for node in self._nodes[1:]:
-            t = threading.Thread(target=primer.addPeer,args=(node.getEnode(),0))
-            t.start()
-            threadlist.append(t)
-        for t in threadlist:
-            t.join()
+            primer.addPeer(node.getEnode(), 0)
+            sleep(2)
 
     def destructChain(self):
         '''

@@ -39,7 +39,7 @@ class GethNode():
             stdin, stdout, stderr = ssh.exec_command(RUN_DOCKER)
             err = stderr.read().strip()
             if not err:
-                print('-----', stdout.read().strip())
+#                print(stdout.read().strip().decode(encoding='utf-8'))
                 print('node %s of blockchain %s at %s:%s started' % (self._nodeindex, self._blockchainid, self._ip, self._listenerPort))
 
                 sleep(3)
@@ -105,7 +105,7 @@ class GethNode():
         except Exception as e:
             print("getPeers", e)
 
-    def newAccount(self, password):
+    def newAccount(self, password='root'):
         '''
         personal.newAccount(password)
         '''
@@ -119,7 +119,7 @@ class GethNode():
         except Exception as e:
             print("newAccount", e)
 
-    def unlockAccount(self, account, password, duration=86400):
+    def unlockAccount(self, account, password='root', duration=86400):
         '''
         personal.unlockAccount()
         '''
@@ -132,6 +132,51 @@ class GethNode():
             return result
         except Exception as e:
             print("unlockAccount", e)
+
+    def sendTransaction(self, toID, toIndex, value):
+        '''
+        eth.sendTransaction2()
+        '''
+        if isinstance(value, int):
+            value = hex(value)
+        param = {"toid":toID, "toindex":toIndex, "value":value}
+        msg = self.__msg("eth_sendTransaction2", [param])
+        url = "http://{}:{}".format(self._ip, self._rpcPort)
+        try:
+            response = requests.post(url, headers=self._headers, data=msg)
+            result = json.loads(response.content.decode(encoding='utf-8'))['result']
+            return result
+        except Exception as e:
+            print("sendTransaction", e)
+
+    def send1000Transaction(self, toID, toIndex, value):
+        '''
+        eth.testSendTransaction2()
+        '''
+        if isinstance(value, int):
+            value = hex(value)
+        param = {"toid":toID, "toindex":toIndex, "value":value}
+        msg = self.__msg("eth_testSendTransaction2", [param])
+        url = "http://{}:{}".format(self._ip, self._rpcPort)
+        try:
+            response = requests.post(url, headers=self._headers, data=msg)
+            result = json.loads(response.content.decode(encoding='utf-8'))['result']
+            return result
+        except Exception as e:
+            print("send1000Transaction", e)
+
+    def getTransaction(self, TXID):
+        '''
+        eth.getTransaction()
+        '''
+        msg = self.__msg("eth_getTransaction", [TXID])
+        url = "http://{}:{}".format(self._ip, self._rpcPort)
+        try:
+            response = requests.post(url, headers=self._headers, data=msg)
+            result = json.loads(response.content.decode(encoding='utf-8'))['result']
+            return result
+        except Exception as e:
+            print("result", e)
 
     def getAccounts(self):
         '''
@@ -146,6 +191,19 @@ class GethNode():
             return accounts
         except Exception as e:
             print("getAccounts", e)
+
+    def getBalance(self, account):
+        '''
+        eth.getBalance()
+        '''
+        msg = self.__msg("eth_getBalance", [account])
+        url = "http://{}:{}".format(self._ip, self._rpcPort)
+        try:
+            response = requests.post(url, headers=self._headers, data=msg)
+            balance = json.loads(response.content.decode(encoding='utf-8'))['result']
+            return balance
+        except Exception as e:
+            print("getBalance", e)
 
 
     def addPeer(self, *param):
@@ -255,13 +313,23 @@ class GethNode():
         ssh.close()
 
 def execCommand(cmd, ip, port=22, username='root', password='Blockchain17'):
+    '''
+    exec a command on remote server using SSH
+    '''
     client = paramiko.SSHClient()
     client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     client.connect(ip, port, username, password)
     stdin, stdout, stderr = client.exec_command(cmd)
-    return True if not stderr.read().strip() else False
+    if not stderr.read():
+        result = stdout.read().strip().decode(encoding='utf-8')
+    else:
+        result = stderr.read().strip().decode(encoding='utf-8')
+    return result
 
 def stopAll(IP, passwd='Blockchain17'):
+    '''
+    stop all running containers on remote server
+    '''
     ssh = paramiko.SSHClient()
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     ssh.connect(hostname=IP, port=22, username='root', password=passwd)
