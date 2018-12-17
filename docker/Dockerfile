@@ -1,7 +1,7 @@
 FROM debian:stretch-slim
 WORKDIR /root
 COPY geth /usr/bin/geth
-COPY core.yaml config.yaml /root/
+COPY passfile core.yaml config.yaml /root/
 RUN apt-get update -qq && apt-get install -yqq --reinstall ca-certificates \
     && apt-get install -yqq --no-install-recommends build-essential flex bison subversion m4 python3 python3-dev python3-setuptools libgmp-dev libssl-dev git curl \
     && curl -SL https://crypto.stanford.edu/pbc/files/pbc-0.5.14.tar.gz | tar xzC ./ && cd pbc-0.5.14 && ./configure LDFLAGS="-lgmp" && make && make install \
