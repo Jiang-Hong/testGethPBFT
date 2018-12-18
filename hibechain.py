@@ -46,6 +46,7 @@ class HIBEChain():
         for chain in self._chains[::-1]:
             if chain.getID() != '':
                 parentChain = self._chains[self._IDList.index(chain.getID()[:-1])]
+                print(chain.getID(), parentChain.getID())
                 # parentChain.connectLowerChain(chain)
                 t = threading.Thread(target=parentChain.connectLowerChain,args=(chain,))
                 t.start()
@@ -143,6 +144,8 @@ if __name__ == "__main__":
     a2 = dp1.newAccount()
     cp1.unlockAccount(a1)
     dp1.unlockAccount(a2)
-#    hibe.destructHIBEChain()
+
+    time.sleep(2)
+    hibe.destructHIBEChain()
 
     print("HIBEChain construction time:", endTime - startTime)

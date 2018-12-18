@@ -5,6 +5,7 @@ from gethnode import GethNode, stopAll
 from ips import IPList
 import threading
 from time import sleep
+from tqdm import tqdm
 
 class SingleChain():
     '''
@@ -73,7 +74,7 @@ class SingleChain():
         '''
         Construct a single chain.
         '''
-        primer = self.getPrimer()
+#        primer = self.getPrimer()
 #        pEnode = primer.Enode
 
         # add peer for each node
@@ -84,9 +85,11 @@ class SingleChain():
 #            threadlist.append(t)
 #        for t in threadlist:
 #            t.join()
-        for node in self._nodes[1:]:
-            primer.addPeer(node.getEnode(), 0)
-            sleep(2)
+        for i in tqdm(range(len(self._nodes))):
+            for j in range(len(self._nodes)):
+                tmpEnode = self._nodes[j].getEnode()
+                self._nodes[i].addPeer(tmpEnode, 0)
+
 
     def destructChain(self):
         '''
@@ -105,10 +108,14 @@ class SingleChain():
         Connect to a lower single chain.
         '''
         sleep(1)
-        p1 = self.getPrimer()
-        p2 = otherChain.getPrimer()
-        ep2 = p2.Enode
-        p1.addPeer(ep2, 1)
+        for node in self._nodes:
+            for other in otherChain._nodes:
+                ep = other.Enode
+                node.addPeer(ep, 1)
+#        p1 = self.getPrimer()
+#        p2 = otherChain.getPrimer()
+#        ep2 = p2.Enode
+#        p1.addPeer(ep2, 1)
 
     def connectUpperChain(self, otherChain):
         '''
@@ -191,4 +198,5 @@ if __name__ == "__main__":
     for i in range(1, nodeNum+1):
         node = c.getNode(i)
         print(node.getPeerCount())
+    sleep(2)
     c.destructChain()

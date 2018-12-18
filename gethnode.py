@@ -27,9 +27,9 @@ class GethNode():
         Start a geth-pbft node on remote server.
         '''
 
-        RUN_DOCKER = ('docker run -p %d:8545 -p %d:30303 --rm --name %s rkdghd/geth-pbft --rpcapi admin,eth,miner,web3,'
+        RUN_DOCKER = ('docker run -d -p %d:8545 -p %d:30303 --rm --name %s rkdghd/geth-pbft --rpcapi admin,eth,miner,web3,'
                       'net,personal --rpc --rpcaddr \"0.0.0.0\" --datadir /root/abc --pbftid %d --nodeindex %d '
-                      '--blockchainid %d --syncmode \"full\" &') % (self._rpcPort, self._listenerPort, self._name,
+                      '--blockchainid %d --syncmode \"full\" ') % (self._rpcPort, self._listenerPort, self._name,
                                                                     self._pbftid, self._nodeindex, self._blockchainid)
 #        print(RUN_DOCKER)
         ssh = paramiko.SSHClient()
@@ -63,7 +63,6 @@ class GethNode():
         '''
         Return json string used in HTTP requests.
         '''
-
         return json.dumps({
                "jsonrpc": "2.0",
                "method": method,
@@ -210,11 +209,12 @@ class GethNode():
         '''
         admin.addPeer()
         '''
-        sleep(3)
+        sleep(0.3)
         msg = self.__msg("admin_addPeer", param)
         url = "http://{}:{}".format(self._ip, self._rpcPort)
         try:
             requests.post(url, headers=self._headers, data=msg)
+            sleep(0.5)
             # print(response.content)
         except Exception as e:
             print("addPeer", e)

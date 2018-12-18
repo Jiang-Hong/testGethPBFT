@@ -2,8 +2,13 @@ FROM debian:stretch-slim
 WORKDIR /root
 COPY geth /usr/bin/geth
 COPY passfile core.yaml config.yaml /root/
-RUN apt-get update -qq && apt-get install -yqq --reinstall ca-certificates \
-    && apt-get install -yqq --no-install-recommends build-essential flex bison subversion m4 python3 python3-dev python3-setuptools libgmp-dev libssl-dev git curl \
+RUN apt-get update && apt-get install -y --reinstall ca-certificates \
+    && echo "deb http://mirrors.163.com/debian/ stretch main non-free contrib" > /etc/apt/sources.list \
+    && echo "deb http://mirrors.163.com/debian/ stretch-updates main non-free contrib" >> /etc/apt/sources.list \
+    && echo "deb http://mirrors.163.com/debian/ stretch-backports main non-free contrib" >> /etc/apt/sources.list \
+    && echo "deb http://mirrors.163.com/debian-security/ stretch/updates main non-free contrib" >> /etc/apt/sources.list \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends build-essential flex bison subversion m4 python3 python3-dev python3-setuptools libgmp-dev libssl-dev git curl \
     && curl -SL https://crypto.stanford.edu/pbc/files/pbc-0.5.14.tar.gz | tar xzC ./ && cd pbc-0.5.14 && ./configure LDFLAGS="-lgmp" && make && make install \
     && cd .. && rm pbc-0.5.14 -rf && git clone https://github.com/facebook/rocksdb.git && cd rocksdb && git checkout 4.1.fb && make shared_lib \
     && rm .git -rf \
