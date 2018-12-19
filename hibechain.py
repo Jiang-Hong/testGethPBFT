@@ -31,6 +31,9 @@ class HIBEChain():
             blockchainid = 120 + index
             tmp = SingleChain(name, level, nodeCount, threshold, blockchainid, IPlist, passwd)
             tmp.SinglechainStart()
+            tmp.SinglechainConfig()
+            tmp.runGethNodes()
+            tmp.constructChain()
             t = threading.Thread(target=tmp.constructChain,args=())
             t.start()
             self._chains.append(tmp)
