@@ -27,7 +27,7 @@ class GethNode():
         '''
         Start a geth-pbft node on remote server.
         '''
-        RUN_DOCKER = ('docker run -td -p %d:8545 -p %d:30303 --name %s rkdghd/geth-pbft:latest' % (self._rpcPort,
+        RUN_DOCKER = ('docker run -td -p %d:8545 -p %d:30303 --rm --name %s rkdghd/geth-pbft:latest' % (self._rpcPort,
                                                                                                         self._listenerPort,
                                                                                                         self._name))
 #        RUN_DOCKER = ('docker run -d -p %d:8545 -p %d:30303 --rm --name %s rkdghd/geth-pbft --rpcapi admin,eth,miner,web3,'
@@ -314,9 +314,9 @@ class GethNode():
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         ssh.connect(hostname=self._ip, port=22, username='root', password=self._passwd)
         STOP_CONTAINER = "docker stop %s" % self._name
-        RM_CONTAINER = "docker rm %s" % self._name
+
         try:
-            stdin, stdout, stderr = ssh.exec_command('%s; sleep 2; %s' %(STOP_CONTAINER, RM_CONTAINER))
+            stdin, stdout, stderr = ssh.exec_command(STOP_CONTAINER)
             result = stdout.read()
             if result:
                 print('node %s of blockchain %s at %s:%s stopped' % (self._nodeindex, self._blockchainid, self._ip, self._rpcPort))
