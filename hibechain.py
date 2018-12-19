@@ -143,10 +143,8 @@ if __name__ == "__main__":
     print(ap1.getPeerCount(), bp1.getPeerCount(), cp1.getPeerCount(), dp1.getPeerCount()) # 4 7 2 2
 
 
-    a1 = cp1.newAccount()
-    a2 = dp1.newAccount()
-    cp1.unlockAccount(a1)
-    dp1.unlockAccount(a2)
+    result = cp1.sendTransaction('12', 1, 1)
+    print(result)
 
     time.sleep(2)
     hibe.destructHIBEChain()
