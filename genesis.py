@@ -4,10 +4,14 @@
 
 import json
 
-with open('docker/10.json', 'rb') as f:
-    genesis = json.loads(f.read())
-genesis['config']['chainId'] = 101
+def confGenesis(chainId, accounts):
+    with open('docker/120.json', 'rb') as f:
+        genesis = json.loads(f.read())
+    genesis['config']['chainId'] = chainId
 
-newGenesis = json.dumps(genesis, indent=2)
-with open('docker/new.json', 'w') as f:
-    print(newGenesis, file=f)
+    for acc in accounts:
+        genesis['alloc'][acc] = {'balance': "0x200000000000000000000000000000000000000000000000000000000000000"}
+    print(genesis) #
+    newGenesis = json.dumps(genesis, indent=2)
+    with open('docker/%s.json' % str(chainId), 'w') as f:
+        print(newGenesis, file=f)

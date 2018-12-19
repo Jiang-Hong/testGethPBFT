@@ -13,7 +13,7 @@ class HIBEChain():
     def __init__(self, IDList, threshList, IPlist, passwd='Blockchain17'):
 
         # Check if the input params are legal
-        if not len(IDList) == len(threshList) <=  IPlist.getFullCount():
+        if not len(IDList) == len(threshList):
             raise ValueError("length of IDList should match length of threshList")
         if sum(nodeCount for (nodeCount, _) in threshList) > IPlist.getFullCount():
             raise ValueError("not enough IPs")
