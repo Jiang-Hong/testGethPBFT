@@ -35,31 +35,34 @@ class SingleChain():
         self._ifSetNumber = False
         self._ifSetLevel = False
         self._ifSetID = False
+        self._isTerminal = False
         self._accounts = []
 
     def SinglechainStart(self):
         '''
         run a singlechain
         '''
-        threadlist = []
+#        threadlist = []
         for index in range(self.nodeCount):
             pbftid = index
             nodeindex = index + 1
             tmp = GethNode(self._iplist, pbftid, nodeindex, self._blockchainid, self._passwd)
             self._ips.add(tmp._ip)
             # xq start a thread， target stand for a function that you want to run ,args stand for the parameters
-            t = threading.Thread(target=tmp.start)
-            threadlist.append(t)
+#            t = threading.Thread(target=tmp.start)
+#            threadlist.append(t)
+#            t.start()
+            tmp.start()
             self._nodes.append(tmp)
-            t.start()
 
-        for t in threadlist:
-            # xq threads must run the join function ,because the resources of main thread is needed
-            t.join()
+
+#        for t in threadlist:
+#            # xq threads must run the join function ,because the resources of main thread is needed
+#            t.join()
 
         for index in range(self.nodeCount):
             self._accounts.append(self._nodes[index]._accounts[0])
-        print(self._accounts)
+#        print(self._accounts)
 
     def SinglechainConfig(self):
         '''
@@ -76,17 +79,38 @@ class SingleChain():
                 if node._ip == serverIP:
                     CMD = 'docker cp %s.json %s:/root/%s.json' % (self._blockchainid, node._name, self._blockchainid)
                     result = execCommand(CMD, serverIP)
-                    print(result)
+#                    print(result)
                     sleep(0.5)
                     INIT = 'docker exec -t %s geth --datadir abc init %s.json' % (node._name, self._blockchainid)
                     result = execCommand(INIT, serverIP)
-                    print(result)
+#                    print(result)
                     sleep(1)
+
+    def TerminalConfig(self):
+        '''
+        set genesis.json for terminal equipment.
+        '''
+        initID = str(self._blockchainid)[:-1]
+        for serverIP in self._ips:
+            NAME = '%s.json' % initID
+            subprocess.run(['./sendFile.sh', NAME, serverIP], stdout=subprocess.PIPE)
+            sleep(0.5)
+            for node in self._nodes:
+                if node._ip == serverIP:
+                    CMD = 'docker cp %s.json %s:/root/%s.json' % (initID, node._name, initID)
+                    result = execCommand(CMD, serverIP)
+#                    print(result)
+                    sleep(0.5)
+                    INIT = 'docker exec -t %s geth --datadir abc init %s.json' % (node._name, initID)
+                    result = execCommand(INIT, serverIP)
+#                    print(result)
+                    sleep(1)
+
 
     def runGethNodes(self):
         print('run geth nodes:')
         for node in tqdm(self._nodes):
-            RUN = ('geth --datadir abc --cache 256 --port 30303 --rpcport 8545 --rpcapi admin,eth,miner,web3,net,personal --rpc --rpcaddr \"0.0.0.0\" '
+            RUN = ('geth --datadir abc --cache 512 --port 30303 --rpcport 8545 --rpcapi admin,eth,miner,web3,net,personal --rpc --rpcaddr \"0.0.0.0\" '
                    '--pbftid %d --nodeindex %d --blockchainid %d --unlock %s --password '
                    '\"passfile\" --syncmode \"full\" --nodiscover') % (node._pbftid, node._nodeindex,
                                                                   node._blockchainid, node._accounts[0])
@@ -169,6 +193,7 @@ class SingleChain():
             for other in otherChain._nodes:
                 ep = other.Enode
                 node.addPeer(ep, 1)
+        sleep(3)
 #        p1 = self.getPrimer()
 #        p2 = otherChain.getPrimer()
 #        ep2 = p2.Enode
@@ -210,17 +235,19 @@ class SingleChain():
         '''
         Set level info for each node.
         '''
-        threadlist = []
-        if not self._ifSetLevel:
-            for node in self._nodes:
-                t = threading.Thread(target = node.setLevel,args=(self._level,maxLevel))
-                t.start()
-                threadlist.append(t)
-            for t in threadlist:
-                t.join()
-            self._ifSetLevel = True
-        else:
-            raise RuntimeError("level of chain %s already set" % self._id)
+#        threadlist = []
+#        if not self._ifSetLevel:
+#            for node in self._nodes:
+#                t = threading.Thread(target = node.setLevel,args=(self._level,maxLevel))
+#                t.start()
+#                threadlist.append(t)
+#            for t in threadlist:
+#                t.join()
+#            self._ifSetLevel = True
+#        else:
+#            raise RuntimeError("level of chain %s already set" % self._id)
+        for node in self._nodes:
+            node.setLevel(self._level, maxLevel)
 
 
     def setID(self):
@@ -236,13 +263,15 @@ class SingleChain():
                 p = self.getPrimer()
                 p.setID("")
             else:
-                theadlist = []
+#                theadlist = []
+#                for node in self._nodes:
+#                    t = threading.Thread(target=node.setID,args=(self._id,))
+#                    t.start()
+#                    theadlist.append(t)
+#                for t in theadlist:
+#                    t.join()
                 for node in self._nodes:
-                    t = threading.Thread(target=node.setID,args=(self._id,))
-                    t.start()
-                    theadlist.append(t)
-                for t in theadlist:
-                    t.join()
+                    node.setID(self._id)
             self._ifSetID = True
         else:
             raise RuntimeError("ID of chain %s already set" % self._id)
@@ -250,7 +279,7 @@ class SingleChain():
 
 if __name__ == "__main__":
     IPlist = IPList('ip.txt')
-    nodeNum = 9
+    nodeNum = 6
     c = SingleChain('1', 1, nodeNum, nodeNum*3//4, 121, IPlist)
     c.SinglechainStart()
     c.SinglechainConfig()
@@ -260,7 +289,9 @@ if __name__ == "__main__":
 #    print(p.getPeerCount())
     for i in range(1, nodeNum+1):
         node = c.getNode(i)
-        print(node.Enode)
+#        acc = node.getAccounts()[0]
+#        print(acc)
+#        print(node.getBalance(acc))
         print(node.getPeerCount())
 
     c.destructChain()

@@ -1,3 +1,4 @@
+
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
@@ -208,11 +209,14 @@ class GethNode():
         eth.getBalance()
         ipc form: docker exec -it geth-pbft8515 geth attach ipc:abc/geth.ipc --exec "eth.getBalance(eth.accounts[0])"
         '''
-        msg = self._msg("eth_getBalance", [account])
+        sleep(1)
+        msg = self._msg("eth_getBalance", [account, 'latest'])
         url = "http://{}:{}".format(self._ip, self._rpcPort)
         try:
             response = requests.post(url, headers=self._headers, data=msg)
+#            print(response.content.decode())
             balance = json.loads(response.content.decode(encoding='utf-8'))['result']
+#            print(balance)
             return balance
         except Exception as e:
             print("getBalance", e)
@@ -238,7 +242,7 @@ class GethNode():
         '''
         if n < t:
             raise ValueError("nodeCount should be no less than threshold value")
-        sleep(2)
+        sleep(3)
         msg = self._msg("admin_setNumber", [n, t])
         url = "http://{}:{}".format(self._ip, self._rpcPort)
         try:
@@ -254,7 +258,7 @@ class GethNode():
         '''
         if maxLevel < level:
             raise ValueError("level should be no larger than maxLevel")
-        sleep(2)
+        sleep(3)
         msg = self._msg("admin_setLevel", [maxLevel, level])
         url = "http://{}:{}".format(self._ip, self._rpcPort)
         try:
@@ -268,7 +272,7 @@ class GethNode():
         '''
         admin.setID()
         '''
-        sleep(2)
+        sleep(3)
         msg = self._msg("admin_setID", ['%d'.format(id)])
         url = "http://{}:{}".format(self._ip, self._rpcPort)
         try:
@@ -283,7 +287,7 @@ class GethNode():
         admin.testhibe()
         '''
         sleep(2)
-        msg = self._msg("admin_testhibe", ['%d'.format(txString)])
+        msg = self._msg("admin_testhibe", ['%s'.format(txString)])
         url = "http://{}:{}".format(self._ip, self._rpcPort)
         try:
             response = requests.post(url, headers=self._headers, data=msg)
@@ -304,6 +308,7 @@ class GethNode():
         except Exception as e:
             print("isRunning", e)
             return False
+
 
     def stop(self):
         '''

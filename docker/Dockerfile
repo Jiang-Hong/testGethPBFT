@@ -21,5 +21,5 @@ RUN apt-get update && apt-get install -y --reinstall ca-certificates \
     && apt-get remove git curl -y \
     && apt-get autoremove -y \
     && mkdir /root/.geth-pbft && mv /root/config.yaml /root/.geth-pbft 
-EXPOSE 8545 30303
+EXPOSE 8545 8546 30303
 #ENTRYPOINT [ "geth" ]

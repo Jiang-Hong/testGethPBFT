@@ -24,37 +24,46 @@ class HIBEChain():
         self._ifSetNumber = False
         self._ifSetLevel = False
         self._ifSetID = False
-        threadlist = []
+#        threadlist = []
         for index, name in enumerate(IDList):
             level = len(name)
             nodeCount, threshold = threshList[index][0], threshList[index][1]
             blockchainid = 120 + index
             tmp = SingleChain(name, level, nodeCount, threshold, blockchainid, IPlist, passwd)
+            if len(name) == self._maxLevel:
+                tmp._isTerminal = True
             tmp.SinglechainStart()
-            tmp.SinglechainConfig()
+            if tmp._isTerminal:
+                print(tmp._id, "--------------terminal")
+                tmp.TerminalConfig()
+            else:
+                tmp.SinglechainConfig()
             tmp.runGethNodes()
             tmp.constructChain()
-            t = threading.Thread(target=tmp.constructChain,args=())
-            t.start()
             self._chains.append(tmp)
-        for t in threadlist:
-            t.join()
+#            t = threading.Thread(target=tmp.constructChain,args=())
+#            t.start()
+#            self._chains.append(tmp)
+#        for t in threadlist:
+#            t.join()
 
     def constructHIBEChain(self):
         '''
         Construct the hierarchical construction of the HIBEChain.
         Connect blockchain nodes with their parent blockchain nodes.
         '''
-        threadlist = []
+#        threadlist = []
         for chain in self._chains[::-1]:
             if chain.getID() != '':
                 parentChain = self._chains[self._IDList.index(chain.getID()[:-1])]
-                print(chain.getID(), parentChain.getID())
+                parentChain.connectLowerChain(chain)
+#                print(chain.getID(), parentChain.getID())
                 # parentChain.connectLowerChain(chain)
-                t = threading.Thread(target=parentChain.connectLowerChain,args=(chain,))
-                t.start()
-        for t in threadlist:
-            t.join()
+#                t = threading.Thread(target=parentChain.connectLowerChain,args=(chain,))
+#                t.start()
+#        for t in threadlist:
+#            t.join()
+
     def destructHIBEChain(self):
         '''
         Stop all the nodes in the HIBEChain.
@@ -75,37 +84,42 @@ class HIBEChain():
         '''
         try:
             index = self._IDList.index(ID)
+            print('index', '-----------', index)
             return self._chains[index]
-        except ValueError:
+        except ValueError or IndexError:
             print("ID %s is not in the HIBEChain" % ID)
 
     def setNumber(self):
         '''
         set (n, t) value for all the chains in HIBEChain.
         '''
-        threadlist = []
+#        threadlist = []
+#        for chain in self._chains:
+#            t = threading.Thread(target = chain.setNumber,args = ())
+#            t.start()
+#            threadlist.append(t)
+#            # chain.setNumber()
+#        for t in threadlist:
+#            t.join()
+#        self._ifSetNumber = True
         for chain in self._chains:
-            t = threading.Thread(target = chain.setNumber,args = ())
-            t.start()
-            threadlist.append(t)
-            # chain.setNumber()
-        for t in threadlist:
-            t.join()
-        self._ifSetNumber = True
+            chain.setNumber()
 
     def setLevel(self):
         '''
         set level value for all the chains in HIBEChain.
         '''
-        threadlist = []
+#        threadlist = []
+#        for chain in self._chains:
+#            # chain.setLevel(self._maxLevel)
+#            t = threading.Thread(target=chain.setLevel,args=(self._maxLevel,))
+#            t.start()
+#            threadlist.append(t)
+#        for t in threadlist:
+#            t.join()
+#        self._ifSetLevel = True
         for chain in self._chains:
-            # chain.setLevel(self._maxLevel)
-            t = threading.Thread(target=chain.setLevel,args=(self._maxLevel,))
-            t.start()
-            threadlist.append(t)
-        for t in threadlist:
-            t.join()
-        self._ifSetLevel = True
+            chain.setLevel(self._maxLevel)
 
     def setID(self):
         '''
@@ -113,40 +127,52 @@ class HIBEChain():
         '''
         if not self._ifSetNumber and self._ifSetLevel:
             raise RuntimeError("number and level info should be set previously")
-        threadlist = []
+#        threadlist = []
+#        for chain in self._chains:
+#            t = threading.Thread(target=chain.setID,args=())
+#            t.start()
+#            threadlist.append(t)
+#        for t in threadlist:
+#            t.join()
+#        self._ifSetID = True
         for chain in self._chains:
-            t = threading.Thread(target=chain.setID,args=())
-            t.start()
-            threadlist.append(t)
-        for t in threadlist:
-            t.join()
-        self._ifSetID = True
+            chain.setID()
 
 
 if __name__ == "__main__":
     IPlist = IPList('ip.txt')
-    IDList = ["", "1", "11", "12", "13"]
-    threshList = [(3, 2), (2, 1), (1, 1), (1,1), (1,1)]
+    IDList = ["", "1", "11", "12"]
+    threshList = [(2, 2), (2, 1), (1, 1), (1,1)]
     startTime = time.time()
     hibe = HIBEChain(IDList, threshList, IPlist)
     hibe.constructHIBEChain()
+
+    for chain in hibe._chains:
+        for node in chain._nodes:
+            print(chain._id, node._id, node.getPeerCount(), node.getPeers())
+
     hibe.setNumber()
     hibe.setLevel()
     hibe.setID()
     endTime = time.time()
 
-    a, b, c, d = hibe.getChain(''), hibe.getChain('1'), hibe.getChain('11'), hibe.getChain("12")
-    ap1 = a.getPrimer()
-    bp1 = b.getPrimer()
-    cp1 = c.getPrimer()
-    dp1 = d.getPrimer()
-    print(ap1.getPeerCount(), bp1.getPeerCount(), cp1.getPeerCount(), dp1.getPeerCount()) # 4 7 2 2
+    root, levelOne, personalOne, personalTwo = hibe.getChain(''), hibe.getChain('1'), hibe.getChain('11'), hibe.getChain("12")
+    R = root.getPrimer()
+    L1 = levelOne.getPrimer()
+    P1 = personalOne.getPrimer()
+    P2 = personalTwo.getPrimer()
+    print(R.getPeerCount(), L1.getPeerCount(), P1.getPeerCount(), P2.getPeerCount()) # 3 5 2 2
 
+#    print(L1.getBalance('0x3131000000000000000000000000000000000001'))
+#    print(L1.getBalance('0x3131000000000000000000000000000000000002'))
+#    acc = L1.getAccounts()[0]
+#    print(acc)
+#    print(L1.getBalance(acc))
+#    result = P1.sendTransaction('12', 1, 10000)
+#    print(result)
+#    print(L1.getBalance('0x3131000000000000000000000000000000000001'))
+#    print(L1.getBalance('0x3131000000000000000000000000000000000002'))
 
-    result = cp1.sendTransaction('12', 1, 1)
-    print(result)
-
-    time.sleep(2)
-    hibe.destructHIBEChain()
+#    hibe.destructHIBEChain()
 
     print("HIBEChain construction time:", endTime - startTime)
