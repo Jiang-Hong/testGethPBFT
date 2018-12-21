@@ -5,3 +5,4 @@ ip.txt
 __pycache__/
 .vscode/
 *.pyc
+test.py
