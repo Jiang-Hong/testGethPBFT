@@ -141,8 +141,8 @@ class HIBEChain():
 
 if __name__ == "__main__":
     IPlist = IPList('ip.txt')
-    IDList = ["", "1", "11", "12"]
-    threshList = [(2, 2), (2, 1), (1, 1), (1,1)]
+    IDList = ["", "1", "2", "11", "12", "13", "14", "15", "16", "21", "22", "23"]
+    threshList = [(10, 8), (6, 5), (6, 5), (1,1), (1,1), (1,1), (1,1), (1,1), (1,1), (1,1), (1,1), (1,1)]
     startTime = time.time()
     hibe = HIBEChain(IDList, threshList, IPlist)
     hibe.constructHIBEChain()
@@ -152,9 +152,12 @@ if __name__ == "__main__":
             print(chain._id, node._id, node.getPeerCount(), node.getPeers())
 
     hibe.setNumber()
+    time.sleep(3)
     hibe.setLevel()
+    time.sleep(3)
     hibe.setID()
     endTime = time.time()
+    time.sleep(5)
 
     root, levelOne, personalOne, personalTwo = hibe.getChain(''), hibe.getChain('1'), hibe.getChain('11'), hibe.getChain("12")
     R = root.getPrimer()

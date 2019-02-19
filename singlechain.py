@@ -131,6 +131,9 @@ class SingleChain():
             except Exception as e:
                 print("getEnode", e)
 
+            sleep(2)
+
+
     def getID(self):
         '''
         return ID of the chain.
@@ -166,6 +169,7 @@ class SingleChain():
 #            threadlist.append(t)
 #        for t in threadlist:
 #            t.join()
+        sleep(1)
         for i in range(len(self._nodes)):
             for j in range(len(self._nodes)):
                 tmpEnode = self._nodes[j].getEnode()
@@ -279,8 +283,8 @@ class SingleChain():
 
 if __name__ == "__main__":
     IPlist = IPList('ip.txt')
-    nodeNum = 6
-    c = SingleChain('1', 1, nodeNum, nodeNum*3//4, 121, IPlist)
+    nodeNum = 2
+    c = SingleChain('1', 1, nodeNum, nodeNum*3//4+1, 121, IPlist)
     c.SinglechainStart()
     c.SinglechainConfig()
     c.runGethNodes()
@@ -294,4 +298,4 @@ if __name__ == "__main__":
 #        print(node.getBalance(acc))
         print(node.getPeerCount())
 
-    c.destructChain()
+#    c.destructChain()

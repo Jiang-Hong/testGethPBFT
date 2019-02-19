@@ -145,6 +145,24 @@ class GethNode():
         except Exception as e:
             print("unlockAccount", e)
 
+    def sendOldTransaction(self, toID, toIndex, value):
+        '''
+        eth.sendTransaction2()
+        '''
+        if isinstance(value, int):
+            value = hex(value)
+        param = {"toid":toID, "toindex":toIndex, "value":value}
+        msg = self._msg("eth_sendTransaction", [param])
+        print(msg)
+        url = "http://{}:{}".format(self._ip, self._rpcPort)
+        try:
+            response = requests.post(url, headers=self._headers, data=msg)
+            print(json.loads(response.content.decode(encoding='utf-8')))
+            result = json.loads(response.content.decode(encoding='utf-8'))['result']
+            return result
+        except Exception as e:
+            print("sendOldTransaction", e)
+
     def sendTransaction(self, toID, toIndex, value):
         '''
         eth.sendTransaction2()
@@ -153,29 +171,31 @@ class GethNode():
             value = hex(value)
         param = {"toid":toID, "toindex":toIndex, "value":value}
         msg = self._msg("eth_sendTransaction2", [param])
+        print(msg)
         url = "http://{}:{}".format(self._ip, self._rpcPort)
         try:
             response = requests.post(url, headers=self._headers, data=msg)
+            print(json.loads(response.content.decode(encoding='utf-8')))
             result = json.loads(response.content.decode(encoding='utf-8'))['result']
             return result
         except Exception as e:
             print("sendTransaction", e)
 
-    def send1000Transaction(self, toID, toIndex, value):
-        '''
-        eth.testSendTransaction2()
-        '''
-        if isinstance(value, int):
-            value = hex(value)
-        param = {"toid":toID, "toindex":toIndex, "value":value}
-        msg = self._msg("eth_testSendTransaction2", [param])
-        url = "http://{}:{}".format(self._ip, self._rpcPort)
-        try:
-            response = requests.post(url, headers=self._headers, data=msg)
-            result = json.loads(response.content.decode(encoding='utf-8'))['result']
-            return result
-        except Exception as e:
-            print("send1000Transaction", e)
+#    def send1000Transaction(self, toID, toIndex, value):
+#        '''
+#        eth.testSendTransaction2()
+#        '''
+#        if isinstance(value, int):
+#            value = hex(value)
+#        param = {"toid":toID, "toindex":toIndex, "value":value}
+#        msg = self._msg("eth_testSendTransaction2", [param])
+#        url = "http://{}:{}".format(self._ip, self._rpcPort)
+#        try:
+#            response = requests.post(url, headers=self._headers, data=msg)
+#            result = json.loads(response.content.decode(encoding='utf-8'))['result']
+#            return result
+#        except Exception as e:
+#            print("send1000Transaction", e)
 
     def getTransaction(self, TXID):
         '''
@@ -268,12 +288,12 @@ class GethNode():
         except Exception as e:
             print("setLevel", e)
 
-    def setID(self, id):
+    def setID(self, ID):
         '''
         admin.setID()
         '''
         sleep(3)
-        msg = self._msg("admin_setID", ['%d'.format(id)])
+        msg = self._msg("admin_setID", [ID])
         url = "http://{}:{}".format(self._ip, self._rpcPort)
         try:
             response = requests.post(url, headers=self._headers, data=msg)
@@ -287,7 +307,7 @@ class GethNode():
         admin.testhibe()
         '''
         sleep(2)
-        msg = self._msg("admin_testhibe", ['%s'.format(txString)])
+        msg = self._msg("admin_testhibe", ['{}'.format(txString)])
         url = "http://{}:{}".format(self._ip, self._rpcPort)
         try:
             response = requests.post(url, headers=self._headers, data=msg)
@@ -295,16 +315,15 @@ class GethNode():
         except Exception as e:
             print("testHIBE", e)
 
-    def isRunning(self):
+    def isGethRunning(self):
         '''
         Check if the client is running.
         '''
-        sleep(0.5)
-        msg = self._msg("admin_nodeInfo", [])
-        url = "http://{}:{}".format(self._ip, self._rpcPort)
         try:
-            response = requests.post(url, headers=self._headers, data=msg)
-            return True if response else False
+            CMD = 'docker exec -t %s geth attach ipc:/root/abc/geth.ipc --exec "admin.nodeInfo"' % self._name
+            result = execCommand(CMD, self._ip)
+#            print(result)
+            return True if result else False
         except Exception as e:
             print("isRunning", e)
             return False
