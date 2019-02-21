@@ -110,11 +110,17 @@ class SingleChain():
     def runGethNodes(self):
         print('run geth nodes:')
         for node in tqdm(self._nodes):
+#            RUN = ('geth --datadir abc --cache 512 --port 30303 --rpcport 8545 --rpcapi admin,eth,miner,web3,net,personal --rpc --rpcaddr \"0.0.0.0\" '
+#                   '--pbftid %d --nodeindex %d --blockchainid %d --unlock %s --password '
+#                   '\"passfile\" --syncmode \"full\" --nodiscover | tee %s') % (node._pbftid, node._nodeindex,
+#                                                                  node._blockchainid, node._accounts[0], node._name)
+#            print(RUN)
+#            CMD = 'docker exec -t %s sh -c %s' % (node._name, RUN)
+#            print(CMD)
             RUN = ('geth --datadir abc --cache 512 --port 30303 --rpcport 8545 --rpcapi admin,eth,miner,web3,net,personal --rpc --rpcaddr \"0.0.0.0\" '
                    '--pbftid %d --nodeindex %d --blockchainid %d --unlock %s --password '
                    '\"passfile\" --syncmode \"full\" --nodiscover') % (node._pbftid, node._nodeindex,
                                                                   node._blockchainid, node._accounts[0])
-#            print(RUN)
             CMD = 'docker exec -td %s %s' % (node._name, RUN)
             result = execCommand(CMD, node._ip)
             if result:
@@ -229,6 +235,7 @@ class SingleChain():
         Set (number, threshold) value for the nodes of the blockchain.
         '''
         if not self._ifSetNumber:
+            print("setNumber")
             p = self.getPrimer()
             p.setNumber(self.nodeCount, self.threshold)
             self._ifSetNumber = True
@@ -250,6 +257,7 @@ class SingleChain():
 #            self._ifSetLevel = True
 #        else:
 #            raise RuntimeError("level of chain %s already set" % self._id)
+        print("setLevel")
         for node in self._nodes:
             node.setLevel(self._level, maxLevel)
 
@@ -265,6 +273,7 @@ class SingleChain():
         if not self._ifSetID:
             if self._level == 0:
                 p = self.getPrimer()
+                print("set primer ID")
                 p.setID("")
             else:
 #                theadlist = []
@@ -275,6 +284,7 @@ class SingleChain():
 #                for t in theadlist:
 #                    t.join()
                 for node in self._nodes:
+                    print("set node ID")
                     node.setID(self._id)
             self._ifSetID = True
         else:
@@ -283,7 +293,7 @@ class SingleChain():
 
 if __name__ == "__main__":
     IPlist = IPList('ip.txt')
-    nodeNum = 2
+    nodeNum = 4
     c = SingleChain('1', 1, nodeNum, nodeNum*3//4+1, 121, IPlist)
     c.SinglechainStart()
     c.SinglechainConfig()

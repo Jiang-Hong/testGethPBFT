@@ -84,7 +84,7 @@ class HIBEChain():
         '''
         try:
             index = self._IDList.index(ID)
-            print('index', '-----------', index)
+            print('chain index', '-----------', index)
             return self._chains[index]
         except ValueError or IndexError:
             print("ID %s is not in the HIBEChain" % ID)

@@ -28,9 +28,12 @@ class GethNode():
         '''
         Start a geth-pbft node on remote server.
         '''
-        RUN_DOCKER = ('docker run -td -p %d:8545 -p %d:30303 --rm --name %s rkdghd/geth-pbft:latest' % (self._rpcPort,
+        RUN_DOCKER = ('docker run -td -p %d:8545 -p %d:30303 --rm --name %s rkdghd/geth-pbft:dev' % (self._rpcPort,
                                                                                                         self._listenerPort,
                                                                                                         self._name))
+#        RUN_DOCKER = ('docker run -td -p %d:8545 -p %d:30303 --rm --name %s rkdghd/geth-pbft:dev' % (self._rpcPort,
+#                                                                                                        self._listenerPort,
+#                                                                                                        self._name))
 #        RUN_DOCKER = ('docker run -d -p %d:8545 -p %d:30303 --rm --name %s rkdghd/geth-pbft --rpcapi admin,eth,miner,web3,'
 #                      'net,personal --rpc --rpcaddr \"0.0.0.0\" --datadir /root/abc --pbftid %d --nodeindex %d '
 #                      '--blockchainid %d --syncmode \"full\" ') % (self._rpcPort, self._listenerPort, self._name,
@@ -121,7 +124,7 @@ class GethNode():
         personal.newAccount(password)
         '''
         sleep(0.5)
-        msg = self._msg("personal_newAccount", [password])
+        msg = self._msg("personal_newAccount", [password]) ###
         url = "http://{}:{}".format(self._ip, self._rpcPort)
         try:
             response = requests.post(url, headers=self._headers, data=msg)
@@ -130,6 +133,22 @@ class GethNode():
             return result
         except Exception as e:
             print("newAccount", e)
+
+    def keyStatus(self):
+        '''
+        admin.keystatus()
+        '''
+        sleep(0.5)
+        msg = self._msg("admin_keyStatus", [])
+        url = "http://{}:{}".format(self._ip, self._rpcPort)
+        try:
+            response = requests.post(url, headers=self._headers, data=msg)
+            print(response.content.decode())
+            status = json.loads(response.content.decode(encoding='utf-8'))['result']
+            return status
+        except Exception as e:
+            print("keyStatus", e)
+
 
     def unlockAccount(self, account, password='root', duration=86400):
         '''
@@ -147,7 +166,7 @@ class GethNode():
 
     def sendOldTransaction(self, toID, toIndex, value):
         '''
-        eth.sendTransaction2()
+        eth.sendTransaction()
         '''
         if isinstance(value, int):
             value = hex(value)
@@ -264,6 +283,7 @@ class GethNode():
             raise ValueError("nodeCount should be no less than threshold value")
         sleep(3)
         msg = self._msg("admin_setNumber", [n, t])
+        print("setNumber", msg) ##
         url = "http://{}:{}".format(self._ip, self._rpcPort)
         try:
             response = requests.post(url, headers=self._headers, data=msg)
@@ -280,6 +300,7 @@ class GethNode():
             raise ValueError("level should be no larger than maxLevel")
         sleep(3)
         msg = self._msg("admin_setLevel", [maxLevel, level])
+        print("setLevel", msg) ##
         url = "http://{}:{}".format(self._ip, self._rpcPort)
         try:
             response = requests.post(url, headers=self._headers, data=msg)
@@ -294,6 +315,7 @@ class GethNode():
         '''
         sleep(3)
         msg = self._msg("admin_setID", [ID])
+        print("setID", msg) ##
         url = "http://{}:{}".format(self._ip, self._rpcPort)
         try:
             response = requests.post(url, headers=self._headers, data=msg)
