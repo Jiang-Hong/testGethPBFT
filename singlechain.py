@@ -90,7 +90,9 @@ class SingleChain():
         '''
         set genesis.json for terminal equipment.
         '''
-        initID = str(self._blockchainid)[:-1]
+        initID = str(self._blockchainid)
+        print("blockchainid", self._blockchainid)
+        print("config initID", initID)
         for serverIP in self._ips:
             NAME = '%s.json' % initID
             subprocess.run(['./sendFile.sh', NAME, serverIP], stdout=subprocess.PIPE)
@@ -122,6 +124,7 @@ class SingleChain():
                    '\"passfile\" --syncmode \"full\" --nodiscover') % (node._pbftid, node._nodeindex,
                                                                   node._blockchainid, node._accounts[0])
             CMD = 'docker exec -td %s %s' % (node._name, RUN)
+            print(RUN)
             result = execCommand(CMD, node._ip)
             if result:
                 print('run node', result)
@@ -308,4 +311,4 @@ if __name__ == "__main__":
 #        print(node.getBalance(acc))
         print(node.getPeerCount())
 
-#    c.destructChain()
+    c.destructChain()
