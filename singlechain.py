@@ -36,6 +36,7 @@ class SingleChain():
         self._ifSetLevel = False
         self._ifSetID = False
         self._isTerminal = False
+        self._cfgFile = None
         self._accounts = []
 
     def SinglechainStart(self):
@@ -72,42 +73,58 @@ class SingleChain():
 
         for serverIP in self._ips:
 #            CP_JSON = 'docker/%s.json root@%s:%s.json' % (self._blockchainid, serverIP, self._blockchainid)
-            NAME = '%s.json' % self._blockchainid
-            subprocess.run(['./sendFile.sh', NAME, serverIP], stdout=subprocess.PIPE)
+
+            if self._id is "":
+                self._cfgFile = '0.json'
+            else:
+                self._cfgFile = '%s.json' % self._id
+            subprocess.run(['./sendFile.sh', self._cfgFile, serverIP], stdout=subprocess.PIPE)
             sleep(0.5)
             for node in self._nodes:
                 if node._ip == serverIP:
-                    CMD = 'docker cp %s.json %s:/root/%s.json' % (self._blockchainid, node._name, self._blockchainid)
+                    CMD = 'docker cp %s %s:/root/%s' % (self._cfgFile, node._name, self._cfgFile)
                     result = execCommand(CMD, serverIP)
 #                    print(result)
                     sleep(0.5)
-                    INIT = 'docker exec -t %s geth --datadir abc init %s.json' % (node._name, self._blockchainid)
-                    result = execCommand(INIT, serverIP)
-#                    print(result)
-                    sleep(1)
+
+#                    INIT = 'docker exec -t %s geth --datadir abc init %s' % (node._name, self._cfgFile)
+#                    result = execCommand(INIT, serverIP)
+##                    print(result)
+#                    sleep(0.5)
 
     def TerminalConfig(self):
         '''
-        set genesis.json for terminal equipment.
+        set genesis.json for terminal equipments.
         '''
-        initID = str(self._blockchainid)
-        print("blockchainid", self._blockchainid)
-        print("config initID", initID)
+        if len(self._id) == 1:
+            self._cfgFile = '0.json'
+        else:
+            self._cfgFile = self._id[:-1]
+
+        print("config cfgFile", self._cfgFile)
         for serverIP in self._ips:
-            NAME = '%s.json' % initID
+            NAME = '%s.json' % self._cfgFile
             subprocess.run(['./sendFile.sh', NAME, serverIP], stdout=subprocess.PIPE)
             sleep(0.5)
             for node in self._nodes:
                 if node._ip == serverIP:
-                    CMD = 'docker cp %s.json %s:/root/%s.json' % (initID, node._name, initID)
+                    CMD = 'docker cp %s %s:/root/%s' % (self._cfgFile, node._name, self._cfgFile)
                     result = execCommand(CMD, serverIP)
 #                    print(result)
                     sleep(0.5)
-                    INIT = 'docker exec -t %s geth --datadir abc init %s.json' % (node._name, initID)
-                    result = execCommand(INIT, serverIP)
-#                    print(result)
-                    sleep(1)
 
+    def gethInit(self):
+        '''
+        run geth init command for nodes in a chain
+        '''
+        if self._cfgFile is None:
+            raise ValueError("initID is not set")
+        for serverIP in self._ips:
+            for node in self._nodes:
+                if node._ip == serverIP:
+                    INIT = 'docker exec -t %s geth --datadir abc init %s' % (node._name, self._cfgFile)
+                    result = execCommand(INIT, serverIP)
+                    sleep(0.5)
 
     def runGethNodes(self):
         print('run geth nodes:')
@@ -267,8 +284,9 @@ class SingleChain():
 
     def setID(self):
         '''
-        Set ID for the blockchain.
+        Set ID for a blockchain.
         '''
+        sleep(10)
         if not self._ifSetNumber and self._ifSetLevel:
             raise RuntimeError("number and level info should be set previously")
         if len(self._id) != self._level:

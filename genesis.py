@@ -11,7 +11,10 @@ def confGenesis(chainId, accounts):
 
     for acc in accounts:
         genesis['alloc'][acc] = {'balance': "0x200000000000000000000000000000000000000000000000000000000000000"}
-#    print(genesis) #
+    extradata = '0x' + '0'*64 + ''.join(accounts) + '0' * 130
+    print(extradata)
+    genesis['extraData'] = extradata
+    print(genesis) #
     newGenesis = json.dumps(genesis, indent=2)
     with open('docker/%s.json' % str(chainId), 'w') as f:
         print(newGenesis, file=f)

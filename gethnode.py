@@ -281,7 +281,7 @@ class GethNode():
         '''
         if n < t:
             raise ValueError("nodeCount should be no less than threshold value")
-        sleep(3)
+        sleep(0.5)
         msg = self._msg("admin_setNumber", [n, t])
         print("setNumber", msg) ##
         url = "http://{}:{}".format(self._ip, self._rpcPort)
@@ -298,7 +298,7 @@ class GethNode():
         '''
         if maxLevel < level:
             raise ValueError("level should be no larger than maxLevel")
-        sleep(3)
+        sleep(0.5)
         msg = self._msg("admin_setLevel", [maxLevel, level])
         print("setLevel", msg) ##
         url = "http://{}:{}".format(self._ip, self._rpcPort)
@@ -313,7 +313,7 @@ class GethNode():
         '''
         admin.setID()
         '''
-        sleep(3)
+        sleep(0.5)
         msg = self._msg("admin_setID", [ID])
         print("setID", msg) ##
         url = "http://{}:{}".format(self._ip, self._rpcPort)

@@ -25,6 +25,7 @@ class HIBEChain():
         self._ifSetLevel = False
         self._ifSetID = False
 #        threadlist = []
+
         for index, name in enumerate(IDList):
             level = len(name)
             nodeCount, threshold = threshList[index][0], threshList[index][1]
@@ -32,20 +33,27 @@ class HIBEChain():
             tmp = SingleChain(name, level, nodeCount, threshold, blockchainid, IPlist, passwd)
             if len(name) == self._maxLevel:
                 tmp._isTerminal = True
+
             tmp.SinglechainStart()
-            if tmp._isTerminal:
+            if not tmp._isTerminal:
+                tmp.SinglechainConfig()
+            else:
                 print(tmp._id, "--------------terminal")
                 tmp.TerminalConfig()
-            else:
-                tmp.SinglechainConfig()
-            tmp.runGethNodes()
-            tmp.constructChain()
             self._chains.append(tmp)
+
 #            t = threading.Thread(target=tmp.constructChain,args=())
 #            t.start()
 #            self._chains.append(tmp)
 #        for t in threadlist:
 #            t.join()
+
+
+        for chain in self._chains:
+            print("chain id is:", chain._id)
+            chain.gethInit()
+            chain.runGethNodes()
+            chain.constructChain()
 
     def constructHIBEChain(self):
         '''
