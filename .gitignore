@@ -1,6 +1,5 @@
 docker/geth
 docker/*.json
-main.py
 ip.txt
 __pycache__/
 .vscode/

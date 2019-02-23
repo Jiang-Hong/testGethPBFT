@@ -63,7 +63,7 @@ class HIBEChain():
 #        threadlist = []
         for chain in self._chains[::-1]:
             if chain.getID() != '':
-                parentChain = self._chains[self._IDList.index(chain.getID()[:-1])]
+                parentChain = self._chains[self._IDList.index(chain.getID()[:-4])]
                 parentChain.connectLowerChain(chain)
 #                print(chain.getID(), parentChain.getID())
                 # parentChain.connectLowerChain(chain)
@@ -149,8 +149,8 @@ class HIBEChain():
 
 if __name__ == "__main__":
     IPlist = IPList('ip.txt')
-    IDList = ["", "1", "2", "11", "12", "13", "14", "15", "16", "21", "22", "23"]
-    threshList = [(10, 8), (6, 5), (6, 5), (1,1), (1,1), (1,1), (1,1), (1,1), (1,1), (1,1), (1,1), (1,1)]
+#    IDList = ["", "1", "2", "11", "12", "13", "14", "15", "16", "21", "22", "23"]
+#    threshList = [(10, 8), (6, 5), (6, 5), (1,1), (1,1), (1,1), (1,1), (1,1), (1,1), (1,1), (1,1), (1,1)]
     startTime = time.time()
     hibe = HIBEChain(IDList, threshList, IPlist)
     hibe.constructHIBEChain()

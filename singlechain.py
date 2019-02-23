@@ -96,10 +96,10 @@ class SingleChain():
         '''
         set genesis.json for terminal equipments.
         '''
-        if len(self._id) == 1:
+        if len(self._id) == 4:
             self._cfgFile = '0.json'
         else:
-            self._cfgFile = self._id[:-1]
+            self._cfgFile = self._id[:-4]
 
         print("config cfgFile", self._cfgFile)
         for serverIP in self._ips:
@@ -315,7 +315,7 @@ class SingleChain():
 if __name__ == "__main__":
     IPlist = IPList('ip.txt')
     nodeNum = 4
-    c = SingleChain('1', 1, nodeNum, nodeNum*3//4+1, 121, IPlist)
+    c = SingleChain('0001', 1, nodeNum, nodeNum*3//4+1, 121, IPlist)
     c.SinglechainStart()
     c.SinglechainConfig()
     c.runGethNodes()
