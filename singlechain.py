@@ -99,12 +99,11 @@ class SingleChain():
         if len(self._id) == 4:
             self._cfgFile = '0.json'
         else:
-            self._cfgFile = self._id[:-4]
+            self._cfgFile = '%s.json' % self._id[:-4]
 
         print("config cfgFile", self._cfgFile)
         for serverIP in self._ips:
-            NAME = '%s.json' % self._cfgFile
-            subprocess.run(['./sendFile.sh', NAME, serverIP], stdout=subprocess.PIPE)
+            subprocess.run(['./sendFile.sh', self._cfgFile, serverIP], stdout=subprocess.PIPE)
             sleep(0.5)
             for node in self._nodes:
                 if node._ip == serverIP:

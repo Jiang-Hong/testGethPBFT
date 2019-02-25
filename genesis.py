@@ -14,7 +14,7 @@ def confGenesis(chainId, accounts):
     extradata = '0x' + '0'*64 + ''.join(accounts) + '0' * 130
     print(extradata)
     genesis['extraData'] = extradata
-    print(genesis) #
+#    print(genesis) #
     newGenesis = json.dumps(genesis, indent=2)
     with open('docker/%s.json' % str(chainId), 'w') as f:
         print(newGenesis, file=f)
