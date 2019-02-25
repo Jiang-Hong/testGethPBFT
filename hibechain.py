@@ -20,18 +20,20 @@ class HIBEChain():
 
         self._chains = []
         self._IDList = IDList
-        self._maxLevel = len(IDList[-1])
+        self._maxLevel = len(IDList[-1]) // 4
         self._ifSetNumber = False
         self._ifSetLevel = False
         self._ifSetID = False
 #        threadlist = []
 
         for index, name in enumerate(IDList):
-            level = len(name)
+            level = len(name) // 4
+            print("name is", name)
             nodeCount, threshold = threshList[index][0], threshList[index][1]
             blockchainid = 120 + index
             tmp = SingleChain(name, level, nodeCount, threshold, blockchainid, IPlist, passwd)
-            if len(name) == self._maxLevel:
+            if level == self._maxLevel:
+                print("len name", name, "maxlevel", self._maxLevel)
                 tmp._isTerminal = True
 
             tmp.SinglechainStart()

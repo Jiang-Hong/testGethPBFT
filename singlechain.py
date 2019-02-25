@@ -288,7 +288,7 @@ class SingleChain():
         sleep(10)
         if not self._ifSetNumber and self._ifSetLevel:
             raise RuntimeError("number and level info should be set previously")
-        if len(self._id) != self._level:
+        if len(self._id) // 4 != self._level:
             raise ValueError("length of id should match level number")
         if not self._ifSetID:
             if self._level == 0:

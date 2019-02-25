@@ -25,7 +25,7 @@ b = hibe.getChain("0001")
 b1 = b.getNode(1)
 print("level 1 keystatus", b1.keyStatus())
 
-hibe.destructHIBEChain()
+#hibe.destructHIBEChain()
 #endTime = time.time()
 #print("HIBEChain construction time:", endTime - startTime)
 
