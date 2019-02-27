@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from singlechain import SingleChain
-from ips import IPList
+from ips import IPList, execCommand, stopAll
 import threading
 import time
 
@@ -33,7 +33,7 @@ class HIBEChain():
             blockchainid = 120 + index
             tmp = SingleChain(name, level, nodeCount, threshold, blockchainid, IPlist, passwd)
             if level == self._maxLevel:
-                print("len name", name, "maxlevel", self._maxLevel)
+                print("name:", name, "maxlevel", self._maxLevel)
                 tmp._isTerminal = True
 
             tmp.SinglechainStart()
@@ -151,41 +151,21 @@ class HIBEChain():
 
 if __name__ == "__main__":
     IPlist = IPList('ip.txt')
-#    IDList = ["", "1", "2", "11", "12", "13", "14", "15", "16", "21", "22", "23"]
-#    threshList = [(10, 8), (6, 5), (6, 5), (1,1), (1,1), (1,1), (1,1), (1,1), (1,1), (1,1), (1,1), (1,1)]
-    startTime = time.time()
+    # startDockerService(IPlist)
+    IDList = ["", "0001", "0002"]
+    threshList = [(4,3), (1, 1), (1, 1)]
+    #startTime = time.time()
     hibe = HIBEChain(IDList, threshList, IPlist)
     hibe.constructHIBEChain()
 
-    for chain in hibe._chains:
-        for node in chain._nodes:
-            print(chain._id, node._id, node.getPeerCount(), node.getPeers())
-
     hibe.setNumber()
-    time.sleep(3)
     hibe.setLevel()
-    time.sleep(3)
     hibe.setID()
-    endTime = time.time()
-    time.sleep(5)
+    time.sleep(1)
+    a = hibe.getChain("")
+    a1 = a.getNode(1)
+    print("level 0 keystatus", a1.keyStatus())
+    b = hibe.getChain("0001")
+    b1 = b.getNode(1)
+    print("level 1 keystatus", b1.keyStatus())
 
-    root, levelOne, personalOne, personalTwo = hibe.getChain(''), hibe.getChain('1'), hibe.getChain('11'), hibe.getChain("12")
-    R = root.getPrimer()
-    L1 = levelOne.getPrimer()
-    P1 = personalOne.getPrimer()
-    P2 = personalTwo.getPrimer()
-    print(R.getPeerCount(), L1.getPeerCount(), P1.getPeerCount(), P2.getPeerCount()) # 3 5 2 2
-
-#    print(L1.getBalance('0x3131000000000000000000000000000000000001'))
-#    print(L1.getBalance('0x3131000000000000000000000000000000000002'))
-#    acc = L1.getAccounts()[0]
-#    print(acc)
-#    print(L1.getBalance(acc))
-#    result = P1.sendTransaction('12', 1, 10000)
-#    print(result)
-#    print(L1.getBalance('0x3131000000000000000000000000000000000001'))
-#    print(L1.getBalance('0x3131000000000000000000000000000000000002'))
-
-#    hibe.destructHIBEChain()
-
-    print("HIBEChain construction time:", endTime - startTime)

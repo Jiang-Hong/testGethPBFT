@@ -5,7 +5,7 @@
 import paramiko
 import requests
 import json
-from ips import IPList
+from ips import IPList, execCommand, stopAll
 from time import sleep
 
 class GethNode():
@@ -200,21 +200,22 @@ class GethNode():
         except Exception as e:
             print("sendTransaction", e)
 
-#    def send1000Transaction(self, toID, toIndex, value):
-#        '''
-#        eth.testSendTransaction2()
-#        '''
-#        if isinstance(value, int):
-#            value = hex(value)
-#        param = {"toid":toID, "toindex":toIndex, "value":value}
-#        msg = self._msg("eth_testSendTransaction2", [param])
-#        url = "http://{}:{}".format(self._ip, self._rpcPort)
-#        try:
-#            response = requests.post(url, headers=self._headers, data=msg)
-#            result = json.loads(response.content.decode(encoding='utf-8'))['result']
-#            return result
-#        except Exception as e:
-#            print("send1000Transaction", e)
+    def testSendTransaction(self, toID, toIndex, value, interval, period):
+        '''
+        eth.testSendTransaction2()
+        '''
+        if isinstance(value, int):
+            value = hex(value)
+        param = {"toid":toID, "toindex":toIndex, "value":value, "txinterval":interval, "txperiod":period}
+        msg = self._msg("eth_testSendTransaction2", [param])
+        url = "http://{}:{}".format(self._ip, self._rpcPort)
+        try:
+            response = requests.post(url, headers=self._headers, data=msg)
+            result = json.loads(response.content.decode(encoding='utf-8'))
+            print(result)
+            return result['result']
+        except Exception as e:
+            print("testSendTransaction2", e)
 
     def getTransaction(self, TXID):
         '''
@@ -248,18 +249,36 @@ class GethNode():
         eth.getBalance()
         ipc form: docker exec -it geth-pbft8515 geth attach ipc:abc/geth.ipc --exec "eth.getBalance(eth.accounts[0])"
         '''
-        sleep(1)
+        sleep(0.2)
+        if not account.startswith('0x'):
+            account = '0x' + account
         msg = self._msg("eth_getBalance", [account, 'latest'])
         url = "http://{}:{}".format(self._ip, self._rpcPort)
         try:
             response = requests.post(url, headers=self._headers, data=msg)
-#            print(response.content.decode())
+            print(response.content.decode())
             balance = json.loads(response.content.decode(encoding='utf-8'))['result']
 #            print(balance)
             return balance
         except Exception as e:
             print("getBalance", e)
 
+    def getBlock(self, index):
+        '''
+        eth.getBlock()
+        '''
+        sleep(0.2)
+        msg = self._msg("eth_getBlock", index)
+        url = "http://{}:{}".format(self._ip, self._rpcPort)
+        try:
+            response = requests.post(url, headers=self._headers, data=msg)
+            print(response.content.decode())
+            block = json.loads(response.content.decode(encoding='utf-8'))['result']
+#            print(balance)
+            print("transactions number:", len(block['transactions']))
+            return block
+        except Exception as e:
+            print("getBlock", e)
 
     def addPeer(self, *param):
         '''
@@ -324,6 +343,38 @@ class GethNode():
         except Exception as e:
             print("setID", e)
 
+    def startMiner(self):
+        '''
+        miner.start()
+        '''
+        sleep(0.2)
+        msg = self._msg("miner_start", [])
+        print("setID", msg) ##
+        url = "http://{}:{}".format(self._ip, self._rpcPort)
+        try:
+            response = requests.post(url, headers=self._headers, data=msg)
+            result = json.loads(response.content.decode(encoding='utf-8'))
+            print(result)
+            print("miner at %s:%d start result: %s" % (self._ip, self._rpcPort, result["result"]))
+        except Exception as e:
+            print("start miner", e)
+
+    def stopMiner(self):
+        '''
+        miner.stop()
+        '''
+        sleep(0.2)
+        msg = self._msg("miner_stop", [])
+        print("setID", msg) ##
+        url = "http://{}:{}".format(self._ip, self._rpcPort)
+        try:
+            response = requests.post(url, headers=self._headers, data=msg)
+            result = json.loads(response.content.decode(encoding='utf-8'))
+            print(result)
+            print("miner at %s:%d stop result: %s" % (self._ip, self._rpcPort, result["result"]))
+        except Exception as e:
+            print("stop miner", e)
+
     def testHIBE(self, txString):
         '''
         admin.testhibe()
@@ -373,75 +424,35 @@ class GethNode():
             print("stop", e)
         ssh.close()
 
-def execCommand(cmd, ip, port=22, username='root', password='Blockchain17'):
-    '''
-    exec a command on remote server using SSH
-    '''
-    client = paramiko.SSHClient()
-    client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    client.connect(ip, port, username, password)
-    stdin, stdout, stderr = client.exec_command(cmd)
-    if not stderr.read():
-        result = stdout.read().strip().decode(encoding='utf-8')
-    else:
-        result = stderr.read().strip().decode(encoding='utf-8')
-    return result
 
-def stopAll(IP, passwd='Blockchain17'):
-    '''
-    stop all running containers on remote server
-    '''
-    ssh = paramiko.SSHClient()
-    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    ssh.connect(hostname=IP, port=22, username='root', password=passwd)
-    try:
-        NAMES = "docker ps --format '{{.Names}}'"
-        stdin, stdout, stderr = ssh.exec_command(NAMES)
-        result = stdout.read()
-        if result:
-            result = result.decode(encoding='utf-8', errors='strict').split()
-            print(' '.join(result))
-            STOP = 'docker stop %s' % ' '.join(result)
-            stdin, stdout, stderr = ssh.exec_command(STOP)
-            result = stdout.read()
-            if result:
-                print("all nodes at %s stopped" % IP)
-            elif not stderr:
-                print(stderr)
-#            return True if result else False
-        elif not stderr:
-            print(stderr)
-    except Exception as e:
-        print('stopAll', e)
-    ssh.close()
 
-def rmAll(IP, passwd='Blockchain17'):
-    '''
-    remove all containers after stopAll() on remote server
-    '''
-    ssh = paramiko.SSHClient()
-    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    ssh.connect(hostname=IP, port=22, username='root', password=passwd)
-    try:
-        NAMES = "docker ps -a --format '{{.Names}}'"
-        stdin, stdout, stderr = ssh.exec_command(NAMES)
-        result = stdout.read()
-        if result:
-            result = result.decode(encoding='utf-8', errors='strict').split()
-            print(' '.join(result))
-            STOP = 'docker rm %s' % ' '.join(result)
-            stdin, stdout, stderr = ssh.exec_command(STOP)
-            result = stdout.read()
-            if result:
-                print("all nodes at %s removed" % IP)
-            elif not stderr:
-                print(stderr)
-#            return True if result else False
-        elif not stderr:
-            print(stderr)
-    except Exception as e:
-        print('rmAll', e)
-    ssh.close()
+#def rmAll(IP, passwd='Blockchain17'):
+#    '''
+#    remove all containers after stopAll() on remote server
+#    '''
+#    ssh = paramiko.SSHClient()
+#    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+#    ssh.connect(hostname=IP, port=22, username='root', password=passwd)
+#    try:
+#        NAMES = "docker ps -a --format '{{.Names}}'"
+#        stdin, stdout, stderr = ssh.exec_command(NAMES)
+#        result = stdout.read()
+#        if result:
+#            result = result.decode(encoding='utf-8', errors='strict').split()
+#            print(' '.join(result))
+#            STOP = 'docker rm %s' % ' '.join(result)
+#            stdin, stdout, stderr = ssh.exec_command(STOP)
+#            result = stdout.read()
+#            if result:
+#                print("all nodes at %s removed" % IP)
+#            elif not stderr:
+#                print(stderr)
+##            return True if result else False
+#        elif not stderr:
+#            print(stderr)
+#    except Exception as e:
+#        print('rmAll', e)
+#    ssh.close()
 
 if __name__ == "__main__":
     IPlist = IPList('ip.txt')

@@ -4,9 +4,9 @@
 
 import json
 
-def confGenesis(chainId, accounts):
+def confGenesis(chainId, accounts, cfgFile):
     with open('docker/120.json', 'rb') as f:
-        genesis = json.loads(f.read())
+        genesis = json.load(f)
     genesis['config']['chainId'] = chainId
 
     for acc in accounts:
@@ -15,13 +15,22 @@ def confGenesis(chainId, accounts):
     print(extradata)
     genesis['extraData'] = extradata
 #    print(genesis) #
+
+    for i in range(0, 5):
+        for j in range(0, 10):
+            for k in range(0, 10):
+                for l in range(0, 10):
+                    ac = hex(ord(str(i)))[2:] + hex(ord(str(j)))[2:] + hex(ord(str(k)))[2:] + hex(ord(str(l)))[2:] + '0' * 31 + '1'
+                    print(ac)
+                    genesis['alloc'][ac] = {'balance': "0x200000000000000000000000000000000000000000000000000000000000000"}
+
     newGenesis = json.dumps(genesis, indent=2)
-    with open('docker/%s.json' % str(chainId), 'w') as f:
+    with open('docker/%s' % cfgFile, 'w') as f:
         print(newGenesis, file=f)
 
 def confTerminals(terminals, cfgFile):
     with open('docker/%s' % cfgFile, 'rb') as f:
-        genesis = json.loads(f.read())
+        genesis = json.load(f)
     for chain in terminals:
         account = []
         for char in chain._id:

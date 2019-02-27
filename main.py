@@ -2,14 +2,15 @@
 # -*- coding: utf-8 -*-
 
 from hibechain import HIBEChain
-from ips import IPList
+from ips import IPList, startDockerService
 import time
 from gethnode import stopAll, execCommand
 
 
 IPlist = IPList('ip.txt')
-IDList = ["", "0001", "0002"]
-threshList = [(4,3), (1, 1), (1, 1)]
+# startDockerService(IPlist)
+IDList = ["", "0001", "0002", "0003", "0004"]
+threshList = [(4,3), (1, 1), (1, 1), (1, 1), (1, 1)]
 #startTime = time.time()
 hibe = HIBEChain(IDList, threshList, IPlist)
 hibe.constructHIBEChain()
@@ -24,6 +25,9 @@ print("level 0 keystatus", a1.keyStatus())
 b = hibe.getChain("0001")
 b1 = b.getNode(1)
 print("level 1 keystatus", b1.keyStatus())
+c = hibe.getChain("0002")
+c1 = c.getNode(1)
+print("level 1 keystatus", c1.keyStatus())
 
 #hibe.destructHIBEChain()
 #endTime = time.time()

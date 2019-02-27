@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from gethnode import GethNode, stopAll, rmAll, execCommand
-from ips import IPList
+from gethnode import GethNode
+from ips import IPList, execCommand, stopAll
 import threading
 from genesis import confGenesis
 from time import sleep
@@ -69,15 +69,13 @@ class SingleChain():
         '''
         set genesis.json for a blockchain & init with genesis.json
         '''
-        confGenesis(self._blockchainid, self._accounts)
+        if self._id is "":
+            self._cfgFile = '0.json'
+        else:
+            self._cfgFile = '%s.json' % self._id
+        confGenesis(self._blockchainid, self._accounts, self._cfgFile)
 
         for serverIP in self._ips:
-#            CP_JSON = 'docker/%s.json root@%s:%s.json' % (self._blockchainid, serverIP, self._blockchainid)
-
-            if self._id is "":
-                self._cfgFile = '0.json'
-            else:
-                self._cfgFile = '%s.json' % self._id
             subprocess.run(['./sendFile.sh', self._cfgFile, serverIP], stdout=subprocess.PIPE)
             sleep(0.5)
             for node in self._nodes:
