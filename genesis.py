@@ -21,7 +21,7 @@ def confGenesis(chainId, accounts, cfgFile):
             for k in range(0, 10):
                 for l in range(0, 10):
                     ac = hex(ord(str(i)))[2:] + hex(ord(str(j)))[2:] + hex(ord(str(k)))[2:] + hex(ord(str(l)))[2:] + '0' * 31 + '1'
-                    print(ac)
+#                    print(ac)
                     genesis['alloc'][ac] = {'balance': "0x200000000000000000000000000000000000000000000000000000000000000"}
 
     newGenesis = json.dumps(genesis, indent=2)

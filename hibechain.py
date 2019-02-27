@@ -28,7 +28,10 @@ class HIBEChain():
 
         for index, name in enumerate(IDList):
             level = len(name) // 4
-            print("name is", name)
+            if name:
+                print("name is", name)
+            else:
+                print("name is blank")
             nodeCount, threshold = threshList[index][0], threshList[index][1]
             blockchainid = 120 + index
             tmp = SingleChain(name, level, nodeCount, threshold, blockchainid, IPlist, passwd)
@@ -62,17 +65,17 @@ class HIBEChain():
         Construct the hierarchical construction of the HIBEChain.
         Connect blockchain nodes with their parent blockchain nodes.
         '''
-#        threadlist = []
+        threadlist = []
         for chain in self._chains[::-1]:
             if chain.getID() != '':
                 parentChain = self._chains[self._IDList.index(chain.getID()[:-4])]
-                parentChain.connectLowerChain(chain)
+#                parentChain.connectLowerChain(chain)
 #                print(chain.getID(), parentChain.getID())
                 # parentChain.connectLowerChain(chain)
-#                t = threading.Thread(target=parentChain.connectLowerChain,args=(chain,))
-#                t.start()
-#        for t in threadlist:
-#            t.join()
+                t = threading.Thread(target=parentChain.connectLowerChain,args=(chain, ))
+                t.start()
+        for t in threadlist:
+            t.join()
 
     def destructHIBEChain(self):
         '''
@@ -168,4 +171,6 @@ if __name__ == "__main__":
     b = hibe.getChain("0001")
     b1 = b.getNode(1)
     print("level 1 keystatus", b1.keyStatus())
+
+    hibe.destructHIBEChain()
 

@@ -49,10 +49,10 @@ class GethNode():
             if not err and out:
                 print('container of node %s of blockchain %s at %s:%s started' % (self._nodeindex, self._blockchainid,
                                                                                   self._ip, self._rpcPort))
-                sleep(1)
+                sleep(0.5)
                 NEWACCOUNT = 'docker exec -t %s geth --datadir abc account new --password passfile' % self._name
                 si, so, se = ssh.exec_command(NEWACCOUNT)
-                sleep(1)
+                sleep(0.5)
                 er = se.read().decode().strip()
                 result = so.read().decode(encoding='utf-8')
                 acc = result.split()[-1][1:-1]
@@ -95,7 +95,7 @@ class GethNode():
         '''
         net.peerCount
         '''
-        sleep(0.5)
+        sleep(0.3)
         msg = self._msg("net_peerCount", [])
         url = "http://{}:{}".format(self._ip, self._rpcPort)
         try:
@@ -109,7 +109,7 @@ class GethNode():
         '''
         admin.peers
         '''
-        sleep(0.5)
+        sleep(0.3)
         msg = self._msg("admin_peers", [])
         url = "http://{}:{}".format(self._ip, self._rpcPort)
         try:
@@ -138,7 +138,7 @@ class GethNode():
         '''
         admin.keystatus()
         '''
-        sleep(0.5)
+        sleep(0.3)
         msg = self._msg("admin_keyStatus", [])
         url = "http://{}:{}".format(self._ip, self._rpcPort)
         try:
@@ -154,7 +154,7 @@ class GethNode():
         '''
         personal.unlockAccount()
         '''
-        sleep(0.5)
+        sleep(0.3)
         msg = self._msg("personal_unlockAccount", [account, password, duration])
         url = "http://{}:{}".format(self._ip, self._rpcPort)
         try:
@@ -234,7 +234,7 @@ class GethNode():
         '''
         eth.accounts
         '''
-        sleep(0.5)
+        sleep(0.3)
         msg = self._msg("eth_accounts", [])
         url = "http://{}:{}".format(self._ip, self._rpcPort)
         try:
@@ -263,22 +263,26 @@ class GethNode():
         except Exception as e:
             print("getBalance", e)
 
-    def getBlock(self, index):
+    def getBlockTransactionCount(self, index):
         '''
-        eth.getBlock()
+        eth.getBlockTransactionCount()
         '''
         sleep(0.2)
-        msg = self._msg("eth_getBlock", index)
+        msg = self._msg("eth_getBlockTransactionCountByNumber", [hex(index)])
         url = "http://{}:{}".format(self._ip, self._rpcPort)
         try:
             response = requests.post(url, headers=self._headers, data=msg)
             print(response.content.decode())
-            block = json.loads(response.content.decode(encoding='utf-8'))['result']
+            number = json.loads(response.content.decode(encoding='utf-8'))['result']
 #            print(balance)
-            print("transactions number:", len(block['transactions']))
-            return block
+            if number:
+                print("block %s transactions number: %s" % (index, int(number, 16)))
+                return int(number, 16)
+            else:
+                print('this block does not exist')
+                return None
         except Exception as e:
-            print("getBlock", e)
+            print("getBlockTransactionCount", e)
 
     def addPeer(self, *param):
         '''
@@ -300,7 +304,7 @@ class GethNode():
         '''
         if n < t:
             raise ValueError("nodeCount should be no less than threshold value")
-        sleep(0.5)
+        sleep(0.3)
         msg = self._msg("admin_setNumber", [n, t])
         print("setNumber", msg) ##
         url = "http://{}:{}".format(self._ip, self._rpcPort)
@@ -317,7 +321,7 @@ class GethNode():
         '''
         if maxLevel < level:
             raise ValueError("level should be no larger than maxLevel")
-        sleep(0.5)
+        sleep(0.3)
         msg = self._msg("admin_setLevel", [maxLevel, level])
         print("setLevel", msg) ##
         url = "http://{}:{}".format(self._ip, self._rpcPort)
@@ -332,7 +336,7 @@ class GethNode():
         '''
         admin.setID()
         '''
-        sleep(0.5)
+        sleep(0.3)
         msg = self._msg("admin_setID", [ID])
         print("setID", msg) ##
         url = "http://{}:{}".format(self._ip, self._rpcPort)
@@ -375,18 +379,18 @@ class GethNode():
         except Exception as e:
             print("stop miner", e)
 
-    def testHIBE(self, txString):
-        '''
-        admin.testhibe()
-        '''
-        sleep(2)
-        msg = self._msg("admin_testhibe", ['{}'.format(txString)])
-        url = "http://{}:{}".format(self._ip, self._rpcPort)
-        try:
-            response = requests.post(url, headers=self._headers, data=msg)
-            print(response.content)
-        except Exception as e:
-            print("testHIBE", e)
+#    def testHIBE(self, txString):
+#        '''
+#        admin.testhibe()
+#        '''
+#        sleep(1)
+#        msg = self._msg("admin_testhibe", ['{}'.format(txString)])
+#        url = "http://{}:{}".format(self._ip, self._rpcPort)
+#        try:
+#            response = requests.post(url, headers=self._headers, data=msg)
+#            print(response.content)
+#        except Exception as e:
+#            print("testHIBE", e)
 
     def isGethRunning(self):
         '''
@@ -406,7 +410,7 @@ class GethNode():
         '''
         Remove the geth-pbft node container on remote server.
         '''
-        sleep(0.3)
+        sleep(0.2)
         ssh = paramiko.SSHClient()
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         ssh.connect(hostname=self._ip, port=22, username='root', password=self._passwd)
@@ -424,35 +428,6 @@ class GethNode():
             print("stop", e)
         ssh.close()
 
-
-
-#def rmAll(IP, passwd='Blockchain17'):
-#    '''
-#    remove all containers after stopAll() on remote server
-#    '''
-#    ssh = paramiko.SSHClient()
-#    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-#    ssh.connect(hostname=IP, port=22, username='root', password=passwd)
-#    try:
-#        NAMES = "docker ps -a --format '{{.Names}}'"
-#        stdin, stdout, stderr = ssh.exec_command(NAMES)
-#        result = stdout.read()
-#        if result:
-#            result = result.decode(encoding='utf-8', errors='strict').split()
-#            print(' '.join(result))
-#            STOP = 'docker rm %s' % ' '.join(result)
-#            stdin, stdout, stderr = ssh.exec_command(STOP)
-#            result = stdout.read()
-#            if result:
-#                print("all nodes at %s removed" % IP)
-#            elif not stderr:
-#                print(stderr)
-##            return True if result else False
-#        elif not stderr:
-#            print(stderr)
-#    except Exception as e:
-#        print('rmAll', e)
-#    ssh.close()
 
 if __name__ == "__main__":
     IPlist = IPList('ip.txt')
