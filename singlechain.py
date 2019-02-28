@@ -6,7 +6,6 @@ from ips import IPList, execCommand, stopAll
 import threading
 from genesis import confGenesis
 from time import sleep
-from tqdm import tqdm
 import subprocess
 import requests
 import json
@@ -125,7 +124,7 @@ class SingleChain():
 
     def runGethNodes(self):
         print('run geth nodes:')
-        for node in tqdm(self._nodes):
+        for node in self._nodes:
 #            RUN = ('geth --datadir abc --cache 512 --port 30303 --rpcport 8545 --rpcapi admin,eth,miner,web3,net,personal --rpc --rpcaddr \"0.0.0.0\" '
 #                   '--pbftid %d --nodeindex %d --blockchainid %d --unlock %s --password '
 #                   '\"passfile\" --syncmode \"full\" --nodiscover | tee %s') % (node._pbftid, node._nodeindex,

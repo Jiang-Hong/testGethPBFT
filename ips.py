@@ -172,5 +172,5 @@ def stopAllContainers(IPlist):
 if __name__ == "__main__":
     f = IPList('ip.txt')
     ips = f.getIPs()
-    for i in range(20):
+    for i in range(10):
         print(f.getNewPort())
