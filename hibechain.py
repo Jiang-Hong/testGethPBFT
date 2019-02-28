@@ -41,7 +41,7 @@ class HIBEChain():
 
             tmp.SinglechainStart()
             if not tmp._isTerminal:
-                tmp.SinglechainConfig()
+                tmp.ConsensusChainConfig()
             else:
                 print(tmp._id, "--------------terminal")
                 tmp.TerminalConfig()
@@ -53,12 +53,15 @@ class HIBEChain():
 #        for t in threadlist:
 #            t.join()
 
-
+        threads = []
         for chain in self._chains:
-            print("chain id is:", chain._id)
-            chain.gethInit()
-            chain.runGethNodes()
-            chain.constructChain()
+            t = threading.Thread(target=chain.runNodes, args=())
+            t.start()
+            threads.append(t)
+
+#            chain.runNodes()
+        for t in threads:
+            t.join()
 
     def constructHIBEChain(self):
         '''
@@ -106,33 +109,33 @@ class HIBEChain():
         '''
         set (n, t) value for all the chains in HIBEChain.
         '''
-#        threadlist = []
-#        for chain in self._chains:
-#            t = threading.Thread(target = chain.setNumber,args = ())
-#            t.start()
-#            threadlist.append(t)
-#            # chain.setNumber()
-#        for t in threadlist:
-#            t.join()
-#        self._ifSetNumber = True
+        threadlist = []
         for chain in self._chains:
-            chain.setNumber()
+            t = threading.Thread(target = chain.setNumber,args = ())
+            t.start()
+            threadlist.append(t)
+#            # chain.setNumber()
+        for t in threadlist:
+            t.join()
+        self._ifSetNumber = True
+#        for chain in self._chains:
+#            chain.setNumber()
 
     def setLevel(self):
         '''
         set level value for all the chains in HIBEChain.
         '''
-#        threadlist = []
-#        for chain in self._chains:
-#            # chain.setLevel(self._maxLevel)
-#            t = threading.Thread(target=chain.setLevel,args=(self._maxLevel,))
-#            t.start()
-#            threadlist.append(t)
-#        for t in threadlist:
-#            t.join()
-#        self._ifSetLevel = True
+        threadlist = []
         for chain in self._chains:
-            chain.setLevel(self._maxLevel)
+            # chain.setLevel(self._maxLevel)
+            t = threading.Thread(target=chain.setLevel,args=(self._maxLevel,))
+            t.start()
+            threadlist.append(t)
+        for t in threadlist:
+            t.join()
+        self._ifSetLevel = True
+#        for chain in self._chains:
+#            chain.setLevel(self._maxLevel)
 
     def setID(self):
         '''
@@ -147,9 +150,9 @@ class HIBEChain():
 #            threadlist.append(t)
 #        for t in threadlist:
 #            t.join()
-#        self._ifSetID = True
         for chain in self._chains:
             chain.setID()
+        self._ifSetID = True
 
 
 if __name__ == "__main__":

@@ -28,7 +28,7 @@ class GethNode():
         '''
         Start a geth-pbft node on remote server.
         '''
-        RUN_DOCKER = ('docker run -td -p %d:8545 -p %d:30303 --rm --name %s rkdghd/geth-pbft:dev' % (self._rpcPort,
+        RUN_DOCKER = ('docker run -td -p %d:8545 -p %d:30303 --rm --name %s rkdghd/geth-pbft:id' % (self._rpcPort,
                                                                                                         self._listenerPort,
                                                                                                         self._name))
 #        RUN_DOCKER = ('docker run -td -p %d:8545 -p %d:30303 --rm --name %s rkdghd/geth-pbft:dev' % (self._rpcPort,

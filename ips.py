@@ -13,7 +13,7 @@ class IP():
     def __init__(self, ip, currentPort=0):
         if len(ip.split('.')) < 4:
             raise ValueError('format of ip is not correct')
-        self._maxPayload = 10    # maximum number of clients running on one server
+        self._maxPayload = 8  # maximum number of clients running on one server
         self._currentPort = currentPort
         self._ip = ip
         self._rpcPorts = range(8515, 8515 + self._maxPayload * 10, 10)
@@ -157,6 +157,16 @@ def isDockerRunning(ip):
         return True
     else:
         return False
+
+def stopAllContainers(IPlist):
+    threads = []
+    for ip in IPlist._ips:
+        print("stop all docker containers at %s" % ip._ip)
+        t = threading.Thread(target=stopAll, args=(ip._ip,))
+        threads.append(t)
+        t.start()
+    for t in threads:
+        t.join()
 
 
 if __name__ == "__main__":

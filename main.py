@@ -9,8 +9,16 @@ from gethnode import stopAll, execCommand
 
 IPlist = IPList('ip.txt')
 # startDockerService(IPlist)
-IDList = ["", "0001", "0002", "0003", "0004", "0005", "0006", "0007", "0008"]
-threshList = [(4,3), (1, 1), (1, 1), (1, 1), (1, 1), (1, 1), (1, 1), (1, 1), (1, 1)]
+IDList = [""]
+threshList = [(4, 3)]
+for i in range(1, 13):
+    index = str(i)
+    tmpID = '0' * (4-len(index)) + index
+    IDList.append(tmpID)
+    threshList.append((1,1))
+
+#IDList = ["", "0001", "0002", "0003", "0004", "0005", "0006", "0007", "0008"]
+#threshList = [(4,3), (1, 1), (1, 1), (1, 1), (1, 1), (1, 1), (1, 1), (1, 1), (1, 1)]
 #startTime = time.time()
 hibe = HIBEChain(IDList, threshList, IPlist)
 hibe.constructHIBEChain()
@@ -29,10 +37,12 @@ c = hibe.getChain("0002")
 c1 = c.getNode(1)
 print("level 1 keystatus", c1.keyStatus())
 
-time.sleep(3)
-b1.testSendTransaction("0001", 1, "0x2", 1000, 1000)
-time.sleep(1)
-a1.startMiner()
+
+
+#time.sleep(3)
+#b1.testSendTransaction("0001", 1, "0x2", 2, 100)
+#time.sleep(1)
+#a1.startMiner()
 
 #hibe.destructHIBEChain()
 #endTime = time.time()

@@ -65,7 +65,7 @@ class SingleChain():
             self._accounts.append(self._nodes[index]._accounts[0])
 #        print(self._accounts)
 
-    def SinglechainConfig(self):
+    def ConsensusChainConfig(self):
         '''
         set genesis.json for a blockchain & init with genesis.json
         '''
@@ -155,7 +155,6 @@ class SingleChain():
                 print("getEnode", e)
 
             sleep(2)
-
 
     def getID(self):
         '''
@@ -307,6 +306,12 @@ class SingleChain():
             self._ifSetID = True
         else:
             raise RuntimeError("ID of chain %s already set" % self._id)
+
+    def runNodes(self):
+        print("chain id is:", self._id)
+        self.gethInit()
+        self.runGethNodes()
+        self.constructChain()
 
 
 if __name__ == "__main__":
