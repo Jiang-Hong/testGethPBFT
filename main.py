@@ -12,7 +12,7 @@ IPlist = IPList('ip.txt')
 # startDockerService(IPlist)
 IDList = [""]
 threshList = [(4, 3)]
-for i in range(1, 12):
+for i in range(1, 37):
     index = str(i)
     tmpID = '0' * (4-len(index)) + index
     IDList.append(tmpID)
@@ -37,7 +37,8 @@ print("level 1 keystatus", b1.keyStatus())
 c = hibe.getChain("0002")
 c1 = c.getNode(1)
 print("level 1 keystatus", c1.keyStatus())
-
+endTime = time.time()
+print("elapsed time:", endTime - startTime)
 threads = []
 for chain in hibe._chains[1:]:
     print("------------")
@@ -48,6 +49,9 @@ for chain in hibe._chains[1:]:
 for t in threads:
     t.join()
 
+for chain in hibe._chains:
+    for node in chain._nodes:
+        print(node.getPeerCount())
 
 for rootNode in a._nodes:
     rootNode.startMiner()
@@ -59,8 +63,7 @@ for rootNode in a._nodes:
 #a1.startMiner()
 
 #hibe.destructHIBEChain()
-endTime = time.time()
-print("elapsed time:", endTime - startTime)
+
 
 
 

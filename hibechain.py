@@ -150,7 +150,11 @@ class HIBEChain():
 #            threadlist.append(t)
 #        for t in threadlist:
 #            t.join()
+        idLength = 0
         for chain in self._chains:
+            if len(chain._id) != idLength:
+                time.sleep(10)
+                idLength = len(chain._id)
             chain.setID()
         self._ifSetID = True
 

@@ -288,12 +288,12 @@ class GethNode():
         '''
         admin.addPeer()
         '''
-        sleep(0.3)
+        sleep(0.5)
         msg = self._msg("admin_addPeer", param)
         url = "http://{}:{}".format(self._ip, self._rpcPort)
         try:
             requests.post(url, headers=self._headers, data=msg)
-            sleep(0.3)
+            sleep(1)
             # print(response.content)
         except Exception as e:
             print("addPeer", e)
@@ -304,7 +304,7 @@ class GethNode():
         '''
         if n < t:
             raise ValueError("nodeCount should be no less than threshold value")
-        sleep(0.3)
+        sleep(0.5)
         msg = self._msg("admin_setNumber", [n, t])
         print("setNumber", msg) ##
         url = "http://{}:{}".format(self._ip, self._rpcPort)
@@ -321,7 +321,7 @@ class GethNode():
         '''
         if maxLevel < level:
             raise ValueError("level should be no larger than maxLevel")
-        sleep(0.3)
+        sleep(0.4)
         msg = self._msg("admin_setLevel", [maxLevel, level])
         print("setLevel", msg) ##
         url = "http://{}:{}".format(self._ip, self._rpcPort)
@@ -399,7 +399,7 @@ class GethNode():
         try:
             CMD = 'docker exec -t %s geth attach ipc:/root/abc/geth.ipc --exec "admin.nodeInfo"' % self._name
             result = execCommand(CMD, self._ip)
-#            print(result)
+            print(result)
             return True if result else False
         except Exception as e:
             print("isRunning", e)

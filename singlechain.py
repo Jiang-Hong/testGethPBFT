@@ -218,7 +218,7 @@ class SingleChain():
             for other in otherChain._nodes:
                 ep = other.Enode
                 node.addPeer(ep, 1)
-        sleep(3)
+        sleep(2)
 #        p1 = self.getPrimer()
 #        p2 = otherChain.getPrimer()
 #        ep2 = p2.Enode
@@ -237,6 +237,7 @@ class SingleChain():
 #        p2 = otherChain.getPrimer()
 #        ep2 = p2.Enode
 #        p1.addPeer(ep2, 2)
+        sleep(2)
 
 
     def getNodeCount(self):
@@ -281,7 +282,6 @@ class SingleChain():
         '''
         Set ID for a blockchain.
         '''
-        sleep(10)
         if not self._ifSetNumber and self._ifSetLevel:
             raise RuntimeError("number and level info should be set previously")
         if len(self._id) // 4 != self._level:
