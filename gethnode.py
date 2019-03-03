@@ -8,6 +8,7 @@ import json
 from ips import IPList, execCommand, stopAll
 from time import sleep
 
+
 class GethNode():
     '''
     Data structure for Geth-pbft client.
@@ -49,10 +50,10 @@ class GethNode():
             if not err and out:
                 print('container of node %s of blockchain %s at %s:%s started' % (self._nodeindex, self._blockchainid,
                                                                                   self._ip, self._rpcPort))
-                sleep(0.5)
+                sleep(0.3)
                 NEWACCOUNT = 'docker exec -t %s geth --datadir abc account new --password passfile' % self._name
                 si, so, se = ssh.exec_command(NEWACCOUNT)
-                sleep(0.5)
+                sleep(0.3)
                 er = se.read().decode().strip()
                 result = so.read().decode(encoding='utf-8')
                 acc = result.split()[-1][1:-1]
@@ -288,12 +289,12 @@ class GethNode():
         '''
         admin.addPeer()
         '''
-        sleep(0.6)
+        sleep(0.4)
         msg = self._msg("admin_addPeer", param)
         url = "http://{}:{}".format(self._ip, self._rpcPort)
         try:
             requests.post(url, headers=self._headers, data=msg)
-            sleep(1)
+            sleep(1.2)
             # print(response.content)
         except Exception as e:
             print("addPeer", e)
@@ -304,7 +305,7 @@ class GethNode():
         '''
         if n < t:
             raise ValueError("nodeCount should be no less than threshold value")
-        sleep(0.5)
+#        sleep(0.3)
         msg = self._msg("admin_setNumber", [n, t])
         print("setNumber", msg) ##
         url = "http://{}:{}".format(self._ip, self._rpcPort)
@@ -321,7 +322,7 @@ class GethNode():
         '''
         if maxLevel < level:
             raise ValueError("level should be no larger than maxLevel")
-        sleep(0.3)
+#        sleep(0.3)
         msg = self._msg("admin_setLevel", [maxLevel, level])
         print("setLevel", msg) ##
         url = "http://{}:{}".format(self._ip, self._rpcPort)
@@ -336,7 +337,7 @@ class GethNode():
         '''
         admin.setID()
         '''
-        sleep(0.5)
+#        sleep(0.3)
         msg = self._msg("admin_setID", [ID])
         print("setID", msg) ##
         url = "http://{}:{}".format(self._ip, self._rpcPort)

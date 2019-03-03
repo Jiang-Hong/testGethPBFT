@@ -82,7 +82,7 @@ class SingleChain():
                     CMD = 'docker cp %s %s:/root/%s' % (self._cfgFile, node._name, self._cfgFile)
                     result = execCommand(CMD, serverIP)
 #                    print(result)
-                    sleep(0.5)
+                    sleep(0.3)
 
 #                    INIT = 'docker exec -t %s geth --datadir abc init %s' % (node._name, self._cfgFile)
 #                    result = execCommand(INIT, serverIP)
@@ -107,7 +107,7 @@ class SingleChain():
                     CMD = 'docker cp %s %s:/root/%s' % (self._cfgFile, node._name, self._cfgFile)
                     result = execCommand(CMD, serverIP)
 #                    print(result)
-                    sleep(0.5)
+                    sleep(0.3)
 
     def gethInit(self):
         '''
@@ -120,7 +120,7 @@ class SingleChain():
                 if node._ip == serverIP:
                     INIT = 'docker exec -t %s geth --datadir abc init %s' % (node._name, self._cfgFile)
                     result = execCommand(INIT, serverIP)
-                    sleep(0.5)
+#                    sleep(0.5)
 
     def runGethNodes(self):
         print('run geth nodes:')
@@ -153,7 +153,7 @@ class SingleChain():
             except Exception as e:
                 print("getEnode", e)
 
-            sleep(2)
+            sleep(0.6)
 
     def getID(self):
         '''
@@ -190,7 +190,7 @@ class SingleChain():
 #            threadlist.append(t)
 #        for t in threadlist:
 #            t.join()
-        sleep(1)
+        sleep(0.5)
         for i in range(len(self._nodes)):
             for j in range(len(self._nodes)):
                 tmpEnode = self._nodes[j].getEnode()
@@ -213,12 +213,12 @@ class SingleChain():
         '''
         Connect to a lower single chain.
         '''
-        sleep(1)
+        sleep(0.5)
         for node in self._nodes:
             for other in otherChain._nodes:
                 ep = other.Enode
                 node.addPeer(ep, 1)
-        sleep(2)
+        sleep(1)
 #        p1 = self.getPrimer()
 #        p2 = otherChain.getPrimer()
 #        ep2 = p2.Enode
@@ -228,7 +228,7 @@ class SingleChain():
         '''
         Connect to an upper single chain.
         '''
-        sleep(1)
+        sleep(0.5)
         for node in self._nodes:
             for other in otherChain._nodes:
                 ep = other.Enode
@@ -237,7 +237,7 @@ class SingleChain():
 #        p2 = otherChain.getPrimer()
 #        ep2 = p2.Enode
 #        p1.addPeer(ep2, 2)
-        sleep(2)
+        sleep(1)
 
 
     def getNodeCount(self):

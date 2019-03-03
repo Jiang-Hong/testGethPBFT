@@ -8,6 +8,11 @@ import threading
 from gethnode import stopAll, execCommand
 
 
+def checkKeyStatus(node):
+    if node.keyStatus() is False:
+        print("keyStatus of node at %s:%s is False" % (node._ip, node._listenerPort))
+        print("node peer count is %s" % node.getPeerCount())
+
 IPlist = IPList('ip.txt')
 # startDockerService(IPlist)
 IDList = [""]
@@ -51,9 +56,11 @@ for chain in hibe._chains[1:]:
 for t in threads:
     t.join()
 
-for chain in hibe._chains:
+threads = []
+for chain in hibe._chains[1:]:
     for node in chain._nodes:
-        print(node.getPeerCount())
+        t = threading.Thread(target=checkKeyStatus, args=(node,))
+#        print(node.getPeerCount())
 
 for rootNode in a._nodes:
     rootNode.startMiner()
@@ -79,6 +86,8 @@ print("elapsed time:", endTime - startTime)
 #a1.startMiner()
 
 #hibe.destructHIBEChain()
+
+
 
 
 
