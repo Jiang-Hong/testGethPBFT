@@ -27,6 +27,8 @@ hibe.constructHIBEChain()
 hibe.setNumber()
 hibe.setLevel()
 hibe.setID()
+
+endTime = time.time()
 time.sleep(1)
 a = hibe.getChain("")
 a1 = a.getNode(1)
@@ -37,8 +39,8 @@ print("level 1 keystatus", b1.keyStatus())
 c = hibe.getChain("0002")
 c1 = c.getNode(1)
 print("level 1 keystatus", c1.keyStatus())
-endTime = time.time()
-print("elapsed time:", endTime - startTime)
+
+
 threads = []
 for chain in hibe._chains[1:]:
     print("------------")
@@ -66,6 +68,8 @@ for chainID in IDList[1:]:
     threadList.append(t)
 for t in threadList:
     t.join()
+
+print("elapsed time:", endTime - startTime)
 
 #a1.getBlockTransactionCount(1)
 

@@ -267,7 +267,7 @@ class GethNode():
         '''
         eth.getBlockTransactionCount()
         '''
-        sleep(0.2)
+        sleep(0.1)
         msg = self._msg("eth_getBlockTransactionCountByNumber", [hex(index)])
         url = "http://{}:{}".format(self._ip, self._rpcPort)
         try:
@@ -321,7 +321,7 @@ class GethNode():
         '''
         if maxLevel < level:
             raise ValueError("level should be no larger than maxLevel")
-        sleep(0.4)
+        sleep(0.3)
         msg = self._msg("admin_setLevel", [maxLevel, level])
         print("setLevel", msg) ##
         url = "http://{}:{}".format(self._ip, self._rpcPort)
@@ -336,7 +336,7 @@ class GethNode():
         '''
         admin.setID()
         '''
-        sleep(0.3)
+        sleep(0.5)
         msg = self._msg("admin_setID", [ID])
         print("setID", msg) ##
         url = "http://{}:{}".format(self._ip, self._rpcPort)
