@@ -84,15 +84,15 @@ class HIBEChain():
         '''
         Stop all the nodes in the HIBEChain.
         '''
-#        threadlist = []
-#        for chain in self._chains:
-#            t = threading.Thread(target=chain.destructChain,args=())
-#            t.start()
-#            threadlist.append(t)
-#        for t in threadlist:
-#            t.join()
+        threadlist = []
         for chain in self._chains:
-            chain.destructChain()
+            t = threading.Thread(target=chain.destructChain,args=())
+            t.start()
+            threadlist.append(t)
+        for t in threadlist:
+            t.join()
+#        for chain in self._chains:
+#            chain.destructChain()
 
     def getChain(self, ID):
         '''
@@ -153,6 +153,7 @@ class HIBEChain():
         idLength = 0
         for chain in self._chains:
             if len(chain._id) != idLength:
+                print("setID new level")
                 time.sleep(10)
                 idLength = len(chain._id)
             chain.setID()

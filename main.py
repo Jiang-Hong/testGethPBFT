@@ -12,7 +12,7 @@ IPlist = IPList('ip.txt')
 # startDockerService(IPlist)
 IDList = [""]
 threshList = [(4, 3)]
-for i in range(1, 37):
+for i in range(1, 77):
     index = str(i)
     tmpID = '0' * (4-len(index)) + index
     IDList.append(tmpID)
@@ -56,6 +56,18 @@ for chain in hibe._chains:
 for rootNode in a._nodes:
     rootNode.startMiner()
 
+threadList = []
+for chainID in IDList[1:]:
+    tmpChain = hibe.getChain(chainID)
+    print(chainID, end="-")
+    tmpNode = tmpChain.getNode(1)
+    t = threading.Thread(target=tmpNode.testSendTransaction, args=("0001",1,'0x1',1,100))
+    t.start()
+    threadList.append(t)
+for t in threadList:
+    t.join()
+
+#a1.getBlockTransactionCount(1)
 
 #time.sleep(3)
 #b1.testSendTransaction("0001", 1, "0x2", 2, 100)
