@@ -24,8 +24,8 @@ class HIBEChain():
         self._ifSetNumber = False
         self._ifSetLevel = False
         self._ifSetID = False
-#        threadlist = []
 
+        threadlist = []
         for index, name in enumerate(IDList):
             level = len(name) // 4
             if name:
@@ -39,13 +39,35 @@ class HIBEChain():
                 print("name:", name, "maxlevel", self._maxLevel)
                 tmp._isTerminal = True
 
-            tmp.SinglechainStart()
-            if not tmp._isTerminal:
-                tmp.ConsensusChainConfig()
-            else:
-                print(tmp._id, "--------------terminal")
-                tmp.TerminalConfig()
+#            tmp.SinglechainStart()
             self._chains.append(tmp)
+            t = threading.Thread(target=tmp.SinglechainStart, args=())
+            t.start()
+            threadlist.append(t)
+
+        for t in threadlist:
+            t.join()
+
+        threads = []
+        for chain in self._chains:
+            if not chain._isTerminal:
+                t = threading.Thread(target=chain.ConsensusChainConfig, args=())
+            else:
+                print(chain._id, "-------------terminal")
+                t = threading.Thread(target=chain.TerminalConfig, args=())
+            t.start()
+            threads.append(t)
+
+        for t in threads:
+            t.join()
+
+
+#            if not tmp._isTerminal:
+#                tmp.ConsensusChainConfig()
+#            else:
+#                print(tmp._id, "--------------terminal")
+#                tmp.TerminalConfig()
+#            self._chains.append(tmp)
 
 #            t = threading.Thread(target=tmp.constructChain,args=())
 #            t.start()

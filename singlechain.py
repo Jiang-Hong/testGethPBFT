@@ -42,23 +42,23 @@ class SingleChain():
         '''
         run a singlechain
         '''
-#        threadlist = []
+        threadlist = []
         for index in range(self.nodeCount):
             pbftid = index
             nodeindex = index + 1
             tmp = GethNode(self._iplist, pbftid, nodeindex, self._blockchainid, self._passwd)
             self._ips.add(tmp._ip)
-            # xq start a thread， target stand for a function that you want to run ,args stand for the parameters
-#            t = threading.Thread(target=tmp.start)
-#            threadlist.append(t)
-#            t.start()
-            tmp.start()
             self._nodes.append(tmp)
+            # xq start a thread， target stand for a function that you want to run ,args stand for the parameters
+            t = threading.Thread(target=tmp.start)
+            threadlist.append(t)
+            t.start()
+#            tmp.start()
+#            threadlist.append(t)
 
-
-#        for t in threadlist:
-#            # xq threads must run the join function ,because the resources of main thread is needed
-#            t.join()
+        for t in threadlist:
+            # xq threads must run the join function ,because the resources of main thread is needed
+            t.join()
 
         for index in range(self.nodeCount):
             self._accounts.append(self._nodes[index]._accounts[0])

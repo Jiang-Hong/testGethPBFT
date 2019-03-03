@@ -13,7 +13,7 @@ class IP():
     def __init__(self, ip, currentPort=0):
         if len(ip.split('.')) < 4:
             raise ValueError('format of ip is not correct')
-        self._maxPayload = 20  # maximum number of clients running on one server
+        self._maxPayload = 8  # maximum number of clients running on one server
         self._currentPort = currentPort
         self._ip = ip
         self._rpcPorts = range(8515, 8515 + self._maxPayload * 10, 10)
