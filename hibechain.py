@@ -165,13 +165,6 @@ class HIBEChain():
         '''
         if not self._ifSetNumber and self._ifSetLevel:
             raise RuntimeError("number and level info should be set previously")
-#        threadlist = []
-#        for chain in self._chains:
-#            t = threading.Thread(target=chain.setID,args=())
-#            t.start()
-#            threadlist.append(t)
-#        for t in threadlist:
-#            t.join()
         idLength = 0
         for chain in self._chains:
             if len(chain._id) != idLength:

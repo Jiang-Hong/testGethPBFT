@@ -12,7 +12,7 @@ IPlist = IPList('ip.txt')
 # startDockerService(IPlist)
 IDList = [""]
 threshList = [(4, 3)]
-for i in range(1, 29):
+for i in range(1, 77):
     index = str(i)
     tmpID = '0' * (4-len(index)) + index
     IDList.append(tmpID)

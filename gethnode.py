@@ -288,7 +288,7 @@ class GethNode():
         '''
         admin.addPeer()
         '''
-        sleep(0.5)
+        sleep(0.6)
         msg = self._msg("admin_addPeer", param)
         url = "http://{}:{}".format(self._ip, self._rpcPort)
         try:
