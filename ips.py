@@ -145,6 +145,7 @@ def startDockerService(IPList):
     for t in threads:
         t.join()
     endTime = time.time()
+    print('docker service started on all servers')
     print('start docker service on all services. elapsed time:', endTime-startTime)
 
 def isDockerRunning(ip):
