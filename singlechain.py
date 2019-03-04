@@ -120,10 +120,10 @@ class SingleChain():
                 if node._ip == serverIP:
                     INIT = 'docker exec -t %s geth --datadir abc init %s' % (node._name, self._cfgFile)
                     result = execCommand(INIT, serverIP)
-#                    sleep(0.5)
+                    sleep(0.5)
 
     def runGethNodes(self):
-        print('run geth nodes:')
+#        print('run geth nodes:')
         for node in self._nodes:
 #            RUN = ('geth --datadir abc --cache 512 --port 30303 --rpcport 8545 --rpcapi admin,eth,miner,web3,net,personal --rpc --rpcaddr \"0.0.0.0\" '
 #                   '--pbftid %d --nodeindex %d --blockchainid %d --unlock %s --password '
@@ -251,7 +251,7 @@ class SingleChain():
         Set (number, threshold) value for the nodes of the blockchain.
         '''
         if not self._ifSetNumber:
-            print("setNumber")
+#            print("setNumber")
             p = self.getPrimer()
             p.setNumber(self.nodeCount, self.threshold)
             self._ifSetNumber = True
@@ -262,7 +262,7 @@ class SingleChain():
         '''
         Set level info for each node.
         '''
-        print("setLevel")
+#        print("setLevel")
         threadlist = []
         if not self._ifSetLevel:
             for node in self._nodes:
@@ -290,7 +290,7 @@ class SingleChain():
         if not self._ifSetID:
             if self._level == 0:
                 p = self.getPrimer()
-                print("set primer ID")
+#                print("set primer ID")
                 p.setID("")
             else:
 #                theadlist = []
@@ -301,14 +301,14 @@ class SingleChain():
 #                for t in theadlist:
 #                    t.join()
                 for node in self._nodes:
-                    print("set node ID")
+#                    print("set node ID")
                     node.setID(self._id)
             self._ifSetID = True
         else:
             raise RuntimeError("ID of chain %s already set" % self._id)
 
     def runNodes(self):
-        print("chain id is:", self._id)
+#        print("chain id is:", self._id)
         self.gethInit()
         self.runGethNodes()
         self.constructChain()
