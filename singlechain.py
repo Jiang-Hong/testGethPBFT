@@ -98,7 +98,7 @@ class SingleChain():
         else:
             self._cfgFile = '%s.json' % self._id[:-4]
 
-        print("config cfgFile", self._cfgFile)
+#        print("config cfgFile", self._cfgFile)
         for serverIP in self._ips:
             subprocess.run(['./sendFile.sh', self._cfgFile, serverIP], stdout=subprocess.PIPE)
             sleep(0.5)
@@ -214,10 +214,16 @@ class SingleChain():
         Connect to a lower single chain.
         '''
         sleep(0.5)
+        threads = []
         for node in self._nodes:
             for other in otherChain._nodes:
-                ep = other.Enode
-                node.addPeer(ep, 1)
+                t = threading.Thread(target=node.addPeer, args=(other.Enode, 1))
+                t.start()
+                threads.append(t)
+#                ep = other.Enode
+#                node.addPeer(ep, 1)
+        for t in threads:
+            t.join()
         sleep(1)
 #        p1 = self.getPrimer()
 #        p2 = otherChain.getPrimer()

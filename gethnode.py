@@ -21,7 +21,7 @@ class GethNode():
         self._nodeindex = nodeindex
         self._blockchainid = blockchainid
         self._name = 'geth-pbft' + str(self._rpcPort)
-        self._headers = {'Content-Type': 'application/json'}
+        self._headers = {'Content-Type': 'application/json', 'Connection':'close'}
         self._passwd = passwd
         self._accounts = []
 
@@ -290,12 +290,14 @@ class GethNode():
         '''
         admin.addPeer()
         '''
-        sleep(0.3)
+        sleep(0.5)
         msg = self._msg("admin_addPeer", param)
         url = "http://{}:{}".format(self._ip, self._rpcPort)
         try:
-            requests.post(url, headers=self._headers, data=msg)
+            r = requests.post(url, headers=self._headers, data=msg, timeout=5)
             sleep(1)
+            r.close()
+
             # print(response.content)
         except Exception as e:
             print("addPeer", e)
@@ -306,7 +308,7 @@ class GethNode():
         '''
         if n < t:
             raise ValueError("nodeCount should be no less than threshold value")
-        sleep(0.3)
+        sleep(0.4)
         msg = self._msg("admin_setNumber", [n, t])
 #        print("setNumber", msg) ##
         url = "http://{}:{}".format(self._ip, self._rpcPort)
@@ -323,7 +325,7 @@ class GethNode():
         '''
         if maxLevel < level:
             raise ValueError("level should be no larger than maxLevel")
-        sleep(0.3)
+        sleep(0.4)
         msg = self._msg("admin_setLevel", [maxLevel, level])
 #        print("setLevel", msg) ##
         url = "http://{}:{}".format(self._ip, self._rpcPort)
@@ -338,16 +340,18 @@ class GethNode():
         '''
         admin.setID()
         '''
-        sleep(0.3)
+        sleep(0.5)
         msg = self._msg("admin_setID", [ID])
         print("setID", msg) ##
         url = "http://{}:{}".format(self._ip, self._rpcPort)
         try:
             response = requests.post(url, headers=self._headers, data=msg)
+            response.close()
             result = json.loads(response.content.decode(encoding='utf-8'))
             print("node at %s:%d setID result: %s" % (self._ip, self._rpcPort, result["result"]))
         except Exception as e:
             print("setID", e)
+        sleep(0.3)
 
     def startMiner(self):
         '''
