@@ -37,7 +37,7 @@ hibe.constructHIBEChain()
 a = hibe.getChain("")
 a1 = a.getNode(1)
 print('waiting for addPeer')
-while a1.getPeerCount() != nodeCount-1:
+while a1.getPeerCount() >= nodeCount-10:
     print('.', end='')
     time.sleep(0.5)
 
