@@ -213,7 +213,7 @@ class GethNode():
         try:
             response = requests.post(url, headers=self._headers, data=msg)
             result = json.loads(response.content.decode(encoding='utf-8'))
-            print(result)
+#            print(result)
             return result['result']
         except Exception as e:
             print("testSendTransaction2", e)
@@ -273,7 +273,7 @@ class GethNode():
         url = "http://{}:{}".format(self._ip, self._rpcPort)
         try:
             response = requests.post(url, headers=self._headers, data=msg)
-            print(response.content.decode())
+#            print(response.content.decode())
             number = json.loads(response.content.decode(encoding='utf-8'))['result']
 #            print(balance)
             if number:
@@ -289,12 +289,12 @@ class GethNode():
         '''
         admin.addPeer()
         '''
-        sleep(0.4)
+        sleep(2)
         msg = self._msg("admin_addPeer", param)
         url = "http://{}:{}".format(self._ip, self._rpcPort)
         try:
             requests.post(url, headers=self._headers, data=msg)
-            sleep(1.2)
+            sleep(2)
             # print(response.content)
         except Exception as e:
             print("addPeer", e)
@@ -305,9 +305,9 @@ class GethNode():
         '''
         if n < t:
             raise ValueError("nodeCount should be no less than threshold value")
-#        sleep(0.3)
+        sleep(0.3)
         msg = self._msg("admin_setNumber", [n, t])
-        print("setNumber", msg) ##
+#        print("setNumber", msg) ##
         url = "http://{}:{}".format(self._ip, self._rpcPort)
         try:
             response = requests.post(url, headers=self._headers, data=msg)
@@ -322,9 +322,9 @@ class GethNode():
         '''
         if maxLevel < level:
             raise ValueError("level should be no larger than maxLevel")
-#        sleep(0.3)
+        sleep(0.3)
         msg = self._msg("admin_setLevel", [maxLevel, level])
-        print("setLevel", msg) ##
+#        print("setLevel", msg) ##
         url = "http://{}:{}".format(self._ip, self._rpcPort)
         try:
             response = requests.post(url, headers=self._headers, data=msg)
@@ -337,7 +337,7 @@ class GethNode():
         '''
         admin.setID()
         '''
-#        sleep(0.3)
+        sleep(0.3)
         msg = self._msg("admin_setID", [ID])
         print("setID", msg) ##
         url = "http://{}:{}".format(self._ip, self._rpcPort)
@@ -354,7 +354,7 @@ class GethNode():
         '''
         sleep(0.2)
         msg = self._msg("miner_start", [])
-        print("setID", msg) ##
+#        print("startMiner", msg) ##
         url = "http://{}:{}".format(self._ip, self._rpcPort)
         try:
             response = requests.post(url, headers=self._headers, data=msg)
@@ -370,7 +370,7 @@ class GethNode():
         '''
         sleep(0.2)
         msg = self._msg("miner_stop", [])
-        print("setID", msg) ##
+#        print("stopMiner", msg) ##
         url = "http://{}:{}".format(self._ip, self._rpcPort)
         try:
             response = requests.post(url, headers=self._headers, data=msg)
@@ -400,7 +400,7 @@ class GethNode():
         try:
             CMD = 'docker exec -t %s geth attach ipc:/root/abc/geth.ipc --exec "admin.nodeInfo"' % self._name
             result = execCommand(CMD, self._ip)
-            print(result)
+#            print(result)
             return True if result else False
         except Exception as e:
             print("isRunning", e)
