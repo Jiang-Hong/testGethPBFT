@@ -98,6 +98,7 @@ def execCommand(cmd, ip, port=22, username='root', password='Blockchain17'):
         result = stdout.read().strip().decode(encoding='utf-8')
     else:
         result = stderr.read().strip().decode(encoding='utf-8')
+    client.close()
     return result
 
 def stopAll(IP, passwd='Blockchain17'):
@@ -169,6 +170,9 @@ def stopAllContainers(IPlist):
     for t in threads:
         t.join()
 
+def rebootServer(IPlist):
+    for ip in IPlist._ips:
+        execCommand('reboot', ip._ip)
 
 if __name__ == "__main__":
     f = IPList('ip.txt')
