@@ -29,14 +29,14 @@ class HIBEChain():
         for index, name in enumerate(IDList):
             level = len(name) // 4
             if name:
-                print("name is", name)
+                print("name is %s" % name, end=" ")
             else:
-                print("name is blank")
+                print("name is blank", end=" ")
             nodeCount, threshold = threshList[index][0], threshList[index][1]
             blockchainid = 120 + index
             tmp = SingleChain(name, level, nodeCount, threshold, blockchainid, IPlist, passwd)
             if level == self._maxLevel:
-                print("name:", name, "maxlevel", self._maxLevel)
+#                print("name:", name, "maxlevel", self._maxLevel)
                 tmp._isTerminal = True
 
 #            tmp.SinglechainStart()
@@ -53,7 +53,7 @@ class HIBEChain():
             if not chain._isTerminal:
                 t = threading.Thread(target=chain.ConsensusChainConfig, args=())
             else:
-                print(chain._id, "-------------terminal")
+#                print(chain._id, "-------------terminal")
                 t = threading.Thread(target=chain.TerminalConfig, args=())
             t.start()
             threads.append(t)
@@ -122,7 +122,7 @@ class HIBEChain():
         '''
         try:
             index = self._IDList.index(ID)
-            print('chain index', '-----------', index)
+#            print('chain index', '-----------', index)
             return self._chains[index]
         except ValueError or IndexError:
             print("ID %s is not in the HIBEChain" % ID)
@@ -168,8 +168,8 @@ class HIBEChain():
         idLength = 0
         for chain in self._chains:
             if len(chain._id) != idLength:
-                print("setID new level")
-                time.sleep(15)
+#                print("setID new level")
+                time.sleep(20)
                 idLength = len(chain._id)
             chain.setID()
         self._ifSetID = True
