@@ -16,7 +16,7 @@ def checkKeyStatus(node):
         global failCount
         failCount += 1
 
-nodeCount = 40
+nodeCount = 80
 
 IPlist = IPList('ip.txt')
 # startDockerService(IPlist)
@@ -36,13 +36,19 @@ hibe.constructHIBEChain()
 
 a = hibe.getChain("")
 a1 = a.getNode(1)
+
 print('waiting for addPeer')
-while a1.getPeerCount() >= nodeCount-5:
-    print('.', end='')
+count = 0
+time.sleep(10)
+while a1.getPeerCount() <= nodeCount-nodeCount//10:
+    print(a1.getPeerCount(), '.', end='')
+    count += 1
+    if count >= 20:
+        break
     time.sleep(0.5)
 
-print('another %s seconds waiting for addPeer' % str(nodeCount//50+10))
-time.sleep(nodeCount//50+10)
+print('another %s seconds waiting for addPeer' % str(nodeCount//50+1))
+time.sleep(nodeCount//50+1)
 
 hibe.setNumber()
 hibe.setLevel()
@@ -58,7 +64,7 @@ c = hibe.getChain("0002")
 c1 = c.getNode(1)
 print("level 1 keystatus", c1.keyStatus())
 
-time.sleep(2)
+time.sleep(15)
 
 threads = []
 for chain in hibe._chains[1:]:

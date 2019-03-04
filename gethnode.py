@@ -102,8 +102,9 @@ class GethNode():
         url = "http://{}:{}".format(self._ip, self._rpcPort)
         try:
             response = requests.post(url, headers=self._headers, data=msg)
+            response.close()
             count = int(json.loads(response.content.decode(encoding='utf-8'))['result'], 16)
-            return count
+            return count if count else 0
         except Exception as e:
             print("getPeerCount", e)
 
@@ -116,6 +117,7 @@ class GethNode():
         url = "http://{}:{}".format(self._ip, self._rpcPort)
         try:
             response = requests.post(url, headers=self._headers, data=msg)
+            response.close()
             peers = json.loads(response.content.decode(encoding='utf-8'))['result']
             return peers
         except Exception as e:
@@ -130,6 +132,7 @@ class GethNode():
         url = "http://{}:{}".format(self._ip, self._rpcPort)
         try:
             response = requests.post(url, headers=self._headers, data=msg)
+            response.close()
             result = json.loads(response.content.decode(encoding='utf-8'))['result']
             self._accounts.append(result)
             return result
@@ -145,6 +148,7 @@ class GethNode():
         url = "http://{}:{}".format(self._ip, self._rpcPort)
         try:
             response = requests.post(url, headers=self._headers, data=msg)
+            response.close()
             print(response.content.decode())
             status = json.loads(response.content.decode(encoding='utf-8'))['result']
             return status
@@ -161,6 +165,7 @@ class GethNode():
         url = "http://{}:{}".format(self._ip, self._rpcPort)
         try:
             response = requests.post(url, headers=self._headers, data=msg)
+            response.close()
             result = json.loads(response.content.decode(encoding='utf-8'))['result']
             return result
         except Exception as e:
@@ -178,6 +183,7 @@ class GethNode():
         url = "http://{}:{}".format(self._ip, self._rpcPort)
         try:
             response = requests.post(url, headers=self._headers, data=msg)
+            response.close()
             print(json.loads(response.content.decode(encoding='utf-8')))
             result = json.loads(response.content.decode(encoding='utf-8'))['result']
             return result
@@ -196,6 +202,7 @@ class GethNode():
         url = "http://{}:{}".format(self._ip, self._rpcPort)
         try:
             response = requests.post(url, headers=self._headers, data=msg)
+            response.close()
             print(json.loads(response.content.decode(encoding='utf-8')))
             result = json.loads(response.content.decode(encoding='utf-8'))['result']
             return result
@@ -213,6 +220,7 @@ class GethNode():
         url = "http://{}:{}".format(self._ip, self._rpcPort)
         try:
             response = requests.post(url, headers=self._headers, data=msg)
+            response.close()
             result = json.loads(response.content.decode(encoding='utf-8'))
 #            print(result)
             return result['result']
@@ -227,6 +235,7 @@ class GethNode():
         url = "http://{}:{}".format(self._ip, self._rpcPort)
         try:
             response = requests.post(url, headers=self._headers, data=msg)
+            response.close()
             result = json.loads(response.content.decode(encoding='utf-8'))['result']
             return result
         except Exception as e:
@@ -241,6 +250,7 @@ class GethNode():
         url = "http://{}:{}".format(self._ip, self._rpcPort)
         try:
             response = requests.post(url, headers=self._headers, data=msg)
+            response.close()
             accounts = json.loads(response.content.decode(encoding='utf-8'))['result']
             return accounts
         except Exception as e:
@@ -258,6 +268,7 @@ class GethNode():
         url = "http://{}:{}".format(self._ip, self._rpcPort)
         try:
             response = requests.post(url, headers=self._headers, data=msg)
+            response.close()
             print(response.content.decode())
             balance = json.loads(response.content.decode(encoding='utf-8'))['result']
 #            print(balance)
@@ -294,8 +305,8 @@ class GethNode():
         msg = self._msg("admin_addPeer", param)
         url = "http://{}:{}".format(self._ip, self._rpcPort)
         try:
-            r = requests.post(url, headers=self._headers, data=msg, timeout=5)
-            sleep(1)
+            r = requests.post(url, headers=self._headers, data=msg, timeout=6)
+            sleep(0.5)
             r.close()
 
             # print(response.content)
@@ -314,6 +325,7 @@ class GethNode():
         url = "http://{}:{}".format(self._ip, self._rpcPort)
         try:
             response = requests.post(url, headers=self._headers, data=msg)
+            response.close()
             result = json.loads(response.content.decode(encoding='utf-8'))
             print("node at %s:%d setNumber result: %s" % (self._ip, self._rpcPort, result["result"]))
         except Exception as e:
@@ -331,6 +343,7 @@ class GethNode():
         url = "http://{}:{}".format(self._ip, self._rpcPort)
         try:
             response = requests.post(url, headers=self._headers, data=msg)
+            response.close()
             result = json.loads(response.content.decode(encoding='utf-8'))
             print("node at %s:%d setLevel result: %s" % (self._ip, self._rpcPort, result["result"]))
         except Exception as e:
@@ -340,7 +353,7 @@ class GethNode():
         '''
         admin.setID()
         '''
-        sleep(0.5)
+        sleep(1)
         msg = self._msg("admin_setID", [ID])
         print("setID", msg) ##
         url = "http://{}:{}".format(self._ip, self._rpcPort)
@@ -351,7 +364,7 @@ class GethNode():
             print("node at %s:%d setID result: %s" % (self._ip, self._rpcPort, result["result"]))
         except Exception as e:
             print("setID", e)
-        sleep(0.3)
+        sleep(1)
 
     def startMiner(self):
         '''
