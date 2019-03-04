@@ -73,7 +73,8 @@ class GethNode():
             # print(result)
         except Exception as e:
             print(e)
-        ssh.close()
+        finally:
+            ssh.close()
 
     def _msg(self, method, params):
         '''
@@ -96,7 +97,7 @@ class GethNode():
         '''
         net.peerCount
         '''
-        sleep(0.3)
+#        sleep(0.3)
         msg = self._msg("net_peerCount", [])
         url = "http://{}:{}".format(self._ip, self._rpcPort)
         try:
@@ -110,7 +111,7 @@ class GethNode():
         '''
         admin.peers
         '''
-        sleep(0.3)
+#        sleep(0.3)
         msg = self._msg("admin_peers", [])
         url = "http://{}:{}".format(self._ip, self._rpcPort)
         try:
@@ -289,12 +290,12 @@ class GethNode():
         '''
         admin.addPeer()
         '''
-        sleep(2)
+        sleep(0.3)
         msg = self._msg("admin_addPeer", param)
         url = "http://{}:{}".format(self._ip, self._rpcPort)
         try:
             requests.post(url, headers=self._headers, data=msg)
-            sleep(2)
+            sleep(1)
             # print(response.content)
         except Exception as e:
             print("addPeer", e)
@@ -427,7 +428,8 @@ class GethNode():
             return True if result else False
         except Exception as e:
             print("stop", e)
-        ssh.close()
+        finally:
+            ssh.close()
 
 
 if __name__ == "__main__":
