@@ -16,7 +16,7 @@ def checkKeyStatus(node):
         global failCount
         failCount += 1
 
-nodeCount = 80
+nodeCount = 60
 
 IPlist = IPList('ip.txt')
 # startDockerService(IPlist)

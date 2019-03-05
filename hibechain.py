@@ -172,7 +172,7 @@ class HIBEChain():
         for chain in self._chains:
             if len(chain._id) != idLength:
 #                print("setID new level")
-                time.sleep(10)
+                time.sleep(20)
                 idLength = len(chain._id)
             chain.setID()
         self._ifSetID = True
