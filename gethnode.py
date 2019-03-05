@@ -50,10 +50,9 @@ class GethNode():
             if not err and out:
                 print('container of node %s of blockchain %s at %s:%s started' % (self._nodeindex, self._blockchainid,
                                                                                   self._ip, self._rpcPort))
-                sleep(0.3)
+#                sleep(0.3)
                 NEWACCOUNT = 'docker exec -t %s geth --datadir abc account new --password passfile' % self._name
                 si, so, se = ssh.exec_command(NEWACCOUNT)
-                sleep(0.3)
                 er = se.read().decode().strip()
                 result = so.read().decode(encoding='utf-8')
                 acc = result.split()[-1][1:-1]
@@ -127,7 +126,7 @@ class GethNode():
         '''
         personal.newAccount(password)
         '''
-        sleep(0.5)
+        sleep(0.1)
         msg = self._msg("personal_newAccount", [password]) ###
         url = "http://{}:{}".format(self._ip, self._rpcPort)
         try:
@@ -143,7 +142,7 @@ class GethNode():
         '''
         admin.keystatus()
         '''
-        sleep(0.3)
+#        sleep(0.3)
         msg = self._msg("admin_keyStatus", [])
         url = "http://{}:{}".format(self._ip, self._rpcPort)
         try:
@@ -160,7 +159,7 @@ class GethNode():
         '''
         personal.unlockAccount()
         '''
-        sleep(0.3)
+#        sleep(0.3)
         msg = self._msg("personal_unlockAccount", [account, password, duration])
         url = "http://{}:{}".format(self._ip, self._rpcPort)
         try:
@@ -245,7 +244,7 @@ class GethNode():
         '''
         eth.accounts
         '''
-        sleep(0.3)
+#        sleep(0.3)
         msg = self._msg("eth_accounts", [])
         url = "http://{}:{}".format(self._ip, self._rpcPort)
         try:
@@ -261,7 +260,7 @@ class GethNode():
         eth.getBalance()
         ipc form: docker exec -it geth-pbft8515 geth attach ipc:abc/geth.ipc --exec "eth.getBalance(eth.accounts[0])"
         '''
-        sleep(0.2)
+#        sleep(0.2)
         if not account.startswith('0x'):
             account = '0x' + account
         msg = self._msg("eth_getBalance", [account, 'latest'])
@@ -280,7 +279,7 @@ class GethNode():
         '''
         eth.getBlockTransactionCount()
         '''
-        sleep(0.1)
+#        sleep(0.1)
         msg = self._msg("eth_getBlockTransactionCountByNumber", [hex(index)])
         url = "http://{}:{}".format(self._ip, self._rpcPort)
         try:
@@ -301,12 +300,12 @@ class GethNode():
         '''
         admin.addPeer()
         '''
-        sleep(0.5)
+        sleep(0.3)
         msg = self._msg("admin_addPeer", param)
         url = "http://{}:{}".format(self._ip, self._rpcPort)
         try:
             r = requests.post(url, headers=self._headers, data=msg, timeout=6)
-            sleep(0.5)
+            sleep(0.1)
             r.close()
 
             # print(response.content)
@@ -319,7 +318,6 @@ class GethNode():
         '''
         if n < t:
             raise ValueError("nodeCount should be no less than threshold value")
-        sleep(0.4)
         msg = self._msg("admin_setNumber", [n, t])
 #        print("setNumber", msg) ##
         url = "http://{}:{}".format(self._ip, self._rpcPort)
@@ -330,6 +328,7 @@ class GethNode():
             print("node at %s:%d setNumber result: %s" % (self._ip, self._rpcPort, result["result"]))
         except Exception as e:
             print("setNumber", e)
+        sleep(0.2)
 
     def setLevel(self, level, maxLevel):
         '''
@@ -337,7 +336,7 @@ class GethNode():
         '''
         if maxLevel < level:
             raise ValueError("level should be no larger than maxLevel")
-        sleep(0.4)
+        sleep(0.3)
         msg = self._msg("admin_setLevel", [maxLevel, level])
 #        print("setLevel", msg) ##
         url = "http://{}:{}".format(self._ip, self._rpcPort)
@@ -353,7 +352,7 @@ class GethNode():
         '''
         admin.setID()
         '''
-        sleep(1)
+        sleep(0.3)
         msg = self._msg("admin_setID", [ID])
         print("setID", msg) ##
         url = "http://{}:{}".format(self._ip, self._rpcPort)
@@ -364,13 +363,13 @@ class GethNode():
             print("node at %s:%d setID result: %s" % (self._ip, self._rpcPort, result["result"]))
         except Exception as e:
             print("setID", e)
-        sleep(1)
+        sleep(0.1)
 
     def startMiner(self):
         '''
         miner.start()
         '''
-        sleep(0.2)
+#        sleep(0.2)
         msg = self._msg("miner_start", [])
 #        print("startMiner", msg) ##
         url = "http://{}:{}".format(self._ip, self._rpcPort)
@@ -386,7 +385,7 @@ class GethNode():
         '''
         miner.stop()
         '''
-        sleep(0.2)
+#        sleep(0.2)
         msg = self._msg("miner_stop", [])
 #        print("stopMiner", msg) ##
         url = "http://{}:{}".format(self._ip, self._rpcPort)
@@ -429,7 +428,7 @@ class GethNode():
         '''
         Remove the geth-pbft node container on remote server.
         '''
-        sleep(0.2)
+#        sleep(0.2)
         ssh = paramiko.SSHClient()
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         ssh.connect(hostname=self._ip, port=22, username='root', password=self._passwd)

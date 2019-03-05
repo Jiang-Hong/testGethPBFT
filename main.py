@@ -39,7 +39,6 @@ a1 = a.getNode(1)
 
 print('waiting for addPeer')
 count = 0
-time.sleep(10)
 while a1.getPeerCount() <= nodeCount-nodeCount//10:
     print(a1.getPeerCount(), '.', end='')
     count += 1
@@ -47,8 +46,8 @@ while a1.getPeerCount() <= nodeCount-nodeCount//10:
         break
     time.sleep(0.5)
 
-print('another %s seconds waiting for addPeer' % str(nodeCount//50+1))
-time.sleep(nodeCount//50+1)
+print('another %s seconds waiting for addPeer' % str(nodeCount//50+5))
+time.sleep(nodeCount//50+5)
 
 hibe.setNumber()
 hibe.setLevel()
@@ -56,15 +55,13 @@ hibe.setID()
 
 endTime = time.time()
 
-print("level 0 keystatus", a1.keyStatus())
+#print("level 0 keystatus", a1.keyStatus())
 b = hibe.getChain("0001")
 b1 = b.getNode(1)
-print("level 1 keystatus", b1.keyStatus())
+#print("level 1 keystatus", b1.keyStatus())
 c = hibe.getChain("0002")
 c1 = c.getNode(1)
-print("level 1 keystatus", c1.keyStatus())
-
-time.sleep(15)
+#print("level 1 keystatus", c1.keyStatus())
 
 threads = []
 for chain in hibe._chains[1:]:

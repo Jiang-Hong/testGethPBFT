@@ -101,6 +101,7 @@ class HIBEChain():
                 t.start()
         for t in threadlist:
             t.join()
+        time.sleep(3)
 
     def destructHIBEChain(self):
         '''
@@ -140,6 +141,7 @@ class HIBEChain():
         for t in threadlist:
             t.join()
         self._ifSetNumber = True
+        time.sleep(1)
 #        for chain in self._chains:
 #            chain.setNumber()
 
@@ -156,6 +158,7 @@ class HIBEChain():
         for t in threadlist:
             t.join()
         self._ifSetLevel = True
+        time.sleep(1)
 #        for chain in self._chains:
 #            chain.setLevel(self._maxLevel)
 
@@ -169,10 +172,11 @@ class HIBEChain():
         for chain in self._chains:
             if len(chain._id) != idLength:
 #                print("setID new level")
-                time.sleep(20)
+                time.sleep(10)
                 idLength = len(chain._id)
             chain.setID()
         self._ifSetID = True
+        time.sleep(10)
 
 
 if __name__ == "__main__":

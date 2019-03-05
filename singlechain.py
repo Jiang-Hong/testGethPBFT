@@ -82,7 +82,7 @@ class SingleChain():
                     CMD = 'docker cp %s %s:/root/%s' % (self._cfgFile, node._name, self._cfgFile)
                     result = execCommand(CMD, serverIP)
 #                    print(result)
-                    sleep(0.3)
+                    sleep(0.2)
 
 #                    INIT = 'docker exec -t %s geth --datadir abc init %s' % (node._name, self._cfgFile)
 #                    result = execCommand(INIT, serverIP)
@@ -107,7 +107,7 @@ class SingleChain():
                     CMD = 'docker cp %s %s:/root/%s' % (self._cfgFile, node._name, self._cfgFile)
                     result = execCommand(CMD, serverIP)
 #                    print(result)
-                    sleep(0.3)
+                    sleep(0.2)
 
     def gethInit(self):
         '''
@@ -120,7 +120,7 @@ class SingleChain():
                 if node._ip == serverIP:
                     INIT = 'docker exec -t %s geth --datadir abc init %s' % (node._name, self._cfgFile)
                     result = execCommand(INIT, serverIP)
-                    sleep(0.5)
+                    sleep(0.3)
 
     def runGethNodes(self):
 #        print('run geth nodes:')
@@ -147,13 +147,13 @@ class SingleChain():
             url = "http://{}:{}".format(node._ip, node._rpcPort)
             try:
                 response = requests.post(url, headers=node._headers, data=msg)
+                response.close()
                 enode = json.loads(response.content.decode(encoding='utf-8'))['result']['enode'].split('@')[0]
                 node.Enode = '{}@{}:{}'.format(enode, node._ip, node._listenerPort)
 #                print(node.Enode)
             except Exception as e:
                 print("getEnode", e)
-
-            sleep(0.6)
+            sleep(0.3)
 
     def getID(self):
         '''
@@ -190,11 +190,12 @@ class SingleChain():
 #            threadlist.append(t)
 #        for t in threadlist:
 #            t.join()
-        sleep(0.5)
+
         for i in range(len(self._nodes)):
             for j in range(len(self._nodes)):
                 tmpEnode = self._nodes[j].getEnode()
                 self._nodes[i].addPeer(tmpEnode, 0)
+#        sleep(0.5)
 
 
     def destructChain(self):
@@ -213,22 +214,19 @@ class SingleChain():
         '''
         Connect to a lower single chain.
         '''
-        sleep(0.5)
-        threads = []
+#        sleep(0.5)
+#        threads = []
         for node in self._nodes:
             for other in otherChain._nodes:
-                t = threading.Thread(target=node.addPeer, args=(other.Enode, 1))
-                t.start()
-                threads.append(t)
-#                ep = other.Enode
-#                node.addPeer(ep, 1)
-        for t in threads:
-            t.join()
-        sleep(1)
-#        p1 = self.getPrimer()
-#        p2 = otherChain.getPrimer()
-#        ep2 = p2.Enode
-#        p1.addPeer(ep2, 1)
+#                t = threading.Thread(target=node.addPeer, args=(other.Enode, 1))
+#                t.start()
+#                threads.append(t)
+                ep = other.Enode
+                node.addPeer(ep, 1)
+#        for t in threads:
+#            t.join()
+#        sleep(1)
+
 
     def connectUpperChain(self, otherChain):
         '''
