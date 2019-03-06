@@ -96,7 +96,7 @@ class GethNode():
         '''
         net.peerCount
         '''
-#        sleep(0.3)
+        sleep(0.3)
         msg = self._msg("net_peerCount", [])
         url = "http://{}:{}".format(self._ip, self._rpcPort)
         try:
@@ -142,13 +142,13 @@ class GethNode():
         '''
         admin.keystatus()
         '''
-#        sleep(0.3)
+        sleep(0.3)
         msg = self._msg("admin_keyStatus", [])
         url = "http://{}:{}".format(self._ip, self._rpcPort)
         try:
             response = requests.post(url, headers=self._headers, data=msg)
             response.close()
-            print(response.content.decode())
+#            print(response.content.decode())
             status = json.loads(response.content.decode(encoding='utf-8'))['result']
             return status
         except Exception as e:
@@ -221,7 +221,7 @@ class GethNode():
             response = requests.post(url, headers=self._headers, data=msg)
             response.close()
             result = json.loads(response.content.decode(encoding='utf-8'))
-#            print(result)
+            print(result)
             return result['result']
         except Exception as e:
             print("testSendTransaction2", e)
@@ -300,17 +300,17 @@ class GethNode():
         '''
         admin.addPeer()
         '''
-        sleep(0.3)
+        sleep(1)
         msg = self._msg("admin_addPeer", param)
         url = "http://{}:{}".format(self._ip, self._rpcPort)
         try:
-            r = requests.post(url, headers=self._headers, data=msg, timeout=6)
-            sleep(0.1)
+            r = requests.post(url, headers=self._headers, data=msg, timeout=10)
+#            sleep(0.1)
             r.close()
 
             # print(response.content)
-        except Exception as e:
-            print("addPeer", e)
+        except requests.exceptions.Timeout:
+            print("-----------addPeer Timeout occurred--------------------")
 
     def setNumber(self, n, t):
         '''
@@ -321,6 +321,7 @@ class GethNode():
         msg = self._msg("admin_setNumber", [n, t])
 #        print("setNumber", msg) ##
         url = "http://{}:{}".format(self._ip, self._rpcPort)
+        sleep(0.1)
         try:
             response = requests.post(url, headers=self._headers, data=msg)
             response.close()
@@ -336,7 +337,7 @@ class GethNode():
         '''
         if maxLevel < level:
             raise ValueError("level should be no larger than maxLevel")
-        sleep(0.3)
+        sleep(0.2)
         msg = self._msg("admin_setLevel", [maxLevel, level])
 #        print("setLevel", msg) ##
         url = "http://{}:{}".format(self._ip, self._rpcPort)
@@ -347,6 +348,7 @@ class GethNode():
             print("node at %s:%d setLevel result: %s" % (self._ip, self._rpcPort, result["result"]))
         except Exception as e:
             print("setLevel", e)
+        sleep(0.1)
 
     def setID(self, ID):
         '''
@@ -375,8 +377,9 @@ class GethNode():
         url = "http://{}:{}".format(self._ip, self._rpcPort)
         try:
             response = requests.post(url, headers=self._headers, data=msg)
+            response.close()
             result = json.loads(response.content.decode(encoding='utf-8'))
-            print(result)
+#            print(result)
             print("miner at %s:%d start result: %s" % (self._ip, self._rpcPort, result["result"]))
         except Exception as e:
             print("start miner", e)
@@ -391,8 +394,9 @@ class GethNode():
         url = "http://{}:{}".format(self._ip, self._rpcPort)
         try:
             response = requests.post(url, headers=self._headers, data=msg)
+            response.close()
             result = json.loads(response.content.decode(encoding='utf-8'))
-            print(result)
+#            print(result)
             print("miner at %s:%d stop result: %s" % (self._ip, self._rpcPort, result["result"]))
         except Exception as e:
             print("stop miner", e)

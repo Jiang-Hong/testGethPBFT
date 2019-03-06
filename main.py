@@ -7,6 +7,8 @@ import time
 import threading
 from gethnode import stopAll, execCommand
 
+threading.stack_size(10*1024*1024)
+
 failCount = 0
 
 def checkKeyStatus(node):
@@ -16,7 +18,7 @@ def checkKeyStatus(node):
         global failCount
         failCount += 1
 
-nodeCount = 60
+nodeCount = 100
 
 IPlist = IPList('ip.txt')
 # startDockerService(IPlist)
@@ -34,20 +36,22 @@ startTime = time.time()
 hibe = HIBEChain(IDList, threshList, IPlist)
 hibe.constructHIBEChain()
 
+connectionTime = time.time()
+
 a = hibe.getChain("")
 a1 = a.getNode(1)
 
-print('waiting for addPeer')
-count = 0
-while a1.getPeerCount() <= nodeCount-nodeCount//10:
-    print(a1.getPeerCount(), '.', end='')
-    count += 1
-    if count >= 20:
-        break
-    time.sleep(0.5)
+#print('waiting for addPeer')
+#count = 0
+#while a1.getPeerCount() <= nodeCount-nodeCount//10:
+#    print(a1.getPeerCount(), '.', end='')
+#    count += 1
+#    if count >= 20:
+#        break
+#    time.sleep(0.5)
 
-print('another %s seconds waiting for addPeer' % str(nodeCount//50+5))
-time.sleep(nodeCount//50+5)
+print('another %s seconds waiting for addPeer' % str(nodeCount//50+3))
+time.sleep(nodeCount//50+3)
 
 hibe.setNumber()
 hibe.setLevel()
@@ -82,8 +86,14 @@ for chain in hibe._chains[1:]:
 for t in threads:
     t.join()
 
+threads = []
 for rootNode in a._nodes:
-    rootNode.startMiner()
+    t = threading.Thread(target=rootNode.startMiner, args=())
+#    rootNode.startMiner()
+    t.start()
+    threads.append(t)
+for t in threads:
+    t.join()
 
 #threadList = []
 #for chainID in IDList[1:]:
@@ -96,8 +106,11 @@ for rootNode in a._nodes:
 #for t in threadList:
 #    t.join()
 
-print("elapsed time:", endTime - startTime)
+print("----------------------------------------------------------------")
+print("connection time", connectionTime - startTime)
+print("total elapsed time:", endTime - startTime)
 print("failCount", failCount)
+print("----------------------------------------------------------------")
 
 #a1.getBlockTransactionCount(1)
 

@@ -77,17 +77,24 @@ class SingleChain():
         for serverIP in self._ips:
             subprocess.run(['./sendFile.sh', self._cfgFile, serverIP], stdout=subprocess.PIPE)
             sleep(0.5)
+            threads = []
             for node in self._nodes:
                 if node._ip == serverIP:
                     CMD = 'docker cp %s %s:/root/%s' % (self._cfgFile, node._name, self._cfgFile)
-                    result = execCommand(CMD, serverIP)
+                    t = threading.Thread(target=execCommand, args=(CMD, serverIP))
+                    t.start()
+                    threads.append(t)
+#                    result = execCommand(CMD, serverIP)
 #                    print(result)
-                    sleep(0.2)
+
 
 #                    INIT = 'docker exec -t %s geth --datadir abc init %s' % (node._name, self._cfgFile)
 #                    result = execCommand(INIT, serverIP)
 ##                    print(result)
 #                    sleep(0.5)
+            for t in threads:
+                t.join()
+            sleep(0.5)
 
     def TerminalConfig(self):
         '''
@@ -120,10 +127,23 @@ class SingleChain():
                 if node._ip == serverIP:
                     INIT = 'docker exec -t %s geth --datadir abc init %s' % (node._name, self._cfgFile)
                     result = execCommand(INIT, serverIP)
-                    sleep(0.3)
+        sleep(0.3)
+
+    def setEnode(self, node):
+        msg = node._msg("admin_nodeInfo", [])
+        url = "http://{}:{}".format(node._ip, node._rpcPort)
+        try:
+            response = requests.post(url, headers=node._headers, data=msg)
+            response.close()
+            enode = json.loads(response.content.decode(encoding='utf-8'))['result']['enode'].split('@')[0]
+            node.Enode = '{}@{}:{}'.format(enode, node._ip, node._listenerPort)
+#            print(node.Enode)
+        except Exception as e:
+            print("setEnode", e)
 
     def runGethNodes(self):
 #        print('run geth nodes:')
+        threads = []
         for node in self._nodes:
 #            RUN = ('geth --datadir abc --cache 512 --port 30303 --rpcport 8545 --rpcapi admin,eth,miner,web3,net,personal --rpc --rpcaddr \"0.0.0.0\" '
 #                   '--pbftid %d --nodeindex %d --blockchainid %d --unlock %s --password '
@@ -138,22 +158,26 @@ class SingleChain():
                                                                   node._blockchainid, node._accounts[0])
             CMD = 'docker exec -td %s %s' % (node._name, RUN)
             print(RUN)
-            result = execCommand(CMD, node._ip)
-            if result:
-                print('run node', result)
 
-            sleep(2)
-            msg = node._msg("admin_nodeInfo", [])
-            url = "http://{}:{}".format(node._ip, node._rpcPort)
-            try:
-                response = requests.post(url, headers=node._headers, data=msg)
-                response.close()
-                enode = json.loads(response.content.decode(encoding='utf-8'))['result']['enode'].split('@')[0]
-                node.Enode = '{}@{}:{}'.format(enode, node._ip, node._listenerPort)
-#                print(node.Enode)
-            except Exception as e:
-                print("getEnode", e)
-            sleep(0.3)
+            t = threading.Thread(target=execCommand, args=(CMD, node._ip))
+            t.start()
+            threads.append(t)
+        for t in threads:
+            t.join()
+        sleep(4)
+#            result = execCommand(CMD, node._ip)
+#            if result:
+#                print('run node', result)
+#            sleep(4)
+
+        threads = []
+        for node in self._nodes:
+            t = threading.Thread(target=self.setEnode, args=(node,))
+            t.start()
+            threads.append(t)
+        for t in threads:
+            t.join()
+        sleep(0.3)
 
     def getID(self):
         '''
@@ -195,7 +219,7 @@ class SingleChain():
             for j in range(len(self._nodes)):
                 tmpEnode = self._nodes[j].getEnode()
                 self._nodes[i].addPeer(tmpEnode, 0)
-#        sleep(0.5)
+        sleep(0.5)
 
 
     def destructChain(self):

@@ -171,8 +171,15 @@ def stopAllContainers(IPlist):
         t.join()
 
 def rebootServer(IPlist):
+    threads = []
     for ip in IPlist._ips:
-        execCommand('reboot', ip._ip)
+        print("reboot server %s" % ip._ip)
+        t = threading.Thread(target=execCommand, args=('reboot', ip._ip))
+        t.start()
+        threads.append(t)
+#        execCommand('reboot', ip._ip)
+    for t in threads:
+        t.join()
 
 if __name__ == "__main__":
     f = IPList('ip.txt')

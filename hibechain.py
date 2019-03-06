@@ -85,6 +85,8 @@ class HIBEChain():
         for t in threads:
             t.join()
 
+        time.sleep(2)
+
     def constructHIBEChain(self):
         '''
         Construct the hierarchical construction of the HIBEChain.
