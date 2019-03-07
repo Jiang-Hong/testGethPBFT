@@ -131,6 +131,7 @@ class SingleChain():
 
     def setEnode(self, node):
         msg = node._msg("admin_nodeInfo", [])
+        sleep(0.3)
         url = "http://{}:{}".format(node._ip, node._rpcPort)
         try:
             response = requests.post(url, headers=node._headers, data=msg)
@@ -160,7 +161,7 @@ class SingleChain():
             CMD = 'docker exec -td %s %s' % (node._name, RUN)
             print(RUN)
             count += 1
-            if count == 5:
+            if count == 10:
                 sleep(0.5)
                 print("-----------------------geth in a chain---------------------")
                 count = 0
@@ -169,7 +170,7 @@ class SingleChain():
             threads.append(t)
         for t in threads:
             t.join()
-        sleep(4)
+        sleep(10)
 #            result = execCommand(CMD, node._ip)
 #            if result:
 #                print('run node', result)

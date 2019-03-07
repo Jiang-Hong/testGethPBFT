@@ -7,7 +7,7 @@ import time
 import threading
 from gethnode import stopAll, execCommand
 
-threading.stack_size(100*1024*1024)
+#threading.stack_size(100*1024*1024)
 
 failCount = 0
 
@@ -18,7 +18,7 @@ def checkKeyStatus(node):
         global failCount
         failCount += 1
 
-nodeCount = 160
+nodeCount = 200
 
 IPlist = IPList('ip.txt')
 # startDockerService(IPlist)
@@ -106,11 +106,13 @@ for t in threads:
 #    threadList.append(t)
 #for t in threadList:
 #    t.join()
-time.sleep(30)
+time.sleep(20)
 for chain in hibe._chains:
     for node in chain._nodes:
-        print(node.getPeerCount())
+        print(node.getPeerCount(), end=" ")
 
+for i in range(1, 20):
+    print(a1.getBlockTransactionCount(i))
 
 print("----------------------------------------------------------------")
 print("node count", nodeCount)

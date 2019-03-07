@@ -55,8 +55,8 @@ class HIBEChain():
             if not chain._isTerminal:
                 t = threading.Thread(target=chain.ConsensusChainConfig, args=())
             else:
-                if count == 5:
-                    time.sleep(0.5)
+                if count >= 5:
+                    time.sleep(0.8)
                     print("config terminal wait here.................................................")
                     count = 0
 #                print(chain._id, "-------------terminal")
@@ -109,7 +109,7 @@ class HIBEChain():
         for chain in self._chains[::-1]:
             count += 1
             if count == 5:
-                time.sleep(0.5)
+                time.sleep(0.8)
                 count = 0
                 print("construct HIBEChain wait here.................................................")
             if chain.getID() != '':
@@ -207,15 +207,21 @@ class HIBEChain():
 #        print("--------------------------------------------")
 
         threads = []
+        count = 0
         for level in chains:
             for chain in level:
+                count += 1
+                if count == 10:
+                    time.sleep(1)
                 t = threading.Thread(target=chain.setID, args=())
                 t.start()
                 threads.append(t)
             for t in threads:
                 t.join()
+            print("-----waiting for setID---------")
             time.sleep(15)
         self._ifSetID = True
+        print("------setID lalala----------------")
 
 
 if __name__ == "__main__":
