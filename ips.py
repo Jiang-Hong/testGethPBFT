@@ -193,3 +193,4 @@ if __name__ == "__main__":
     ips = f.getIPs()
     for i in range(10):
         print(f.getNewPort())
+    startDockerService(f)
