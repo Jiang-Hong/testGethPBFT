@@ -7,18 +7,18 @@ import time
 import threading
 from gethnode import stopAll, execCommand
 
-threading.stack_size(10*1024*1024)
+threading.stack_size(100*1024*1024)
 
 failCount = 0
 
 def checkKeyStatus(node):
-    if node.keyStatus() is False:
+    if node.keyStatus() is not True:
         print("keyStatus of node at %s:%s is False" % (node._ip, node._listenerPort))
         print("node peer count is %s" % node.getPeerCount())
         global failCount
         failCount += 1
 
-nodeCount = 100
+nodeCount = 160
 
 IPlist = IPList('ip.txt')
 # startDockerService(IPlist)
@@ -50,8 +50,9 @@ a1 = a.getNode(1)
 #        break
 #    time.sleep(0.5)
 
-print('another %s seconds waiting for addPeer' % str(nodeCount//50+3))
-time.sleep(nodeCount//50+3)
+print('another %s seconds waiting for addPeer' % str(nodeCount//50+10))
+time.sleep(nodeCount//50+10)
+print('peer count of a1----', a1.getPeerCount())
 
 hibe.setNumber()
 hibe.setLevel()
@@ -63,8 +64,8 @@ endTime = time.time()
 b = hibe.getChain("0001")
 b1 = b.getNode(1)
 #print("level 1 keystatus", b1.keyStatus())
-c = hibe.getChain("0002")
-c1 = c.getNode(1)
+#c = hibe.getChain("0002")
+#c1 = c.getNode(1)
 #print("level 1 keystatus", c1.keyStatus())
 
 threads = []
@@ -105,12 +106,19 @@ for t in threads:
 #    threadList.append(t)
 #for t in threadList:
 #    t.join()
+time.sleep(30)
+for chain in hibe._chains:
+    for node in chain._nodes:
+        print(node.getPeerCount())
+
 
 print("----------------------------------------------------------------")
+print("node count", nodeCount)
 print("connection time", connectionTime - startTime)
 print("total elapsed time:", endTime - startTime)
 print("failCount", failCount)
 print("----------------------------------------------------------------")
+print(time.ctime())
 
 #a1.getBlockTransactionCount(1)
 

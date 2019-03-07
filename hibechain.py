@@ -49,10 +49,16 @@ class HIBEChain():
             t.join()
 
         threads = []
+        count = 0
         for chain in self._chains:
+            count += 1
             if not chain._isTerminal:
                 t = threading.Thread(target=chain.ConsensusChainConfig, args=())
             else:
+                if count == 5:
+                    time.sleep(0.5)
+                    print("config terminal wait here.................................................")
+                    count = 0
 #                print(chain._id, "-------------terminal")
                 t = threading.Thread(target=chain.TerminalConfig, args=())
             t.start()
@@ -76,7 +82,13 @@ class HIBEChain():
 #            t.join()
 
         threads = []
+        count = 0
         for chain in self._chains:
+            count += 1
+            if count == 5:
+                time.sleep(0.5)
+                print("-----geth starting--------------------------")
+                count = 0
             t = threading.Thread(target=chain.runNodes, args=())
             t.start()
             threads.append(t)
@@ -93,7 +105,13 @@ class HIBEChain():
         Connect blockchain nodes with their parent blockchain nodes.
         '''
         threadlist = []
+        count = 0
         for chain in self._chains[::-1]:
+            count += 1
+            if count == 5:
+                time.sleep(0.5)
+                count = 0
+                print("construct HIBEChain wait here.................................................")
             if chain.getID() != '':
                 parentChain = self._chains[self._IDList.index(chain.getID()[:-4])]
 #                parentChain.connectLowerChain(chain)

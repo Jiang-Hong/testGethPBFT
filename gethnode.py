@@ -304,13 +304,13 @@ class GethNode():
         msg = self._msg("admin_addPeer", param)
         url = "http://{}:{}".format(self._ip, self._rpcPort)
         try:
-            r = requests.post(url, headers=self._headers, data=msg, timeout=10)
+            r = requests.post(url, headers=self._headers, data=msg, timeout=30)
 #            sleep(0.1)
             r.close()
 
             # print(response.content)
         except requests.exceptions.Timeout:
-            print("-----------addPeer Timeout occurred--------------------")
+            print("-----------addPeer Timeout occurred %s--------------------" % self._ip)
 
     def setNumber(self, n, t):
         '''

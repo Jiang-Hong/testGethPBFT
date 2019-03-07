@@ -4,6 +4,7 @@
 import paramiko
 import threading
 import time
+import subprocess
 
 
 class IP():
@@ -136,6 +137,12 @@ def startDockerService(IPList):
     '''
     startTime = time.time()
     CMD = 'systemctl start docker'
+
+    for ip in IPList._ips:
+        myCMD = ['ssh-keyscan'] + [ip._ip]
+        with open('/home/rkd/.ssh/known_hosts', 'a') as outfile:
+            subprocess.run(myCMD, stdout=outfile)
+
     threads = []
     for ip in IPList._ips:
         print("%s at %s" % (CMD, ip))

@@ -144,6 +144,7 @@ class SingleChain():
     def runGethNodes(self):
 #        print('run geth nodes:')
         threads = []
+        count = 0
         for node in self._nodes:
 #            RUN = ('geth --datadir abc --cache 512 --port 30303 --rpcport 8545 --rpcapi admin,eth,miner,web3,net,personal --rpc --rpcaddr \"0.0.0.0\" '
 #                   '--pbftid %d --nodeindex %d --blockchainid %d --unlock %s --password '
@@ -158,7 +159,11 @@ class SingleChain():
                                                                   node._blockchainid, node._accounts[0])
             CMD = 'docker exec -td %s %s' % (node._name, RUN)
             print(RUN)
-
+            count += 1
+            if count == 5:
+                sleep(0.5)
+                print("-----------------------geth in a chain---------------------")
+                count = 0
             t = threading.Thread(target=execCommand, args=(CMD, node._ip))
             t.start()
             threads.append(t)
@@ -249,7 +254,6 @@ class SingleChain():
                 node.addPeer(ep, 1)
 #        for t in threads:
 #            t.join()
-#        sleep(1)
 
 
     def connectUpperChain(self, otherChain):
