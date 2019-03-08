@@ -170,7 +170,11 @@ class SingleChain():
             threads.append(t)
         for t in threads:
             t.join()
-        sleep(10)
+        print('node starting...')
+        for i in range(10):
+            print('.', end='')
+            sleep(1)
+
 #            result = execCommand(CMD, node._ip)
 #            if result:
 #                print('run node', result)
@@ -223,6 +227,7 @@ class SingleChain():
 
         for i in range(len(self._nodes)):
             for j in range(len(self._nodes)):
+                print("constructing single chain")
                 tmpEnode = self._nodes[j].getEnode()
                 self._nodes[i].addPeer(tmpEnode, 0)
         sleep(0.5)
@@ -251,8 +256,10 @@ class SingleChain():
 #                t = threading.Thread(target=node.addPeer, args=(other.Enode, 1))
 #                t.start()
 #                threads.append(t)
-                ep = other.Enode
-                node.addPeer(ep, 1)
+#                ep = other.Enode
+#                node.addPeer(ep, 1)
+                ep = node.Enode
+                other.addPeer(ep, 2)
 #        for t in threads:
 #            t.join()
 

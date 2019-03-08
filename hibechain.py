@@ -65,7 +65,9 @@ class HIBEChain():
             threads.append(t)
 
         for t in threads:
+            print('...', end='')
             t.join()
+        print("................config terminal finished")
 
 
 #            if not tmp._isTerminal:
@@ -170,8 +172,13 @@ class HIBEChain():
         set level value for all the chains in HIBEChain.
         '''
         threadlist = []
+        count = 0
         for chain in self._chains:
             # chain.setLevel(self._maxLevel)
+            count += 1
+            if count == 10:
+                count = 0
+                time.sleep(0.8)
             t = threading.Thread(target=chain.setLevel,args=(self._maxLevel,))
             t.start()
             threadlist.append(t)

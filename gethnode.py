@@ -53,6 +53,7 @@ class GethNode():
 #                sleep(0.3)
                 NEWACCOUNT = 'docker exec -t %s geth --datadir abc account new --password passfile' % self._name
                 si, so, se = ssh.exec_command(NEWACCOUNT)
+                sleep(1)
                 er = se.read().decode().strip()
                 result = so.read().decode(encoding='utf-8')
                 acc = result.split()[-1][1:-1]

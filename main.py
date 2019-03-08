@@ -18,7 +18,7 @@ def checkKeyStatus(node):
         global failCount
         failCount += 1
 
-nodeCount = 200
+nodeCount = 250
 
 IPlist = IPList('ip.txt')
 # startDockerService(IPlist)
@@ -69,7 +69,12 @@ b1 = b.getNode(1)
 #print("level 1 keystatus", c1.keyStatus())
 
 threads = []
+count = 0
 for chain in hibe._chains[1:]:
+    count += 1
+    if count == 10:
+        time.sleep(0.8)
+        count = 0
     tmpNode = chain.getNode(1)
     t = threading.Thread(target=tmpNode.testSendTransaction, args=("0001", 1, "0x1", 3, 100))
     t.start()
@@ -107,9 +112,14 @@ for t in threads:
 #for t in threadList:
 #    t.join()
 time.sleep(20)
+count = 0
 for chain in hibe._chains:
     for node in chain._nodes:
         print(node.getPeerCount(), end=" ")
+        count += 1
+    if count >= 50:
+        break
+
 
 for i in range(1, 20):
     print(a1.getBlockTransactionCount(i))
