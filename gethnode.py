@@ -143,7 +143,7 @@ class GethNode():
         '''
         admin.keystatus()
         '''
-        sleep(0.3)
+        sleep(0.1)
         msg = self._msg("admin_keyStatus", [])
         url = "http://{}:{}".format(self._ip, self._rpcPort)
         try:
@@ -349,7 +349,7 @@ class GethNode():
             print("node at %s:%d setLevel result: %s" % (self._ip, self._rpcPort, result["result"]))
         except Exception as e:
             print("setLevel", e)
-        sleep(0.1)
+        sleep(0.2)
 
     def setID(self, ID):
         '''
@@ -366,6 +366,23 @@ class GethNode():
             print("node at %s:%d setID result: %s" % (self._ip, self._rpcPort, result["result"]))
         except Exception as e:
             print("setID", e)
+        sleep(0.1)
+
+    def txpoolStatus(self):
+        '''
+        txpool.status
+        '''
+        sleep(0.1)
+        msg = self._msg("txpool_status", [])
+#        print("txpool.status", msg)
+        url = "http://{}:{}".format(self._ip, self._rpcPort)
+        try:
+            response = requests.post(url, headers=self._headers, data=msg)
+            response.close()
+            result = json.loads(response.content.decode(encoding='utf-8'))
+            print("txpool.status pending:%d, queued:%d" % (int(result["result"]['pending'], 16), int(result["result"]['queued'], 16)))
+        except Exception as e:
+            print("txpool.status", e)
         sleep(0.1)
 
     def startMiner(self):

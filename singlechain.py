@@ -154,7 +154,7 @@ class SingleChain():
 #            print(RUN)
 #            CMD = 'docker exec -t %s sh -c %s' % (node._name, RUN)
 #            print(CMD)
-            RUN = ('geth --datadir abc --cache 512 --port 30303 --rpcport 8545 --rpcapi admin,eth,miner,web3,net,personal --rpc --rpcaddr \"0.0.0.0\" '
+            RUN = ('geth --datadir abc --cache 512 --port 30303 --rpcport 8545 --rpcapi admin,eth,miner,web3,net,personal,txpool --rpc --rpcaddr \"0.0.0.0\" '
                    '--pbftid %d --nodeindex %d --blockchainid %d --unlock %s --password '
                    '\"passfile\" --maxpeers 5000 --syncmode \"full\" --nodiscover') % (node._pbftid, node._nodeindex,
                                                                   node._blockchainid, node._accounts[0])

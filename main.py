@@ -65,32 +65,49 @@ b = hibe.getChain("0001")
 b1 = b.getNode(1)
 #print("level 1 keystatus", b1.keyStatus())
 #c = hibe.getChain("0002")
-#c1 = c.getNode(1)
+#c1 = c.getNode(1)z
 #print("level 1 keystatus", c1.keyStatus())
+
 
 threads = []
 count = 0
 for chain in hibe._chains[1:]:
-    count += 1
-    if count == 10:
-        time.sleep(0.8)
-        count = 0
-    tmpNode = chain.getNode(1)
-    t = threading.Thread(target=tmpNode.testSendTransaction, args=("0001", 1, "0x1", 3, 100))
-    t.start()
-    threads.append(t)
-for t in threads:
-    t.join()
-
-threads = []
-for chain in hibe._chains[1:]:
     for node in chain._nodes:
+        count += 1
+        if count == 5:
+            time.sleep(0.5)
+            count = 0
         t = threading.Thread(target=checkKeyStatus, args=(node,))
         t.start()
         threads.append(t)
 #        print(node.getPeerCount())
 for t in threads:
     t.join()
+
+
+
+#threads = []
+#count = 0
+#for chain in hibe._chains[1:]:
+#    print("chain id", chain._id)
+#    count += 1
+#    if count == 8:
+#        time.sleep(1)
+#        count = 0
+#    tmpNode = chain.getNode(1)
+#    t = threading.Thread(target=tmpNode.testSendTransaction, args=("0001", 1, "0x1", 3, 100))
+#    t.start()
+#    threads.append(t)
+#for t in threads:
+#    t.join()
+for chain in hibe._chains[1:]:
+    print("chain id", chain._id)
+    tmpNode = chain.getNode(1)
+    tmpNode.testSendTransaction("0001", 1, "0x1", 0.5, 100)
+
+
+time.sleep(3)
+a1.txpoolStatus()
 
 threads = []
 for rootNode in a._nodes:
@@ -117,7 +134,7 @@ for chain in hibe._chains:
     for node in chain._nodes:
         print(node.getPeerCount(), end=" ")
         count += 1
-    if count >= 50:
+    if count >= 20:
         break
 
 

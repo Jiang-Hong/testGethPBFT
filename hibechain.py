@@ -26,6 +26,7 @@ class HIBEChain():
         self._ifSetID = False
 
         threadlist = []
+        count = 0
         for index, name in enumerate(IDList):
             level = len(name) // 4
             if name:
@@ -41,6 +42,10 @@ class HIBEChain():
 
 #            tmp.SinglechainStart()
             self._chains.append(tmp)
+            count += 1
+            if count == 5:
+                time.sleep(1)
+                count = 0
             t = threading.Thread(target=tmp.SinglechainStart, args=())
             t.start()
             threadlist.append(t)
@@ -178,11 +183,13 @@ class HIBEChain():
             count += 1
             if count == 10:
                 count = 0
-                time.sleep(0.8)
+                time.sleep(1)
             t = threading.Thread(target=chain.setLevel,args=(self._maxLevel,))
             t.start()
             threadlist.append(t)
+        print('waiting for set level')
         for t in threadlist:
+            print('...', end='')
             t.join()
         self._ifSetLevel = True
         time.sleep(1)
@@ -218,7 +225,7 @@ class HIBEChain():
         for level in chains:
             for chain in level:
                 count += 1
-                if count == 10:
+                if count == 5:
                     time.sleep(1)
                 t = threading.Thread(target=chain.setID, args=())
                 t.start()
