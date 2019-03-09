@@ -251,6 +251,7 @@ class SingleChain():
         '''
 #        sleep(0.5)
 #        threads = []
+        sleep(0.5)
         for node in self._nodes:
             for other in otherChain._nodes:
 #                t = threading.Thread(target=node.addPeer, args=(other.Enode, 1))
@@ -262,6 +263,7 @@ class SingleChain():
                 other.addPeer(ep, 2)
 #        for t in threads:
 #            t.join()
+        sleep(1)
 
 
     def connectUpperChain(self, otherChain):

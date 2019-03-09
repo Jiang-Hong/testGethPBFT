@@ -45,6 +45,7 @@ class GethNode():
         ssh.connect(hostname=self._ip, port=22, username='root', password=self._passwd)
         try:
             stdin, stdout, stderr = ssh.exec_command(RUN_DOCKER)
+            sleep(1)
             err = stderr.read().decode().strip()
             out = stdout.read().decode().strip()
             if not err and out:
@@ -301,14 +302,13 @@ class GethNode():
         '''
         admin.addPeer()
         '''
-        sleep(1)
+        sleep(0.5)
         msg = self._msg("admin_addPeer", param)
         url = "http://{}:{}".format(self._ip, self._rpcPort)
         try:
             r = requests.post(url, headers=self._headers, data=msg, timeout=30)
 #            sleep(0.1)
             r.close()
-
             # print(response.content)
         except requests.exceptions.Timeout:
             print("-----------addPeer Timeout occurred %s--------------------" % self._ip)

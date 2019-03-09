@@ -160,7 +160,12 @@ class HIBEChain():
         set (n, t) value for all the chains in HIBEChain.
         '''
         threadlist = []
+        count = 0
         for chain in self._chains:
+            count += 1
+            if count == 10:
+                time.sleep(0.8)
+                count = 0
             t = threading.Thread(target = chain.setNumber,args = ())
             t.start()
             threadlist.append(t)
