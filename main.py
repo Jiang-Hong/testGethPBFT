@@ -18,17 +18,23 @@ def checkKeyStatus(node):
         global failCount
         failCount += 1
 
-nodeCount = 300
-
 IPlist = IPList('ip.txt')
 # startDockerService(IPlist)
 IDList = [""]
 threshList = [(4, 3)]
-for i in range(1, nodeCount-3):
-    index = str(i)
-    tmpID = '0' * (4-len(index)) + index
-    IDList.append(tmpID)
-    threshList.append((1,1))
+#idForLevel1 = ["0001", "0002"]
+#threshForLevel1 = [(4,3), (4,3)]
+#idForLevel2 = ["00010001", "00010002", "00020001", "00020002"]
+#threshForLevel2 = [(4,3), (4,3), (4,3), (4,3)]
+#IDList += idForLevel1 + idForLevel2
+#threshList += threshForLevel1 + threshForLevel2
+
+nodeCount = 5
+#for i in range(1, nodeCount-3):
+#    index = str(i)
+#    tmpID = '0' * (4-len(index)) + index
+#    IDList.append(tmpID)
+#    threshList.append((1,1))
 
 #IDList = ["", "0001", "0002", "0003", "0004", "0005", "0006", "0007", "0008"]
 #threshList = [(4,3), (1, 1), (1, 1), (1, 1), (1, 1), (1, 1), (1, 1), (1, 1), (1, 1)]
@@ -37,6 +43,7 @@ hibe = HIBEChain(IDList, threshList, IPlist)
 hibe.constructHIBEChain()
 
 connectionTime = time.time()
+
 
 a = hibe.getChain("")
 a1 = a.getNode(1)
@@ -129,7 +136,8 @@ for t in threads:
 #    threadList.append(t)
 #for t in threadList:
 #    t.join()
-time.sleep(20)
+
+time.sleep(10)
 count = 0
 for chain in hibe._chains:
     for node in chain._nodes:
@@ -149,6 +157,7 @@ print("total elapsed time:", endTime - startTime)
 print("failCount", failCount)
 print("----------------------------------------------------------------")
 print(time.ctime())
+
 
 #a1.getBlockTransactionCount(1)
 

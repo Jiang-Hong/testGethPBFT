@@ -162,7 +162,7 @@ class SingleChain():
             print(RUN)
             count += 1
             if count == 10:
-                sleep(0.5)
+                sleep(0.3)
                 print("-----------------------geth in a chain---------------------")
                 count = 0
             t = threading.Thread(target=execCommand, args=(CMD, node._ip))

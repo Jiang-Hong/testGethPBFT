@@ -44,7 +44,7 @@ class HIBEChain():
             self._chains.append(tmp)
             count += 1
             if count == 5:
-                time.sleep(1)
+                time.sleep(0.8)
                 count = 0
             t = threading.Thread(target=tmp.SinglechainStart, args=())
             t.start()
@@ -62,7 +62,7 @@ class HIBEChain():
             else:
                 if count >= 5:
                     time.sleep(0.8)
-                    print("config terminal wait here.................................................")
+                    print("config terminal.................................................")
                     count = 0
 #                print(chain._id, "-------------terminal")
                 t = threading.Thread(target=chain.TerminalConfig, args=())
@@ -164,7 +164,7 @@ class HIBEChain():
         for chain in self._chains:
             count += 1
             if count == 10:
-                time.sleep(0.8)
+                time.sleep(0.5)
                 count = 0
             t = threading.Thread(target = chain.setNumber,args = ())
             t.start()
@@ -187,8 +187,8 @@ class HIBEChain():
             # chain.setLevel(self._maxLevel)
             count += 1
             if count == 10:
+                time.sleep(0.5)
                 count = 0
-                time.sleep(1)
             t = threading.Thread(target=chain.setLevel,args=(self._maxLevel,))
             t.start()
             threadlist.append(t)
@@ -232,6 +232,7 @@ class HIBEChain():
                 count += 1
                 if count == 5:
                     time.sleep(1)
+                    count = 0
                 t = threading.Thread(target=chain.setID, args=())
                 t.start()
                 threads.append(t)
@@ -240,7 +241,7 @@ class HIBEChain():
             print("-----waiting for setID---------")
             time.sleep(15)
         self._ifSetID = True
-        print("------setID lalala----------------")
+        print("------setID finished----------------")
 
 
 if __name__ == "__main__":

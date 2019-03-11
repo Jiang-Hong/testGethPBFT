@@ -330,7 +330,7 @@ class GethNode():
             print("node at %s:%d setNumber result: %s" % (self._ip, self._rpcPort, result["result"]))
         except Exception as e:
             print("setNumber", e)
-        sleep(0.2)
+        sleep(0.1)
 
     def setLevel(self, level, maxLevel):
         '''
@@ -338,7 +338,7 @@ class GethNode():
         '''
         if maxLevel < level:
             raise ValueError("level should be no larger than maxLevel")
-        sleep(0.2)
+        sleep(0.1)
         msg = self._msg("admin_setLevel", [maxLevel, level])
 #        print("setLevel", msg) ##
         url = "http://{}:{}".format(self._ip, self._rpcPort)
@@ -349,7 +349,7 @@ class GethNode():
             print("node at %s:%d setLevel result: %s" % (self._ip, self._rpcPort, result["result"]))
         except Exception as e:
             print("setLevel", e)
-        sleep(0.2)
+        sleep(0.1)
 
     def setID(self, ID):
         '''
@@ -357,7 +357,7 @@ class GethNode():
         '''
         sleep(0.3)
         msg = self._msg("admin_setID", [ID])
-        print("setID", msg) ##
+#        print("setID", msg) ##
         url = "http://{}:{}".format(self._ip, self._rpcPort)
         try:
             response = requests.post(url, headers=self._headers, data=msg)
@@ -366,7 +366,7 @@ class GethNode():
             print("node at %s:%d setID result: %s" % (self._ip, self._rpcPort, result["result"]))
         except Exception as e:
             print("setID", e)
-        sleep(0.1)
+        sleep(0.2)
 
     def txpoolStatus(self):
         '''
