@@ -29,12 +29,12 @@ threshList = [(4, 3)]
 #IDList += idForLevel1 + idForLevel2
 #threshList += threshForLevel1 + threshForLevel2
 
-nodeCount = 5
-#for i in range(1, nodeCount-3):
-#    index = str(i)
-#    tmpID = '0' * (4-len(index)) + index
-#    IDList.append(tmpID)
-#    threshList.append((1,1))
+nodeCount = 6
+for i in range(1, nodeCount-3):
+    index = str(i)
+    tmpID = '0' * (4-len(index)) + index
+    IDList.append(tmpID)
+    threshList.append((1,1))
 
 #IDList = ["", "0001", "0002", "0003", "0004", "0005", "0006", "0007", "0008"]
 #threshList = [(4,3), (1, 1), (1, 1), (1, 1), (1, 1), (1, 1), (1, 1), (1, 1), (1, 1)]
