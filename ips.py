@@ -58,7 +58,7 @@ class IPList():
     '''
     Manage IPs and ports.
     '''
-    def __init__(self, ipFile, currentIP=0):
+    def __init__(self, ipFile, currentIP=0, username=USERNAME, password=PASSWD):
         '''
         Read IPs from a file.
         '''
