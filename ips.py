@@ -6,8 +6,8 @@ import threading
 import time
 import subprocess
 
-USERNAME = "root"
-PASSWD = "Blockchain17"
+USERNAME = "dell"
+PASSWD = "dell@2017"
 
 class IP():
     '''
