@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from singlechain import SingleChain
-from ips import IPList, execCommand, stopAll
+from ips import IPList, execCommand, stopAll, USERNAME, PASSWD
 import threading
 import time
 
@@ -10,7 +10,7 @@ class HIBEChain():
     '''
     Data structure for a Hierarchical IBE Chain.
     '''
-    def __init__(self, IDList, threshList, IPlist, passwd='Blockchain17'):
+    def __init__(self, IDList, threshList, IPlist, username=USERNAME, password=PASSWD):
 
         # Check if the input params are legal
         if not len(IDList) == len(threshList):
@@ -18,6 +18,8 @@ class HIBEChain():
         if sum(nodeCount for (nodeCount, _) in threshList) > IPlist.getFullCount():
             raise ValueError("not enough IPs")
 
+        self._username = username
+        self._passwd = password
         self._chains = []
         self._IDList = IDList
         self._maxLevel = len(IDList[-1]) // 4
@@ -35,7 +37,7 @@ class HIBEChain():
                 print("name is blank", end=" ")
             nodeCount, threshold = threshList[index][0], threshList[index][1]
             blockchainid = 120 + index
-            tmp = SingleChain(name, level, nodeCount, threshold, blockchainid, IPlist, passwd)
+            tmp = SingleChain(name, level, nodeCount, threshold, blockchainid, IPlist, self._username, self._passwd)
             if level == self._maxLevel:
 #                print("name:", name, "maxlevel", self._maxLevel)
                 tmp._isTerminal = True

@@ -2,10 +2,9 @@
 # -*- coding: utf-8 -*-
 
 from hibechain import HIBEChain
-from ips import IPList, startDockerService, stopAllContainers
+from ips import IPList, startDockerService, stopAllContainers, execCommand
 import time
 import threading
-from gethnode import stopAll, execCommand
 
 #threading.stack_size(100*1024*1024)
 
@@ -29,7 +28,7 @@ threshList = [(4, 3)]
 #IDList += idForLevel1 + idForLevel2
 #threshList += threshForLevel1 + threshForLevel2
 
-nodeCount = 6
+nodeCount = 20
 for i in range(1, nodeCount-3):
     index = str(i)
     tmpID = '0' * (4-len(index)) + index

@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from gethnode import GethNode
-from ips import IPList, execCommand, stopAll
+from ips import IPList, execCommand, stopAll, USERNAME, PASSWD
 import threading
 from genesis import confGenesis
 from time import sleep
@@ -15,20 +15,21 @@ class SingleChain():
     Data structure for a set of Geth-pbft clients for a single blockchain.
     '''
 
-    def __init__(self, name, level, nodeCount, threshold, blockchainid, IPlist, passwd='Blockchain17'):
+    def __init__(self, name, level, nodeCount, threshold, blockchainid, IPlist, username=USERNAME, passwd=PASSWD):
         '''
         init a set of geth-pbft nodes for one blockchain.
         '''
         if nodeCount > IPlist.getFullCount():
             raise ValueError("not enough IPs")
 
+        self._username = username
+        self._passwd = passwd
         self._level = level
         self._id = name
         self.nodeCount = nodeCount
         self.threshold = threshold
         self._blockchainid = blockchainid
         self._iplist = IPlist
-        self._passwd = passwd
         self._nodes = []
         self._ips = set()
         self._ifSetNumber = False
@@ -46,7 +47,7 @@ class SingleChain():
         for index in range(self.nodeCount):
             pbftid = index
             nodeindex = index + 1
-            tmp = GethNode(self._iplist, pbftid, nodeindex, self._blockchainid, self._passwd)
+            tmp = GethNode(self._iplist, pbftid, nodeindex, self._blockchainid, self._username, self._passwd)
             self._ips.add(tmp._ip)
             self._nodes.append(tmp)
             # xq start a thread， target stand for a function that you want to run ,args stand for the parameters

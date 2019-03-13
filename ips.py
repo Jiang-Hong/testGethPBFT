@@ -6,12 +6,14 @@ import threading
 import time
 import subprocess
 
+USERNAME = "root"
+PASSWD = "Blockchain17"
 
 class IP():
     '''
     Create an IP object with a list of rpc ports and a list of listener ports.
     '''
-    def __init__(self, ip, currentPort=0):
+    def __init__(self, ip, currentPort=0, username=USERNAME, password=PASSWD):
         if len(ip.split('.')) < 4:
             print("ip is", ip)
             raise ValueError('format of ip is not correct')
@@ -20,6 +22,8 @@ class IP():
         self._ip = ip
         self._rpcPorts = range(8515, 8515 + self._maxPayload * 10, 10)
         self._listenerPorts = range(30313, 30313 + self._maxPayload * 10, 10)
+        self._username = username
+        self._password = password
 
     def __repr__(self):
         return self._ip
@@ -43,8 +47,11 @@ class IP():
         '''
         return self._currentPort >= self._maxPayload
 
-    def releaseAll(self):
+    def releasePorts(self):
         self._currentPort = 0
+
+    def stopContainers(self):
+        pass
 
 
 class IPList():
@@ -61,6 +68,8 @@ class IPList():
             for line in f.readlines():
                 if line.strip():
                     self._ips.append(IP(line.strip()))
+                else:
+                    break
 
     def getIPs(self):
         '''
@@ -88,7 +97,10 @@ class IPList():
     def releaseAll(self):
         self._currentIP = 0
 
-def execCommand(cmd, ip, port=22, username='root', password='Blockchain17'):
+    def stopAll(self):
+        pass
+
+def execCommand(cmd, ip, port=22, username=USERNAME, password=PASSWD):
     '''
     exec a command on remote server using SSH
     '''
@@ -103,13 +115,13 @@ def execCommand(cmd, ip, port=22, username='root', password='Blockchain17'):
     client.close()
     return result
 
-def stopAll(IP, passwd='Blockchain17'):
+def stopAll(IP, username=USERNAME, password=PASSWD):
     '''
     stop all running containers on a remote server
     '''
     ssh = paramiko.SSHClient()
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    ssh.connect(hostname=IP, port=22, username='root', password=passwd)
+    ssh.connect(hostname=IP, port=22, username=username, password=password)
     try:
         NAMES = "docker ps --format '{{.Names}}'"
         stdin, stdout, stderr = ssh.exec_command(NAMES)

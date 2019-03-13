@@ -5,7 +5,7 @@
 import paramiko
 import requests
 import json
-from ips import IPList, execCommand, stopAll
+from ips import IPList, execCommand, stopAll, USERNAME, PASSWD
 from time import sleep
 
 
@@ -13,7 +13,7 @@ class GethNode():
     '''
     Data structure for Geth-pbft client.
     '''
-    def __init__(self, IPlist, pbftid, nodeindex, blockchainid, passwd='Blockchain17'):
+    def __init__(self, IPlist, pbftid, nodeindex, blockchainid, username=USERNAME, passwd=PASSWD):
         self.Enode = ''
         self._id = nodeindex
         self._ip, self._rpcPort, self._listenerPort = IPlist.getNewPort()
@@ -22,7 +22,8 @@ class GethNode():
         self._blockchainid = blockchainid
         self._name = 'geth-pbft' + str(self._rpcPort)
         self._headers = {'Content-Type': 'application/json', 'Connection':'close'}
-        self._passwd = passwd
+        self._username = USERNAME
+        self._passwd = PASSWD
         self._accounts = []
 
     def start(self):
@@ -42,7 +43,7 @@ class GethNode():
 #        print(RUN_DOCKER)
         ssh = paramiko.SSHClient()
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        ssh.connect(hostname=self._ip, port=22, username='root', password=self._passwd)
+        ssh.connect(hostname=self._ip, port=22, username=self._username, password=self._passwd)
         try:
             stdin, stdout, stderr = ssh.exec_command(RUN_DOCKER)
             sleep(1)
@@ -155,6 +156,7 @@ class GethNode():
             return status
         except Exception as e:
             print("keyStatus", e)
+            return False
 
 
     def unlockAccount(self, account, password='root', duration=86400):
@@ -453,7 +455,7 @@ class GethNode():
 #        sleep(0.2)
         ssh = paramiko.SSHClient()
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        ssh.connect(hostname=self._ip, port=22, username='root', password=self._passwd)
+        ssh.connect(hostname=self._ip, port=22, username=self._username, password=self._passwd)
         STOP_CONTAINER = "docker stop %s" % self._name
 
         try:
