@@ -6,8 +6,8 @@ import threading
 import time
 import subprocess
 
-USERNAME = "dell"
-PASSWD = "dell@2017"
+USERNAME = 'root' #"dell"
+PASSWD = 'Blockchain17' #"dell@2017"
 
 class IP():
     '''
@@ -149,7 +149,7 @@ def startDockerService(IPList):
     start docker service on remote server
     '''
     startTime = time.time()
-    CMD = 'systemctl start docker'
+    CMD = 'echo %s | sudo systemctl start docker' % (PASSWD)
 
     for ip in IPList._ips:
         myCMD = ['ssh-keyscan'] + [ip._ip]
@@ -200,6 +200,12 @@ def rebootServer(IPlist):
 #        execCommand('reboot', ip._ip)
     for t in threads:
         t.join()
+
+def shutdownServer(IPlist, username=USERNAME, password=PASSWD):
+    for ip in IPlist._ips:
+        my_cmd = "echo %s | sshpass -p %s ssh -tt %s@%s sudo shutdown now" % (password, password, username, ip)
+        print("server %s poweroff" % ip._ip)
+        subprocess.run(my_cmd, stdout=subprocess.PIPE)
 
 if __name__ == "__main__":
     f = IPList('ip.txt')

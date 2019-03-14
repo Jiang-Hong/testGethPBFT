@@ -76,7 +76,7 @@ class SingleChain():
         confGenesis(self._blockchainid, self._accounts, self._cfgFile)
 
         for serverIP in self._ips:
-            subprocess.run(['./sendFile.sh', self._cfgFile, serverIP], stdout=subprocess.PIPE)
+            subprocess.run(['./sendFile.sh', self._cfgFile, serverIP, self._username, self._passwd], stdout=subprocess.PIPE)
             sleep(0.5)
             threads = []
             for node in self._nodes:
@@ -108,7 +108,7 @@ class SingleChain():
 
 #        print("config cfgFile", self._cfgFile)
         for serverIP in self._ips:
-            subprocess.run(['./sendFile.sh', self._cfgFile, serverIP], stdout=subprocess.PIPE)
+            subprocess.run(['./sendFile.sh', self._cfgFile, serverIP, self._username, self._passwd], stdout=subprocess.PIPE)
             sleep(0.5)
             for node in self._nodes:
                 if node._ip == serverIP:
