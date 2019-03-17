@@ -12,6 +12,7 @@ import threading
 #TODO IP class with more function. use IP class in other module
 #TODO rewrite rpc message with decorator
 #TODO function annotation
+#TODO connection  peer reset -- set ClientAliveInterval ClientAliveCountMax TCPKeepAlive -- sshd_config all params
 
 failCount = 0
 
@@ -25,17 +26,6 @@ def checkKeyStatus(node):
 IPlist = IPList('ip.txt')
 
 IDList, threshList = loadCfg(cfgFile='conf.txt')
-
-#level1Count = 4
-#idForLevel1 = []
-#threshForLevel1 = []
-
-#idForLevel1 = ["0001", "0002"]
-#threshForLevel1 = [(4,3), (4,3)]
-#idForLevel2 = ["00010001", "00010002", "00020001", "00020002"]
-#threshForLevel2 = [(4,3), (4,3), (4,3), (4,3)]
-#IDList += idForLevel1 + idForLevel2
-#threshList += threshForLevel1 + threshForLevel2
 
 #nodeCount = 20
 #IDList = ['']
@@ -70,8 +60,8 @@ a1 = a.getNode(1)
 #        break
 #    time.sleep(0.5)
 
-print('another %s seconds waiting for addPeer' % str(nodeCount//50+10))
-time.sleep(nodeCount//50+10)
+print('another %s seconds waiting for addPeer' % str(10))
+time.sleep(10)
 print('peer count of a1----', a1.getPeerCount())
 
 hibe.setNumber()
@@ -167,7 +157,9 @@ print("----------------------------------------------------------------")
 print("node count", nodeCount)
 print("connection time", connectionTime - startTime)
 print("total elapsed time:", endTime - startTime)
+'''
 print("failCount", failCount)
+'''
 print(time.ctime())
 print("----------------------------------------------------------------")
 
