@@ -4,7 +4,7 @@
 from gethnode import GethNode
 from ips import IPList, execCommand, stopAll, USERNAME, PASSWD
 import threading
-from genesis import confGenesis
+from conf import confGenesis
 from time import sleep
 import subprocess
 import requests
@@ -362,9 +362,8 @@ if __name__ == "__main__":
     nodeNum = 4
     c = SingleChain('0001', 1, nodeNum, nodeNum*3//4+1, 121, IPlist)
     c.SinglechainStart()
-    c.SinglechainConfig()
-    c.runGethNodes()
-    c.constructChain()
+    c.ConsensusChainConfig()
+    c.runNodes()
 #    p = c.getPrimer()
 #    print(p.getPeerCount())
     for i in range(1, nodeNum+1):

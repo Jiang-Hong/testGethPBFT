@@ -6,8 +6,8 @@ import threading
 import time
 import subprocess
 
-USERNAME = 'root' #"dell"
-PASSWD = 'Blockchain17' #"dell@2017"
+USERNAME = 'dell' #"dell"
+PASSWD = 'dell@2017' #"dell@2017"
 
 class IP():
     '''
@@ -202,10 +202,14 @@ def rebootServer(IPlist):
         t.join()
 
 def shutdownServer(IPlist, username=USERNAME, password=PASSWD):
+    '''
+    shutdown all server on IPlist
+    note: should set param shell=True
+    '''
     for ip in IPlist._ips:
-        my_cmd = "echo %s | sshpass -p %s ssh -tt %s@%s sudo shutdown now" % (password, password, username, ip)
+        my_cmd = 'echo %s | sshpass -p %s ssh -tt %s@%s sudo shutdown now' % (password, password, username, ip)
         print("server %s poweroff" % ip._ip)
-        subprocess.run(my_cmd, stdout=subprocess.PIPE)
+        subprocess.run(my_cmd, stdout=subprocess.PIPE, shell=True)
 
 if __name__ == "__main__":
     f = IPList('ip.txt')

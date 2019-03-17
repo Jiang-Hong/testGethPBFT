@@ -67,14 +67,16 @@ class GethNode():
                     self._accounts.append(acc)
 #                    print('get new account', acc, self._ip, self._rpcPort)
                 else:
-                    print('new account error %s@%s' % (self._ip, self._rpcPort), er)
+                    print(er)
+                    raise RuntimeError('new account error at %s@%s' % (self._ip, self._rpcPort))
 
             else:
-                print('%s@%s' % (self._ip, self._rpcPort), err, "start step")
+                print(err)
+                raise RuntimeError('container start error at %s@%s' % (self._ip, self._rpcPort))
             # result = stdout.read()
             # print(result)
         except Exception as e:
-            print(e)
+            raise RuntimeError(e)
         finally:
             ssh.close()
 
@@ -313,7 +315,8 @@ class GethNode():
             r.close()
             # print(response.content)
         except requests.exceptions.Timeout:
-            print("-----------addPeer Timeout occurred %s--------------------" % self._ip)
+            raise RuntimeWarning('%s@%s addPeer Timeout occurred' % (self._listenerPort, self._ip))
+#            print("-----------addPeer Timeout occurred %s--------------------" % self._ip)
 
     def setNumber(self, n, t):
         '''

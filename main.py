@@ -3,10 +3,15 @@
 
 from hibechain import HIBEChain
 from ips import IPList, startDockerService, stopAllContainers, execCommand
+from conf import loadCfg
 import time
 import threading
 
 #threading.stack_size(100*1024*1024)
+#TODO remove addPeer sleep time
+#TODO IP class with more function. use IP class in other module
+#TODO rewrite rpc message with decorator
+#TODO function annotation
 
 failCount = 0
 
@@ -18,9 +23,13 @@ def checkKeyStatus(node):
         failCount += 1
 
 IPlist = IPList('ip.txt')
-# startDockerService(IPlist)
-IDList = [""]
-threshList = [(4, 3)]
+
+IDList, threshList = loadCfg(cfgFile='conf.txt')
+
+#level1Count = 4
+#idForLevel1 = []
+#threshForLevel1 = []
+
 #idForLevel1 = ["0001", "0002"]
 #threshForLevel1 = [(4,3), (4,3)]
 #idForLevel2 = ["00010001", "00010002", "00020001", "00020002"]
@@ -28,20 +37,25 @@ threshList = [(4, 3)]
 #IDList += idForLevel1 + idForLevel2
 #threshList += threshForLevel1 + threshForLevel2
 
-nodeCount = 20
-for i in range(1, nodeCount-3):
-    index = str(i)
-    tmpID = '0' * (4-len(index)) + index
-    IDList.append(tmpID)
-    threshList.append((1,1))
+#nodeCount = 20
+#IDList = ['']
+#threshList = [(4, 3)]
+#for i in range(1, nodeCount-3):
+#    index = str(i)
+#    tmpID = '0' * (4-len(index)) + index
+#    IDList.append(tmpID)
+#    threshList.append((1,1))
+#nodeCount = sum(nodeCount for (nodeCount, _) in threshList)
 
-#IDList = ["", "0001", "0002", "0003", "0004", "0005", "0006", "0007", "0008"]
-#threshList = [(4,3), (1, 1), (1, 1), (1, 1), (1, 1), (1, 1), (1, 1), (1, 1), (1, 1)]
+print(IDList)
+print(threshList)
+
 startTime = time.time()
 hibe = HIBEChain(IDList, threshList, IPlist)
 hibe.constructHIBEChain()
 
 connectionTime = time.time()
+print("connect time", connectionTime-startTime)
 
 
 a = hibe.getChain("")
@@ -90,7 +104,7 @@ for chain in hibe._chains[1:]:
 for t in threads:
     t.join()
 
-
+'''
 
 threads = []
 count = 0
@@ -154,8 +168,9 @@ print("node count", nodeCount)
 print("connection time", connectionTime - startTime)
 print("total elapsed time:", endTime - startTime)
 print("failCount", failCount)
-print("----------------------------------------------------------------")
 print(time.ctime())
+print("----------------------------------------------------------------")
+
 
 
 #a1.getBlockTransactionCount(1)
@@ -167,7 +182,7 @@ print(time.ctime())
 
 #hibe.destructHIBEChain()
 
-
+'''
 
 
 

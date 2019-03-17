@@ -5,6 +5,7 @@ from singlechain import SingleChain
 from ips import IPList, execCommand, stopAll, USERNAME, PASSWD
 import threading
 import time
+from math import sqrt
 
 class HIBEChain():
     '''
@@ -15,8 +16,10 @@ class HIBEChain():
         # Check if the input params are legal
         if not len(IDList) == len(threshList):
             raise ValueError("length of IDList should match length of threshList")
-        if sum(nodeCount for (nodeCount, _) in threshList) > IPlist.getFullCount():
-            raise ValueError("not enough IPs")
+        countNeeded = sum(nodeCount for (nodeCount, _) in threshList)
+        countContainers = IPlist.getFullCount()
+        if countNeeded > countContainers:
+            raise ValueError("not enough IPs. %d containers needed but only %d containers available" % (countNeeded, countContainers))
 
         self._username = username
         self._passwd = password
@@ -38,8 +41,8 @@ class HIBEChain():
             nodeCount, threshold = threshList[index][0], threshList[index][1]
             blockchainid = 120 + index
             tmp = SingleChain(name, level, nodeCount, threshold, blockchainid, IPlist, self._username, self._passwd)
-            if level == self._maxLevel:
-#                print("name:", name, "maxlevel", self._maxLevel)
+            if level == self._maxLevel and tmp.threshold == 1:
+                print("Terminal: name", name, "maxlevel", self._maxLevel)
                 tmp._isTerminal = True
 
 #            tmp.SinglechainStart()
@@ -118,7 +121,7 @@ class HIBEChain():
         for chain in self._chains[::-1]:
             count += 1
             if count == 5:
-                time.sleep(0.8)
+                time.sleep(0.5)
                 count = 0
                 print("construct HIBEChain wait here.................................................")
             if chain.getID() != '':
@@ -229,7 +232,7 @@ class HIBEChain():
 
         threads = []
         count = 0
-        for level in chains:
+        for n, level in enumerate(chains):
             for chain in level:
                 count += 1
                 if count == 5:
@@ -240,9 +243,16 @@ class HIBEChain():
                 threads.append(t)
             for t in threads:
                 t.join()
-            print("-----waiting for setID---------")
-            time.sleep(15)
+
+            baseCount = max([chain.threshold for chain in level]) + 1
+            sleepTime = 5 * baseCount
+            print("-----waiting for setID---------%d--%ds" % (n, sleepTime))
+            time.sleep(sleepTime)
         self._ifSetID = True
+#        level = len(self._IDList[-1]) // 4
+#        print("level is %d", level)
+#        for i in range(level):
+#            time.sleep(15)
         print("------setID finished----------------")
 
 
