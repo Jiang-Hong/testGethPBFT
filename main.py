@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from hibechain import HIBEChain
-from ips import IPList, startDockerService, stopAllContainers, execCommand
+from ips import IPList, execCommand
 from conf import loadCfg
 import time
 import threading
@@ -12,6 +12,7 @@ import threading
 #TODO IP class with more function. use IP class in other module
 #TODO rewrite rpc message with decorator
 #TODO function annotation
+#TODO use relative path
 #TODO connection  peer reset -- set ClientAliveInterval ClientAliveCountMax TCPKeepAlive -- sshd_config all params
 
 failCount = 0
@@ -25,7 +26,7 @@ def checkKeyStatus(node):
 
 IPlist = IPList('ip.txt')
 
-IDList, threshList = loadCfg(cfgFile='conf.txt')
+IDList, threshList = loadCfg(cfgFile='conf1.txt')
 
 #nodeCount = 20
 #IDList = ['']

@@ -2,10 +2,9 @@
 # -*- coding: utf-8 -*-
 
 from singlechain import SingleChain
-from ips import IPList, execCommand, stopAll, USERNAME, PASSWD
+from ips import IPList, USERNAME, PASSWD
 import threading
 import time
-from math import sqrt
 
 class HIBEChain():
     '''

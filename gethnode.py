@@ -5,7 +5,7 @@
 import paramiko
 import requests
 import json
-from ips import IPList, execCommand, stopAll, USERNAME, PASSWD
+from ips import IPList, execCommand, USERNAME, PASSWD
 from time import sleep
 
 
@@ -13,6 +13,19 @@ class GethNode():
     '''
     Data structure for Geth-pbft client.
     '''
+
+    def _msgDecorator(req):
+        def func(self, *args, **kwargs):
+            req(self, *args, **kwargs)
+            data = json.dumps({
+                    'jsonrpc': '2.0',
+                    'method': self._method,
+                    'params': kwargs['params'],
+                    'id':self._id
+                    })
+            print(data)
+        return func
+
     def __init__(self, IPlist, pbftid, nodeindex, blockchainid, username=USERNAME, passwd=PASSWD):
         self.Enode = ''
         self._id = nodeindex
@@ -25,6 +38,7 @@ class GethNode():
         self._username = USERNAME
         self._passwd = PASSWD
         self._accounts = []
+        self._method = ''
 
     def start(self):
         '''
@@ -310,7 +324,7 @@ class GethNode():
         msg = self._msg("admin_addPeer", param)
         url = "http://{}:{}".format(self._ip, self._rpcPort)
         try:
-            r = requests.post(url, headers=self._headers, data=msg, timeout=30)
+            r = requests.post(url, headers=self._headers, data=msg)
 #            sleep(0.1)
             r.close()
             # print(response.content)

@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from gethnode import GethNode
-from ips import IPList, execCommand, stopAll, USERNAME, PASSWD
+from ips import IPList, execCommand, USERNAME, PASSWD
 import threading
 from conf import confGenesis
 from time import sleep
@@ -175,11 +175,6 @@ class SingleChain():
         for i in range(10):
             print('.', end='')
             sleep(1)
-
-#            result = execCommand(CMD, node._ip)
-#            if result:
-#                print('run node', result)
-#            sleep(4)
 
         threads = []
         for node in self._nodes:
