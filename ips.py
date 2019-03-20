@@ -61,7 +61,7 @@ class IP():
         client = paramiko.SSHClient()
         client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         client.connect(self._ipaddr, port, self._username, self._password)
-        stdin, stdout, stderr = client.exec_command(cmd)
+        stdin, stdout, stderr = client.exec_command(cmd, get_pty=True)
         if not stderr.read():
             result = stdout.read().strip().decode(encoding='utf-8')
             client.close()

@@ -133,19 +133,6 @@ class SingleChain():
             t.join()
         time.sleep(0.3)
 
-    def setEnode(self, node):
-        msg = node._msg("admin_nodeInfo", [])
-        time.sleep(0.2)
-        url = "http://{}:{}".format(node._IP._ipaddr, node._rpcPort)
-        try:
-            response = requests.post(url, headers=node._headers, data=msg)
-            response.close()
-            enode = json.loads(response.content.decode(encoding='utf-8'))['result']['enode'].split('@')[0]
-            node.Enode = '{}@{}:{}'.format(enode, node._IP._ipaddr, node._listenerPort)
-#            print(node.Enode)
-        except Exception as e:
-            print("setEnode", e)
-
     def runGethNodes(self):
 #        print('run geth nodes:')
         threads = []
@@ -174,7 +161,7 @@ class SingleChain():
 
         threads = []
         for node in self._nodes:
-            t = threading.Thread(target=self.setEnode, args=(node,))
+            t = threading.Thread(target=node.setEnode)
             t.start()
             threads.append(t)
         for t in threads:

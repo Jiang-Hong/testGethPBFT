@@ -185,6 +185,13 @@ class GethNode():
         self._rpcCall(method, params)
 #        sleep(0.5)
 
+    def setEnode(self):
+        method = 'admin_nodeInfo'
+        params = []
+        result = self._rpcCall(method, params)
+        enode = result['enode'].split('@')[0]
+        self.Enode = '{}@{}:{}'.format(enode, self._IP._ipaddr, self._listenerPort)
+
     def setNumber(self, n, t):
         '''
         admin.setNumber()
