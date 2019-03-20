@@ -46,7 +46,7 @@ hibe = HIBEChain(IDList, threshList, IPlist)
 hibe.constructHIBEChain()
 
 connectionTime = time.time()
-print("connect time %.2fs" % (connectionTime-startTime))
+print("connect time %.3fs" % (connectionTime-startTime))
 
 
 a = hibe.getChain("")

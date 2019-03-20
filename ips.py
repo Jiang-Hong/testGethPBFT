@@ -61,7 +61,7 @@ class IP():
         client = paramiko.SSHClient()
         client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         client.connect(self._ipaddr, port, self._username, self._password)
-        stdin, stdout, stderr = client.exec_command(cmd, get_pty=True)
+        stdin, stdout, stderr = client.exec_command(cmd)
         if not stderr.read():
             result = stdout.read().strip().decode(encoding='utf-8')
             client.close()
@@ -182,16 +182,16 @@ class IPList():
                 subprocess.run(myCMD, stdout=outfile)
 
         threads = []
-        for ip in self._IPs:
-            print("%s at %s" % (CMD, ip))
-            t = threading.Thread(target=execCommand, args=(CMD, ip._ipaddr))
+        for IP in self._IPs:
+            print("%s at %s" % (CMD, IP._ipaddr))
+            t = threading.Thread(target=IP.execCommand, args=(CMD,))
             threads.append(t)
             t.start()
 
         for t in threads:
             t.join()
         endTime = time.time()
-        print('start docker service on all servers. elapsed time: %.2fs' % (endTime-startTime))
+        print('start docker service on all servers. elapsed time: %.3fs' % (endTime-startTime))
 
     def rebootServers(self):
         for ip in self._IPs:

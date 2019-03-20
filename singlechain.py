@@ -210,7 +210,7 @@ class SingleChain():
             for t in threads:
                 t.join()
             endTime = time.time()
-            print('%.2fs' % (endTime - startTime))
+            print('%.3fs' % (endTime - startTime))
             print("-------------------------")
             time.sleep(0.2)
 
