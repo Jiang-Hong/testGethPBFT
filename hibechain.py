@@ -11,7 +11,6 @@ class HIBEChain():
     Data structure for a Hierarchical IBE Chain.
     '''
     def __init__(self, IDList, threshList, IPlist, username=USERNAME, password=PASSWD):
-
         # Check if the input params are legal
         if not len(IDList) == len(threshList):
             raise ValueError("length of IDList should match length of threshList")
@@ -43,8 +42,6 @@ class HIBEChain():
             if level == self._maxLevel and tmp.threshold == 1:
                 print("Terminal: name", name, "maxlevel", self._maxLevel)
                 tmp._isTerminal = True
-
-#            tmp.SinglechainStart()
             self._chains.append(tmp)
             count += 1
             if count == 5:
@@ -65,10 +62,9 @@ class HIBEChain():
                 t = threading.Thread(target=chain.ConsensusChainConfig, args=())
             else:
                 if count >= 5:
-                    time.sleep(0.8)
-                    print("config terminal.................................................")
                     count = 0
-#                print(chain._id, "-------------terminal")
+                    time.sleep(0.8)
+                    print("config terminal..................")
                 t = threading.Thread(target=chain.TerminalConfig, args=())
             t.start()
             threads.append(t)
@@ -76,35 +72,20 @@ class HIBEChain():
         for t in threads:
             print('...', end='')
             t.join()
-        print("................config terminal finished")
-
-
-#            if not tmp._isTerminal:
-#                tmp.ConsensusChainConfig()
-#            else:
-#                print(tmp._id, "--------------terminal")
-#                tmp.TerminalConfig()
-#            self._chains.append(tmp)
-
-#            t = threading.Thread(target=tmp.constructChain,args=())
-#            t.start()
-#            self._chains.append(tmp)
-#        for t in threadlist:
-#            t.join()
+        print("config terminal finished")
 
         threads = []
         count = 0
         for chain in self._chains:
             count += 1
             if count == 5:
-                time.sleep(0.5)
-                print("-----geth starting--------------------------")
                 count = 0
+                time.sleep(0.5)
+                print("-----geth starting---------")
             t = threading.Thread(target=chain.runNodes, args=())
             t.start()
             threads.append(t)
 
-#            chain.runNodes()
         for t in threads:
             t.join()
 
@@ -122,12 +103,9 @@ class HIBEChain():
             if count == 5:
                 time.sleep(0.5)
                 count = 0
-                print("construct HIBEChain wait here.................................................")
+                print("construct HIBEChain wait here...........")
             if chain.getID() != '':
                 parentChain = self._chains[self._IDList.index(chain.getID()[:-4])]
-#                parentChain.connectLowerChain(chain)
-#                print(chain.getID(), parentChain.getID())
-                # parentChain.connectLowerChain(chain)
                 t = threading.Thread(target=parentChain.connectLowerChain,args=(chain, ))
                 t.start()
         for t in threadlist:
@@ -145,8 +123,6 @@ class HIBEChain():
             threadlist.append(t)
         for t in threadlist:
             t.join()
-#        for chain in self._chains:
-#            chain.destructChain()
 
     def getChain(self, ID):
         '''
@@ -154,7 +130,6 @@ class HIBEChain():
         '''
         try:
             index = self._IDList.index(ID)
-#            print('chain index', '-----------', index)
             return self._chains[index]
         except ValueError or IndexError:
             print("ID %s is not in the HIBEChain" % ID)
@@ -173,13 +148,10 @@ class HIBEChain():
             t = threading.Thread(target = chain.setNumber,args = ())
             t.start()
             threadlist.append(t)
-#            # chain.setNumber()
         for t in threadlist:
             t.join()
         self._ifSetNumber = True
         time.sleep(1)
-#        for chain in self._chains:
-#            chain.setNumber()
 
     def setLevel(self):
         '''
@@ -198,12 +170,10 @@ class HIBEChain():
             threadlist.append(t)
         print('waiting for set level')
         for t in threadlist:
-            print('...', end='')
+            print('.', end='')
             t.join()
         self._ifSetLevel = True
         time.sleep(1)
-#        for chain in self._chains:
-#            chain.setLevel(self._maxLevel)
 
     def setID(self):
         '''
@@ -245,14 +215,11 @@ class HIBEChain():
 
             baseCount = max([chain.threshold for chain in level]) + 1
             sleepTime = 5 * baseCount
-            print("-----waiting for setID---------%d--%ds" % (n, sleepTime))
+            print("waiting for setID---------level%d--%ds" % (n, sleepTime))
             time.sleep(sleepTime)
         self._ifSetID = True
-#        level = len(self._IDList[-1]) // 4
-#        print("level is %d", level)
-#        for i in range(level):
-#            time.sleep(15)
         print("------setID finished----------------")
+        time.sleep(5)
 
 
 if __name__ == "__main__":

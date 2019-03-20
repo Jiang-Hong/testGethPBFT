@@ -7,13 +7,13 @@ from conf import loadCfg
 import time
 import threading
 
-#threading.stack_size(100*1024*1024)
-#TODO remove addPeer sleep time
-#TODO IP class with more function. use IP class in other module
+threading.stack_size(100*1024*1024)
+
 #TODO rewrite rpc message with decorator
 #TODO function annotation
-#TODO use relative path
+#TODO log
 #TODO connection  peer reset -- set ClientAliveInterval ClientAliveCountMax TCPKeepAlive -- sshd_config all params
+#paramiko auth check_auth decorators
 
 failCount = 0
 
@@ -46,7 +46,7 @@ hibe = HIBEChain(IDList, threshList, IPlist)
 hibe.constructHIBEChain()
 
 connectionTime = time.time()
-print("connect time", connectionTime-startTime)
+print("connect time %.2fs" % (connectionTime-startTime))
 
 
 a = hibe.getChain("")
