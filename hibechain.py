@@ -214,6 +214,8 @@ class HIBEChain():
                 t.join()
 
             baseCount = max([chain.threshold for chain in level]) + 1
+            if chain._isTerminal:
+                baseCount += 2
             sleepTime = 5 * baseCount
             print("waiting for setID---------level%d--%ds" % (n, sleepTime))
             time.sleep(sleepTime)
