@@ -64,7 +64,7 @@ class HIBEChain():
                 if count >= 5:
                     count = 0
                     time.sleep(0.8)
-                    print("config terminal..................")
+                    print("config terminal")
                 t = threading.Thread(target=chain.TerminalConfig, args=())
             t.start()
             threads.append(t)
@@ -103,7 +103,7 @@ class HIBEChain():
             if count == 5:
                 time.sleep(0.5)
                 count = 0
-                print("construct HIBEChain wait here...........")
+                print("construct HIBEChain wait here...")
             if chain.getID() != '':
                 parentChain = self._chains[self._IDList.index(chain.getID()[:-4])]
                 t = threading.Thread(target=parentChain.connectLowerChain,args=(chain, ))

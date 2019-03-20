@@ -177,7 +177,7 @@ print("----------------------------------------------------------------")
 
 '''
 
-
+IPlist.stopAllContainers()
 
 
 # docker run -td rkdghd/geth-pbft:latest bash

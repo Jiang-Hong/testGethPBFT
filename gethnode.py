@@ -47,17 +47,6 @@ class GethNode():
         if len(account) == 40:
             self._accounts.append(account)
 
-    def _msg(self, method, params):
-        '''
-        Return json string used in HTTP requests.
-        '''
-        return json.dumps({
-               "jsonrpc": "2.0",
-               "method": method,
-               "params": params,
-               "id": self._id
-               })
-
     def _rpcCall(self, method, params):
         data = json.dumps({                          ## json string used in HTTP requests
                     'jsonrpc': '2.0',
