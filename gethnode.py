@@ -127,7 +127,7 @@ class GethNode():
         return method, params
 
     @rpc
-    def unlockAccount(self, account, *args, password='root', duration=86400, **kwargs):
+    def unlockAccount(self, *args, account='0', password='root', duration=86400, **kwargs):
         '''
         personal.unlockAccount()
         '''
