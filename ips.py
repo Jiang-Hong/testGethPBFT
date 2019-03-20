@@ -216,43 +216,43 @@ def execCommand(cmd, ipaddr, port=22, username=USERNAME, password=PASSWD):
     client.close()
     return result
 
-def stopAll(IP, username=USERNAME, password=PASSWD):
-    '''
-    Stop all running containers on a server.
-    '''
-    ssh = paramiko.SSHClient()
-    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    ssh.connect(hostname=IP, port=22, username=username, password=password)
-    try:
-        NAMES = "docker ps --format '{{.Names}}'"
-        stdin, stdout, stderr = ssh.exec_command(NAMES)
-        result = stdout.read()
-        if result:
-            result = result.decode(encoding='utf-8', errors='strict').split()
-            print(' '.join(result))
-            STOP = 'docker stop %s' % ' '.join(result)
-            stdin, stdout, stderr = ssh.exec_command(STOP)
-            result = stdout.read()
-            if result:
-                print("all nodes at %s stopped" % IP)
-            elif not stderr:
-                print(stderr)
-#            return True if result else False
-        elif not stderr:
-            print(stderr)
-    except Exception as e:
-        print('stopAll', e)
-    ssh.close()
-
-def stopAllContainers(IPlist):
-    threads = []
-    for ip in IPlist._ips:
-        print("stop all docker containers at %s" % ip._ip)
-        t = threading.Thread(target=stopAll, args=(ip._ip,))
-        threads.append(t)
-        t.start()
-    for t in threads:
-        t.join()
+#def stopAll(IP, username=USERNAME, password=PASSWD):
+#    '''
+#    Stop all running containers on a server.
+#    '''
+#    ssh = paramiko.SSHClient()
+#    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+#    ssh.connect(hostname=IP, port=22, username=username, password=password)
+#    try:
+#        NAMES = "docker ps --format '{{.Names}}'"
+#        stdin, stdout, stderr = ssh.exec_command(NAMES)
+#        result = stdout.read()
+#        if result:
+#            result = result.decode(encoding='utf-8', errors='strict').split()
+#            print(' '.join(result))
+#            STOP = 'docker stop %s' % ' '.join(result)
+#            stdin, stdout, stderr = ssh.exec_command(STOP)
+#            result = stdout.read()
+#            if result:
+#                print("all nodes at %s stopped" % IP)
+#            elif not stderr:
+#                print(stderr)
+##            return True if result else False
+#        elif not stderr:
+#            print(stderr)
+#    except Exception as e:
+#        print('stopAll', e)
+#    ssh.close()
+#
+#def stopAllContainers(IPlist):
+#    threads = []
+#    for ip in IPlist._ips:
+#        print("stop all docker containers at %s" % ip._ip)
+#        t = threading.Thread(target=stopAll, args=(ip._ip,))
+#        threads.append(t)
+#        t.start()
+#    for t in threads:
+#        t.join()
 
 def shutdownServer(IPlist, username=USERNAME, password=PASSWD):
     '''
