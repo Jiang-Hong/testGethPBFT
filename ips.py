@@ -7,8 +7,8 @@ import time
 import subprocess
 import os
 
-USERNAME = 'rkd' #"dell"
-PASSWD = '2wsxDR%trd@' #"dell@2017"
+USERNAME = 'alice' #"dell"
+PASSWD = 'test' #"dell@2017"
 
 class IP():
     '''
