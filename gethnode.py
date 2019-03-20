@@ -2,10 +2,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import paramiko
 import requests
 import json
-from ips import IPList, execCommand, USERNAME, PASSWD
+from ips import IPList, USERNAME, PASSWD
 from time import sleep
 
 
@@ -14,22 +13,10 @@ class GethNode():
     Data structure for Geth-pbft client.
     '''
 
-    def _msgDecorator(req):
-        def func(self, *args, **kwargs):
-            req(self, *args, **kwargs)
-            data = json.dumps({
-                    'jsonrpc': '2.0',
-                    'method': self._method,
-                    'params': kwargs['params'],
-                    'id':self._id
-                    })
-            print(data)
-        return func
-
     def __init__(self, IPlist, pbftid, nodeindex, blockchainid, username=USERNAME, passwd=PASSWD):
         self.Enode = ''
         self._id = nodeindex
-        self._ip, self._rpcPort, self._listenerPort = IPlist.getNewPort()
+        self._IP, self._rpcPort, self._listenerPort = IPlist.getNewPort()
         self._pbftid = pbftid
         self._nodeindex = nodeindex
         self._blockchainid = blockchainid
@@ -38,7 +25,6 @@ class GethNode():
         self._username = USERNAME
         self._passwd = PASSWD
         self._accounts = []
-        self._method = ''
 
     def start(self):
         '''
@@ -47,52 +33,19 @@ class GethNode():
         RUN_DOCKER = ('docker run -td -p %d:8545 -p %d:30303 --rm --name %s rkdghd/geth-pbft:id' % (self._rpcPort,
                                                                                                         self._listenerPort,
                                                                                                         self._name))
-#        RUN_DOCKER = ('docker run -td -p %d:8545 -p %d:30303 --rm --name %s rkdghd/geth-pbft:dev' % (self._rpcPort,
-#                                                                                                        self._listenerPort,
-#                                                                                                        self._name))
-#        RUN_DOCKER = ('docker run -d -p %d:8545 -p %d:30303 --rm --name %s rkdghd/geth-pbft --rpcapi admin,eth,miner,web3,'
-#                      'net,personal --rpc --rpcaddr \"0.0.0.0\" --datadir /root/abc --pbftid %d --nodeindex %d '
-#                      '--blockchainid %d --syncmode \"full\" ') % (self._rpcPort, self._listenerPort, self._name,
-#                                                                    self._pbftid, self._nodeindex, self._blockchainid)
-#        print(RUN_DOCKER)
-        ssh = paramiko.SSHClient()
-        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        ssh.connect(hostname=self._ip, port=22, username=self._username, password=self._passwd)
-        try:
-            stdin, stdout, stderr = ssh.exec_command(RUN_DOCKER)
-            sleep(1)
-            err = stderr.read().decode().strip()
-            out = stdout.read().decode().strip()
-            if not err and out:
-                print('container of node %s of blockchain %s at %s:%s started' % (self._nodeindex, self._blockchainid,
-                                                                                  self._ip, self._rpcPort))
-#                sleep(0.3)
-                NEWACCOUNT = 'docker exec -t %s geth --datadir abc account new --password passfile' % self._name
-                si, so, se = ssh.exec_command(NEWACCOUNT)
-                sleep(1)
-                er = se.read().decode().strip()
-                result = so.read().decode(encoding='utf-8')
-                acc = result.split()[-1][1:-1]
-                if not er and len(acc)==40:
-#                    print('---------')
-#                    print(result)
-#                    print(acc)
-#                    print('---------')
-                    self._accounts.append(acc)
-#                    print('get new account', acc, self._ip, self._rpcPort)
-                else:
-                    print(er)
-                    raise RuntimeError('new account error at %s@%s' % (self._ip, self._rpcPort))
 
-            else:
-                print(err)
-                raise RuntimeError('container start error at %s@%s' % (self._ip, self._rpcPort))
-            # result = stdout.read()
-            # print(result)
-        except Exception as e:
-            raise RuntimeError(e)
-        finally:
-            ssh.close()
+        result = self._IP.execCommand(RUN_DOCKER)
+        if result:
+            print('container of node %s of blockchain %s at %s:%s started' % (self._nodeindex, self._blockchainid,
+                                                                                  self._IP._ipaddr, self._rpcPort))
+        else:
+            raise RuntimeError('Docker start error. Container maybe already exists')
+        sleep(0.6)
+        NEWACCOUNT = 'docker exec -t %s geth --datadir abc account new --password passfile' % self._name
+        account = self._IP.execCommand(NEWACCOUNT).split()[-1][1:-1]
+#        print(account)
+        if len(account) == 40:
+            self._accounts.append(account)
 
     def _msg(self, method, params):
         '''
@@ -105,6 +58,21 @@ class GethNode():
                "id": self._id
                })
 
+    def _rpcCall(self, method, params):
+        data = json.dumps({                          ## json string used in HTTP requests
+                    'jsonrpc': '2.0',
+                    'method': method,
+                    'params': params,
+                    'id':self._id
+                    })
+        url = "http://{}:{}".format(self._IP._ipaddr, self._rpcPort)
+        try:
+            response = requests.post(url, headers=self._headers, data=data)
+            response.close()
+            return json.loads(response.content.decode(encoding='utf-8'))['result']
+        except Exception as e:
+            raise RuntimeError(method, e)
+
     def getEnode(self):
         '''
         Return enode information from admin.nodeInfo.
@@ -115,80 +83,43 @@ class GethNode():
         '''
         net.peerCount
         '''
-        sleep(0.3)
-        msg = self._msg("net_peerCount", [])
-        url = "http://{}:{}".format(self._ip, self._rpcPort)
-        try:
-            response = requests.post(url, headers=self._headers, data=msg)
-            response.close()
-            count = int(json.loads(response.content.decode(encoding='utf-8'))['result'], 16)
-            return count if count else 0
-        except Exception as e:
-            print("getPeerCount", e)
+        method = 'net_peerCount'
+        params = []
+        return int(self._rpcCall(method, params), 16)
 
     def getPeers(self):
         '''
         admin.peers
         '''
-#        sleep(0.3)
-        msg = self._msg("admin_peers", [])
-        url = "http://{}:{}".format(self._ip, self._rpcPort)
-        try:
-            response = requests.post(url, headers=self._headers, data=msg)
-            response.close()
-            peers = json.loads(response.content.decode(encoding='utf-8'))['result']
-            return peers
-        except Exception as e:
-            print("getPeers", e)
+        method = 'admin_peers'
+        params = []
+        return self._rpcCall(method, params)
 
     def newAccount(self, password='root'):
         '''
         personal.newAccount(password)
         '''
-        sleep(0.1)
-        msg = self._msg("personal_newAccount", [password]) ###
-        url = "http://{}:{}".format(self._ip, self._rpcPort)
-        try:
-            response = requests.post(url, headers=self._headers, data=msg)
-            response.close()
-            result = json.loads(response.content.decode(encoding='utf-8'))['result']
-            self._accounts.append(result)
-            return result
-        except Exception as e:
-            print("newAccount", e)
+        method = 'personal_newAccount'
+        params = [password]
+        result = self._rpcCall(method, params)
+        self._accounts.append(result)
+        return result
 
     def keyStatus(self):
         '''
         admin.keystatus()
         '''
-        sleep(0.1)
-        msg = self._msg("admin_keyStatus", [])
-        url = "http://{}:{}".format(self._ip, self._rpcPort)
-        try:
-            response = requests.post(url, headers=self._headers, data=msg)
-            response.close()
-#            print(response.content.decode())
-            status = json.loads(response.content.decode(encoding='utf-8'))['result']
-            return status
-        except Exception as e:
-            print("keyStatus", e)
-            return False
-
+        method = 'admin_keyStatus'
+        params = []
+        return self._rpcCall(method, params)
 
     def unlockAccount(self, account, password='root', duration=86400):
         '''
         personal.unlockAccount()
         '''
-#        sleep(0.3)
-        msg = self._msg("personal_unlockAccount", [account, password, duration])
-        url = "http://{}:{}".format(self._ip, self._rpcPort)
-        try:
-            response = requests.post(url, headers=self._headers, data=msg)
-            response.close()
-            result = json.loads(response.content.decode(encoding='utf-8'))['result']
-            return result
-        except Exception as e:
-            print("unlockAccount", e)
+        method = 'personal_unlockAccount'
+        params = [account, password, duration]
+        return self._rpcCall(method, params)
 
     def sendOldTransaction(self, toID, toIndex, value):
         '''
@@ -196,18 +127,9 @@ class GethNode():
         '''
         if isinstance(value, int):
             value = hex(value)
-        param = {"toid":toID, "toindex":toIndex, "value":value}
-        msg = self._msg("eth_sendTransaction", [param])
-        print(msg)
-        url = "http://{}:{}".format(self._ip, self._rpcPort)
-        try:
-            response = requests.post(url, headers=self._headers, data=msg)
-            response.close()
-            print(json.loads(response.content.decode(encoding='utf-8')))
-            result = json.loads(response.content.decode(encoding='utf-8'))['result']
-            return result
-        except Exception as e:
-            print("sendOldTransaction", e)
+        params = [{"toid":toID, "toindex":toIndex, "value":value}]
+        method = 'eth_sendTransaction'
+        return self._rpcCall(method, params)
 
     def sendTransaction(self, toID, toIndex, value):
         '''
@@ -215,18 +137,9 @@ class GethNode():
         '''
         if isinstance(value, int):
             value = hex(value)
-        param = {"toid":toID, "toindex":toIndex, "value":value}
-        msg = self._msg("eth_sendTransaction2", [param])
-        print(msg)
-        url = "http://{}:{}".format(self._ip, self._rpcPort)
-        try:
-            response = requests.post(url, headers=self._headers, data=msg)
-            response.close()
-            print(json.loads(response.content.decode(encoding='utf-8')))
-            result = json.loads(response.content.decode(encoding='utf-8'))['result']
-            return result
-        except Exception as e:
-            print("sendTransaction", e)
+        params = [{"toid":toID, "toindex":toIndex, "value":value}]
+        method = 'eth_sendTransaction2'
+        return self._rpcCall(method, params)
 
     def testSendTransaction(self, toID, toIndex, value, interval, period):
         '''
@@ -234,103 +147,54 @@ class GethNode():
         '''
         if isinstance(value, int):
             value = hex(value)
-        param = {"toid":toID, "toindex":toIndex, "value":value, "txinterval":interval, "txperiod":period}
-        msg = self._msg("eth_testSendTransaction2", [param])
-        url = "http://{}:{}".format(self._ip, self._rpcPort)
-        try:
-            response = requests.post(url, headers=self._headers, data=msg)
-            response.close()
-            result = json.loads(response.content.decode(encoding='utf-8'))
-            print(result)
-            return result['result']
-        except Exception as e:
-            print("testSendTransaction2", e)
+        params = [{"toid":toID, "toindex":toIndex, "value":value, "txinterval":interval, "txperiod":period}]
+        method = 'eth_testSendTransaction2'
+        return self._rpcCall(method, params)
 
     def getTransaction(self, TXID):
         '''
         eth.getTransaction()
         '''
-        msg = self._msg("eth_getTransaction", [TXID])
-        url = "http://{}:{}".format(self._ip, self._rpcPort)
-        try:
-            response = requests.post(url, headers=self._headers, data=msg)
-            response.close()
-            result = json.loads(response.content.decode(encoding='utf-8'))['result']
-            return result
-        except Exception as e:
-            print("result", e)
+        method = 'eth_getTransaction'
+        params = [TXID]
+        return self._rpcCall(method, params)
 
     def getAccounts(self):
         '''
         eth.accounts
         '''
-#        sleep(0.3)
-        msg = self._msg("eth_accounts", [])
-        url = "http://{}:{}".format(self._ip, self._rpcPort)
-        try:
-            response = requests.post(url, headers=self._headers, data=msg)
-            response.close()
-            accounts = json.loads(response.content.decode(encoding='utf-8'))['result']
-            return accounts
-        except Exception as e:
-            print("getAccounts", e)
+        method = 'eth_accounts'
+        params = []
+        return self._rpcCall(method, params)
 
     def getBalance(self, account):
         '''
         eth.getBalance()
         ipc form: docker exec -it geth-pbft8515 geth attach ipc:abc/geth.ipc --exec "eth.getBalance(eth.accounts[0])"
         '''
-#        sleep(0.2)
         if not account.startswith('0x'):
             account = '0x' + account
-        msg = self._msg("eth_getBalance", [account, 'latest'])
-        url = "http://{}:{}".format(self._ip, self._rpcPort)
-        try:
-            response = requests.post(url, headers=self._headers, data=msg)
-            response.close()
-            print(response.content.decode())
-            balance = json.loads(response.content.decode(encoding='utf-8'))['result']
-#            print(balance)
-            return balance
-        except Exception as e:
-            print("getBalance", e)
+        method = 'eth_getBalance'
+        params = [account, 'latest']
+        return self._rpcCall(method, params)
 
     def getBlockTransactionCount(self, index):
         '''
         eth.getBlockTransactionCount()
         '''
-#        sleep(0.1)
-        msg = self._msg("eth_getBlockTransactionCountByNumber", [hex(index)])
-        url = "http://{}:{}".format(self._ip, self._rpcPort)
-        try:
-            response = requests.post(url, headers=self._headers, data=msg)
-#            print(response.content.decode())
-            number = json.loads(response.content.decode(encoding='utf-8'))['result']
-#            print(balance)
-            if number:
-                print("block %s transactions number: %s" % (index, int(number, 16)))
-                return int(number, 16)
-            else:
-                print('this block does not exist')
-                return None
-        except Exception as e:
-            print("getBlockTransactionCount", e)
+        method = 'eth_getBlockTransactionCountByNumber'
+        params = [hex(index)]
+        number = self._rpcCall(method, params)
+        return int(number, 16) if number else None
 
     def addPeer(self, *param):
         '''
         admin.addPeer()
         '''
-        sleep(0.5)
-        msg = self._msg("admin_addPeer", param)
-        url = "http://{}:{}".format(self._ip, self._rpcPort)
-        try:
-            r = requests.post(url, headers=self._headers, data=msg)
-#            sleep(0.1)
-            r.close()
-            # print(response.content)
-        except requests.exceptions.Timeout:
-            raise RuntimeWarning('%s@%s addPeer Timeout occurred' % (self._listenerPort, self._ip))
-#            print("-----------addPeer Timeout occurred %s--------------------" % self._ip)
+        method = 'admin_addPeer'
+        params = param
+        self._rpcCall(method, params)
+#        sleep(0.5)
 
     def setNumber(self, n, t):
         '''
@@ -338,17 +202,10 @@ class GethNode():
         '''
         if n < t:
             raise ValueError("nodeCount should be no less than threshold value")
-        msg = self._msg("admin_setNumber", [n, t])
-#        print("setNumber", msg) ##
-        url = "http://{}:{}".format(self._ip, self._rpcPort)
-        sleep(0.1)
-        try:
-            response = requests.post(url, headers=self._headers, data=msg)
-            response.close()
-            result = json.loads(response.content.decode(encoding='utf-8'))
-            print("node at %s:%d setNumber result: %s" % (self._ip, self._rpcPort, result["result"]))
-        except Exception as e:
-            print("setNumber", e)
+        method = 'admin_setNumber'
+        params = [n, t]
+        result = self._rpcCall(method, params)
+        print("node at %s:%d setNumber result: %s" % (self._IP._ipaddr, self._rpcPort, result))
         sleep(0.1)
 
     def setLevel(self, level, maxLevel):
@@ -357,136 +214,70 @@ class GethNode():
         '''
         if maxLevel < level:
             raise ValueError("level should be no larger than maxLevel")
-        sleep(0.1)
-        msg = self._msg("admin_setLevel", [maxLevel, level])
-#        print("setLevel", msg) ##
-        url = "http://{}:{}".format(self._ip, self._rpcPort)
-        try:
-            response = requests.post(url, headers=self._headers, data=msg)
-            response.close()
-            result = json.loads(response.content.decode(encoding='utf-8'))
-            print("node at %s:%d setLevel result: %s" % (self._ip, self._rpcPort, result["result"]))
-        except Exception as e:
-            print("setLevel", e)
-        sleep(0.1)
+#        sleep(0.1)
+        method = 'admin_setLevel'
+        params = [maxLevel, level]
+        result = self._rpcCall(method, params)
+        print("node at %s:%d setLevel result: %s" % (self._IP._ipaddr, self._rpcPort, result))
+#        sleep(0.1)
 
     def setID(self, ID):
         '''
         admin.setID()
         '''
-        sleep(0.3)
-        msg = self._msg("admin_setID", [ID])
-#        print("setID", msg) ##
-        url = "http://{}:{}".format(self._ip, self._rpcPort)
-        try:
-            response = requests.post(url, headers=self._headers, data=msg)
-            response.close()
-            result = json.loads(response.content.decode(encoding='utf-8'))
-            print("node at %s:%d setID result: %s" % (self._ip, self._rpcPort, result["result"]))
-        except Exception as e:
-            print("setID", e)
-        sleep(0.2)
+#        sleep(0.3)
+        method = 'admin_setID'
+        params = [ID]
+        result = self._rpcCall(method, params)
+        print("node at %s:%d setID result: %s" % (self._IP._ipaddr, self._rpcPort, result))
+#        sleep(0.2)
 
     def txpoolStatus(self):
         '''
         txpool.status
         '''
-        sleep(0.1)
-        msg = self._msg("txpool_status", [])
-#        print("txpool.status", msg)
-        url = "http://{}:{}".format(self._ip, self._rpcPort)
-        try:
-            response = requests.post(url, headers=self._headers, data=msg)
-            response.close()
-            result = json.loads(response.content.decode(encoding='utf-8'))
-            print("txpool.status pending:%d, queued:%d" % (int(result["result"]['pending'], 16), int(result["result"]['queued'], 16)))
-        except Exception as e:
-            print("txpool.status", e)
-        sleep(0.1)
+        method = 'txpool_status'
+        params = []
+        result = self._rpcCall(method, params)
+        print("txpool.status pending:%d, queued:%d" % (int(result['pending'], 16), int(result['queued'], 16)))
+
 
     def startMiner(self):
         '''
         miner.start()
         '''
-#        sleep(0.2)
-        msg = self._msg("miner_start", [])
-#        print("startMiner", msg) ##
-        url = "http://{}:{}".format(self._ip, self._rpcPort)
-        try:
-            response = requests.post(url, headers=self._headers, data=msg)
-            response.close()
-            result = json.loads(response.content.decode(encoding='utf-8'))
-#            print(result)
-            print("miner at %s:%d start result: %s" % (self._ip, self._rpcPort, result["result"]))
-        except Exception as e:
-            print("start miner", e)
+        method = 'miner_start'
+        params = []
+        self._rpcCall(method, params)
+        print("miner at %s:%d start" % (self._IP._ipaddr, self._rpcPort))
 
     def stopMiner(self):
         '''
         miner.stop()
         '''
-#        sleep(0.2)
-        msg = self._msg("miner_stop", [])
-#        print("stopMiner", msg) ##
-        url = "http://{}:{}".format(self._ip, self._rpcPort)
-        try:
-            response = requests.post(url, headers=self._headers, data=msg)
-            response.close()
-            result = json.loads(response.content.decode(encoding='utf-8'))
-#            print(result)
-            print("miner at %s:%d stop result: %s" % (self._ip, self._rpcPort, result["result"]))
-        except Exception as e:
-            print("stop miner", e)
-
-#    def testHIBE(self, txString):
-#        '''
-#        admin.testhibe()
-#        '''
-#        sleep(1)
-#        msg = self._msg("admin_testhibe", ['{}'.format(txString)])
-#        url = "http://{}:{}".format(self._ip, self._rpcPort)
-#        try:
-#            response = requests.post(url, headers=self._headers, data=msg)
-#            print(response.content)
-#        except Exception as e:
-#            print("testHIBE", e)
+        method = 'miner_stop'
+        params = []
+        result = self._rpcCall(method, params)
+        print("miner at %s:%d stop: %s" % (self._IP._ipaddr, self._rpcPort, result))
 
     def isGethRunning(self):
         '''
         Check if the client is running.
         '''
-        try:
-            CMD = 'docker exec -t %s geth attach ipc:/root/abc/geth.ipc --exec "admin.nodeInfo"' % self._name
-            result = execCommand(CMD, self._ip)
-#            print(result)
-            return True if result else False
-        except Exception as e:
-            print("isRunning", e)
+        CMD = 'docker exec -t %s geth attach ipc:/root/abc/geth.ipc --exec "admin.nodeInfo"' % self._name
+        result = self._IP.execCommand(CMD)
+        if result.split(':')[0] == 'Fatal':
             return False
-
+        else:
+            return True
 
     def stop(self):
         '''
         Remove the geth-pbft node container on remote server.
         '''
-#        sleep(0.2)
-        ssh = paramiko.SSHClient()
-        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        ssh.connect(hostname=self._ip, port=22, username=self._username, password=self._passwd)
         STOP_CONTAINER = "docker stop %s" % self._name
-
-        try:
-            stdin, stdout, stderr = ssh.exec_command(STOP_CONTAINER)
-            result = stdout.read()
-            if result:
-                print('node %s of blockchain %s at %s:%s stopped' % (self._nodeindex, self._blockchainid, self._ip, self._rpcPort))
-            elif not stderr:
-                print('%s@%s' % (self._ip, self._rpcPort), stderr, "stop step")
-            return True if result else False
-        except Exception as e:
-            print("stop", e)
-        finally:
-            ssh.close()
+        self._IP.execCommand(STOP_CONTAINER)
+        print('node %s of blockchain %s at %s:%s stopped' % (self._nodeindex, self._blockchainid, self._IP._ipaddr, self._rpcPort))
 
 
 if __name__ == "__main__":
