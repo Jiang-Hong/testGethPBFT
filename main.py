@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from hibechain import HIBEChain
-from ips import IPList, execCommand
+from iplist import IPList, execCommand
 from conf import loadCfg
 import time
 import threading
@@ -25,7 +25,7 @@ def checkKeyStatus(node):
 
 IPlist = IPList('ip.txt')
 
-IDList, threshList = loadCfg(cfgFile='conf1.txt')
+IDList, threshList = loadCfg(cfgFile='conf11.txt')
 
 #nodeCount = 20
 #IDList = ['']

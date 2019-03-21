@@ -57,20 +57,19 @@ def confGenesis(chainId, accounts, cfgFile):
     with open('docker/%s' % cfgFile, 'w') as f:
         print(newGenesis, file=f)
 
-#def confTerminals(terminals, cfgFile):
-#    with open('docker/%s' % cfgFile, 'rb') as f:
-#        genesis = json.load(f)
-#    for chain in terminals:
-#        account = []
-#        for char in chain._id:
-#            account.append(hex(ord(char))[2:])
-#        acc = ''.join(account)
-#        acc = acc + (40 - len(acc) - 1) * '0' + '1'
-#        print(acc)
-#        genesis['alloc'][acc] = {'balance': "0x200000000000000000000000000000000000000000000000000000000000000"}
-#    newGenesis = json.dumps(genesis, indent=2)
-#    with open('docker/%s' % cfgFile, 'w') as f:
-#        print(newGenesis, file=f)
+def confTerminals(cfgFile, terminals):
+    with open('docker/%s' % cfgFile, 'rb') as f:
+        genesis = json.load(f)
+    for chain in terminals:
+        account = []
+        for char in chain._id:
+            account.append(hex(ord(char))[2:])
+        acc = ''.join(account)
+        acc = acc + (40 - len(acc) - 1) * '0' + '1'
+        genesis['alloc'][acc] = {'balance': "0x200000000000000000000000000000000000000000000000000000000000000"}
+    newGenesis = json.dumps(genesis, indent=2)
+    with open('docker/%s' % cfgFile, 'w') as f:
+        print(newGenesis, file=f)
 
 if __name__ == '__main__':
     IDList, threshList = loadCfg()

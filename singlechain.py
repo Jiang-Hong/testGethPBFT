@@ -2,13 +2,12 @@
 # -*- coding: utf-8 -*-
 
 from gethnode import GethNode
-from ips import IPList, USERNAME, PASSWD
+from iplist import IPList, USERNAME, PASSWD
 import threading
-from conf import confGenesis
+from conf import confGenesis, confTerminals
 import time
 import subprocess
-import requests
-import json
+
 from functools import wraps
 
 class SingleChain():
@@ -69,8 +68,8 @@ class SingleChain():
         Decorator for setting genesis.json file for a chain.
         '''
         @wraps(config)
-        def func(self):
-            config(self)
+        def func(self, *args):
+            config(self, *args)
             for serverIP in self._IPs:
                 subprocess.run(['sshpass -p %s scp docker/%s %s@%s:%s' % (self._passwd, self._cfgFile,
                                self._username, serverIP._ipaddr, self._cfgFile) ], stdout=subprocess.PIPE, shell=True)
@@ -97,6 +96,14 @@ class SingleChain():
         else:
             self._cfgFile = '%s.json' % self._id
         confGenesis(self._blockchainid, self._accounts, self._cfgFile)
+
+    @_setGenesisDecorator
+    def LeafChainConfig(self, TerminalChains):
+        if self._id is "":
+            self._cfgFile = '0.json'
+        else:
+            self._cfgFile = '%s.json' % self._id
+        confTerminals(self._cfgFile, TerminalChains)
 
     @_setGenesisDecorator
     def TerminalConfig(self):
@@ -149,7 +156,6 @@ class SingleChain():
             count += 1
             if count == 10:
                 time.sleep(0.3)
-                print("-----------------------geth in a chain---------------------")
                 count = 0
             t = threading.Thread(target=node._IP.execCommand, args=(CMD,))
             t.start()
@@ -318,6 +324,7 @@ class SingleChain():
         if not self._ifSetNumber and self._ifSetLevel:
             raise RuntimeError("number and level info should be set previously")
         if len(self._id) // 4 != self._level:
+            print(self._id, self._level, '-----------------------------------------------')
             raise ValueError("length of id should match level number")
         if not self._ifSetID:
             if self._level == 0:

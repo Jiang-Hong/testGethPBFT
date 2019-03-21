@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from singlechain import SingleChain
-from ips import IPList, USERNAME, PASSWD
+from iplist import IPList, USERNAME, PASSWD
 import threading
 import time
 
@@ -22,58 +22,49 @@ class HIBEChain():
         self._username = username
         self._passwd = password
         self._chains = []
-        self._terminals = []
         self._IDList = IDList
+        self._threshList = threshList
+        self._IPlist = IPlist
         self._maxLevel = len(IDList[-1]) // 4
         self._ifSetNumber = False
         self._ifSetLevel = False
         self._ifSetID = False
+        self._structedChains = []
 
-        threadlist = []
+        self.initChains()
+
+        threads = []
         count = 0
-        for index, name in enumerate(IDList):
-            level = len(name) // 4
-            if name:
-                print("name is %s" % name, end=" ")
-            else:
-                print("name is blank", end=" ")
-            nodeCount, threshold = threshList[index][0], threshList[index][1]
-            blockchainid = 120 + index
-            tmp = SingleChain(name, level, nodeCount, threshold, blockchainid, IPlist, self._username, self._passwd)
-            if level == self._maxLevel and tmp.threshold == 1:
-                print("Terminal: name", name, "maxlevel", self._maxLevel)
-                tmp._isTerminal = True
-            self._chains.append(tmp)
-            count += 1
-            if count == 5:
-                time.sleep(0.8)
-                count = 0
-            t = threading.Thread(target=tmp.SinglechainStart, args=())
-            t.start()
-            threadlist.append(t)
-
-        for t in threadlist:
+        for level in self._structedChains[:-1]:
+            for chain in level:
+                count += 1
+                if count >= 8:
+                    count = 0
+                    time.sleep(0.5)
+                t = threading.Thread(target=chain.ConsensusChainConfig, args=())
+                t.start()
+                threads.append(t)
+        for t in threads:
             t.join()
 
         threads = []
         count = 0
-        for chain in self._chains:
-            if chain._isTerminal:
-                self._terminals.append(chain)
-            else:
-                count += 1
-                if count >= 6:
-                    count = 0
-                    time.sleep(0.8)
+        if not self._structedChains[-1][0]._isTerminal:
+            for chain in self._structedChains[-1]:
                 t = threading.Thread(target=chain.ConsensusChainConfig, args=())
-            t.start()
-            threads.append(t)
-
+                t.start()
+                threads.append(t)
+        else:
+            for chain in self._structedChains[-2]:
+                chain.LeafChainConfig(self._structedChains[-1])
+            for chain in self._structedChains[-1]:
+                t = threading.Thread(target=chain.TerminalConfig, args=())
+                t.start()
+                threads.append(t)
         for t in threads:
             t.join()
 
 
-        print("config terminal finished")
 
         threads = []
         count = 0
@@ -135,6 +126,43 @@ class HIBEChain():
         except ValueError or IndexError:
             print("ID %s is not in the HIBEChain" % ID)
 
+    def initChains(self):
+        threadlist = []
+        count = 0
+        level = 0
+        tmpChain = []
+        for index, name in enumerate(self._IDList):
+            if name:
+                print("name is %s" % name, end=" ")
+            else:
+                print("name is blank", end=" ")
+            currentLevel = len(name) // 4
+            nodeCount, threshold = self._threshList[index][0], self._threshList[index][1]
+            blockchainid = 120 + index
+            tmp = SingleChain(name, currentLevel, nodeCount, threshold, blockchainid, self._IPlist, self._username, self._passwd)
+            self._chains.append(tmp)
+            if currentLevel == level:
+                tmpChain.append(tmp)
+            else:
+                self._structedChains.append(tmpChain)
+                tmpChain = []
+                tmpChain.append(tmp)
+                level = currentLevel
+            count += 1
+            if count == 5:
+                time.sleep(0.8)
+                count = 0
+            t = threading.Thread(target=tmp.SinglechainStart, args=())
+            t.start()
+            threadlist.append(t)
+        self._structedChains.append(tmpChain)
+
+        for t in threadlist:
+            t.join()
+        for ch in self._structedChains[-1]:
+            if ch.threshold == 1:
+                ch._isTerminal = True
+
     def setNumber(self):
         '''
         set (n, t) value for all the chains in HIBEChain.
@@ -195,11 +223,6 @@ class HIBEChain():
                 idLength = len(chain._id)
         chains.append(tmp)
 
-#        print("--------------------------------------------")
-#        for i in chains:
-#            print(len(i))
-#        print("--------------------------------------------")
-
         threads = []
         count = 0
         for n, level in enumerate(chains):
@@ -214,9 +237,9 @@ class HIBEChain():
             for t in threads:
                 t.join()
 
-            baseCount = max([chain.threshold for chain in level]) + 1
+            baseCount = max([chain.threshold for chain in level]) + 2
             if chain._isTerminal:
-                baseCount += 3
+                baseCount += 2
             sleepTime = 5 * baseCount
             print("waiting for setID---------level%d--%ds" % (n, sleepTime))
             time.sleep(sleepTime)

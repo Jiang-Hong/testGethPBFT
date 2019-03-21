@@ -4,7 +4,7 @@
 
 import requests
 import json
-from ips import IPList, USERNAME, PASSWD
+from iplist import IPList, USERNAME, PASSWD
 from time import sleep
 from functools import wraps
 
