@@ -9,7 +9,6 @@ import threading
 
 threading.stack_size(100*1024*1024)
 
-#TODO rewrite rpc message with decorator
 #TODO function annotation
 #TODO log
 #TODO connection  peer reset -- set ClientAliveInterval ClientAliveCountMax TCPKeepAlive -- sshd_config all params
@@ -19,7 +18,7 @@ failCount = 0
 
 def checkKeyStatus(node):
     if node.keyStatus() is not True:
-        print("keyStatus of node at %s:%s is False" % (node._ip, node._listenerPort))
+        print("keyStatus of node at %s:%s is False" % (node._IP, node._listenerPort))
         print("node peer count is %s" % node.getPeerCount())
         global failCount
         failCount += 1
@@ -40,6 +39,8 @@ IDList, threshList = loadCfg(cfgFile='conf1.txt')
 
 print(IDList)
 print(threshList)
+
+nodeCount = sum(n for (n, t) in threshList)
 
 startTime = time.time()
 hibe = HIBEChain(IDList, threshList, IPlist)
@@ -95,7 +96,7 @@ for chain in hibe._chains[1:]:
 for t in threads:
     t.join()
 
-'''
+
 
 threads = []
 count = 0
@@ -118,7 +119,7 @@ for t in threads:
 #    tmpNode.testSendTransaction("0001", 1, "0x1", 1, 250)
 
 
-time.sleep(3)
+time.sleep(5)
 a1.txpoolStatus()
 
 threads = []
@@ -158,26 +159,18 @@ print("----------------------------------------------------------------")
 print("node count", nodeCount)
 print("connection time", connectionTime - startTime)
 print("total elapsed time:", endTime - startTime)
-'''
+
 print("failCount", failCount)
-'''
+
 print(time.ctime())
 print("----------------------------------------------------------------")
 
 
-
-#a1.getBlockTransactionCount(1)
-
-#time.sleep(3)
-#b1.testSendTransaction("0001", 1, "0x2", 2, 100)
-#time.sleep(1)
-#a1.startMiner()
-
 #hibe.destructHIBEChain()
 
-'''
 
-IPlist.stopAllContainers()
+
+
 
 
 # docker run -td rkdghd/geth-pbft:latest bash

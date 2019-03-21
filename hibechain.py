@@ -17,11 +17,12 @@ class HIBEChain():
         countNeeded = sum(nodeCount for (nodeCount, _) in threshList)
         countContainers = IPlist.getFullCount()
         if countNeeded > countContainers:
-            raise ValueError("not enough IPs. %d containers needed but only %d containers available" % (countNeeded, countContainers))
+            raise ValueError("%d containers needed but only %d containers available" % (countNeeded, countContainers))
 
         self._username = username
         self._passwd = password
         self._chains = []
+        self._terminals = []
         self._IDList = IDList
         self._maxLevel = len(IDList[-1]) // 4
         self._ifSetNumber = False
@@ -57,21 +58,21 @@ class HIBEChain():
         threads = []
         count = 0
         for chain in self._chains:
-            count += 1
-            if not chain._isTerminal:
-                t = threading.Thread(target=chain.ConsensusChainConfig, args=())
+            if chain._isTerminal:
+                self._terminals.append(chain)
             else:
-                if count >= 5:
+                count += 1
+                if count >= 6:
                     count = 0
                     time.sleep(0.8)
-                    print("config terminal")
-                t = threading.Thread(target=chain.TerminalConfig, args=())
+                t = threading.Thread(target=chain.ConsensusChainConfig, args=())
             t.start()
             threads.append(t)
 
         for t in threads:
-            print('...', end='')
             t.join()
+
+
         print("config terminal finished")
 
         threads = []
@@ -215,7 +216,7 @@ class HIBEChain():
 
             baseCount = max([chain.threshold for chain in level]) + 1
             if chain._isTerminal:
-                baseCount += 2
+                baseCount += 3
             sleepTime = 5 * baseCount
             print("waiting for setID---------level%d--%ds" % (n, sleepTime))
             time.sleep(sleepTime)

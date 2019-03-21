@@ -79,10 +79,7 @@ class IP():
         '''
         CMD = 'systemctl status docker'
         result = self.execCommand(CMD).split("\n")
-        if len(result) >= 5:
-            return True
-        else:
-            return False
+        return True if len(result) >= 5 else False
 
     def stopContainers(self):
         '''
@@ -135,10 +132,7 @@ class IPList():
         '''
         Return the number of containers when all servers are full loaded.
         '''
-        if len(self._IPs):
-            return len(self._IPs) * self._IPs[0].getMaxPayload()
-        else:
-            return 0
+        return len(self._IPs) * self._IPs[0].getMaxPayload() if len(self._IPs) else 0
 
     def getNewPort(self):
         '''

@@ -72,7 +72,8 @@ class SingleChain():
         def func(self):
             config(self)
             for serverIP in self._IPs:
-                subprocess.run(['sshpass -p %s scp docker/%s %s@%s:%s' % (self._passwd, self._cfgFile, self._username, serverIP._ipaddr, self._cfgFile) ], stdout=subprocess.PIPE, shell=True)
+                subprocess.run(['sshpass -p %s scp docker/%s %s@%s:%s' % (self._passwd, self._cfgFile,
+                               self._username, serverIP._ipaddr, self._cfgFile) ], stdout=subprocess.PIPE, shell=True)
                 time.sleep(0.5)
                 threads = []
                 for node in self._nodes:
@@ -138,10 +139,11 @@ class SingleChain():
         threads = []
         count = 0
         for node in self._nodes:
-            RUN = ('geth --datadir abc --cache 512 --port 30303 --rpcport 8545 --rpcapi admin,eth,miner,web3,net,personal,txpool --rpc --rpcaddr \"0.0.0.0\" '
+            RUN = ('geth --datadir abc --cache 512 --port 30303 --rpcport 8545 --rpcapi '
+                   'admin,eth,miner,web3,net,personal,txpool --rpc --rpcaddr \"0.0.0.0\" '
                    '--pbftid %d --nodeindex %d --blockchainid %d --unlock %s --password '
-                   '\"passfile\" --maxpeers 5000 --maxpendpeers 1000 --syncmode \"full\" --nodiscover') % (node._pbftid, node._nodeindex,
-                                                                  node._blockchainid, node._accounts[0])
+                   '\"passfile\" --maxpeers 5000 --maxpendpeers 1000 --syncmode \"full\" --nodiscover') % (node._pbftid,
+                                                                node._nodeindex, node._blockchainid, node._accounts[0])
             CMD = 'docker exec -td %s %s' % (node._name, RUN)
             print(RUN)
             count += 1

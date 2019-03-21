@@ -50,6 +50,9 @@ class GethNode():
             self._accounts.append(account)
 
     def rpc(fn):
+        '''
+        Decorator for rpc calls.
+        '''
         @wraps(fn)
         def func(self, *args, **kwargs):
             method, params = fn(self, *args, **kwargs)
@@ -67,9 +70,9 @@ class GethNode():
             except Exception as e:
                 raise RuntimeError(method, e)
             print('%s@%s:%s %s' % (method, self._IP._ipaddr, self._rpcPort, result))
-
             _setNewAccount = lambda acc: self._accounts.append(acc[2:])
-            _printTxpool = lambda result: print("txpool.status pending:%d, queued:%d" % (int(result['pending'], 16), int(result['queued'], 16)))
+            _printTxpool = lambda result: print("txpool.status pending:%d, queued:%d" % (int(result['pending'], 16),
+                                                                                         int(result['queued'], 16)))
             def _hex2Dec(num):
                 return int(num, 16) if num else 0
             def _setEnode(result):
@@ -109,7 +112,7 @@ class GethNode():
         return method, params
 
     @rpc
-    def newAccount(self, password='root', *args, **kwargs):  # 'root' is the default password of the new account
+    def newAccount(self, password='root', *args, **kwargs):
         '''
         personal.newAccount(password)
         '''
@@ -127,7 +130,7 @@ class GethNode():
         return method, params
 
     @rpc
-    def unlockAccount(self, *args, account='0', password='root', duration=86400, **kwargs):
+    def unlockAccount(self, account='0', password='root', duration=86400, **kwargs):
         '''
         personal.unlockAccount()
         '''
@@ -158,7 +161,7 @@ class GethNode():
         return method, params
 
     @rpc
-    def testSendTransaction(self, toID, toIndex, value, interval, period, *args, **kwargs):
+    def testSendTransaction(self, toID, toIndex, value, interval, period, **kwargs):
         '''
         eth.testSendTransaction2()
         '''
@@ -289,10 +292,7 @@ class GethNode():
         '''
         CMD = 'docker exec -t %s geth attach ipc:/root/abc/geth.ipc --exec "admin.nodeInfo"' % self._name
         result = self._IP.execCommand(CMD)
-        if result.split(':')[0] == 'Fatal':
-            return False
-        else:
-            return True
+        return False if result.split(':')[0] == 'Fatal' else True
 
     def stop(self):
         '''
@@ -300,7 +300,8 @@ class GethNode():
         '''
         STOP_CONTAINER = "docker stop %s" % self._name
         self._IP.execCommand(STOP_CONTAINER)
-        print('node %s of blockchain %s at %s:%s stopped' % (self._nodeindex, self._blockchainid, self._IP._ipaddr, self._rpcPort))
+        print('node %s of blockchain %s at %s:%s stopped' % (self._nodeindex, self._blockchainid,
+                                                             self._IP._ipaddr, self._rpcPort))
 
 
 if __name__ == "__main__":
