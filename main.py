@@ -100,7 +100,7 @@ for t in threads:
 
 threads = []
 count = 0
-for chain in hibe._chains[1:]:
+for chain in hibe._structedChains[-1]:
     print("chain id", chain._id)
     count += 1
     if count == 10:
@@ -120,11 +120,13 @@ for t in threads:
 
 
 time.sleep(5)
-a1.txpoolStatus()
+consensusChain = hibe._structedChains[-2][0]
+p = consensusChain.getPrimer()
+p.txpoolStatus()
 
 threads = []
-for rootNode in a._nodes:
-    t = threading.Thread(target=rootNode.startMiner, args=())
+for node in (n for level in hibe._structedChains[:-1] for chain in level for n in chain._nodes):
+    t = threading.Thread(target=node.startMiner, args=())
 #    rootNode.startMiner()
     t.start()
     threads.append(t)
@@ -153,15 +155,13 @@ for chain in hibe._chains:
 
 
 for i in range(1, 20):
-    print(a1.getBlockTransactionCount(i))
+    print(p.getBlockTransactionCount(i))
 
 print("----------------------------------------------------------------")
 print("node count", nodeCount)
 print("connection time", connectionTime - startTime)
 print("total elapsed time:", endTime - startTime)
-
 print("failCount", failCount)
-
 print(time.ctime())
 print("----------------------------------------------------------------")
 
