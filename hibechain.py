@@ -210,22 +210,10 @@ class HIBEChain():
         '''
         if not self._ifSetNumber and self._ifSetLevel:
             raise RuntimeError("number and level info should be set previously")
-        idLength = 0
-        chains = []
-        tmp = []
-        for chain in self._chains:
-            if len(chain._id) == idLength:
-                tmp.append(chain)
-            elif len(chain._id) != idLength:
-                chains.append(tmp)
-                tmp = []
-                tmp.append(chain)
-                idLength = len(chain._id)
-        chains.append(tmp)
-
+        startTime = time.time()
         threads = []
         count = 0
-        for n, level in enumerate(chains):
+        for n, level in enumerate(self._structedChains):
             for chain in level:
                 count += 1
                 if count == 5:
@@ -237,15 +225,20 @@ class HIBEChain():
             for t in threads:
                 t.join()
 
-            baseCount = max([chain.threshold for chain in level]) + 2
-            if chain._isTerminal:
-                baseCount += 2
-            sleepTime = 5 * baseCount
-            print("waiting for setID---------level%d--%ds" % (n, sleepTime))
-            time.sleep(sleepTime)
+            print('waiting for delivering key')
+            if n == 0:
+                sleepTime = max([chain.nodeCount for chain in level]) * 5
+                print('root level waiting...%ds' % sleepTime)
+                time.sleep(sleepTime)
+            p = level[-1]._nodes[-1]
+            while not p.keyStatus():
+                print('.', end='')
+                time.sleep(1)
         self._ifSetID = True
-        print("------setID finished----------------")
         time.sleep(5)
+        print("------setID finished----------------")
+        endTime = time.time()
+        print('setID elapsed time %.2f' % (endTime - startTime))
 
 
 if __name__ == "__main__":

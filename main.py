@@ -166,7 +166,7 @@ print(time.ctime())
 print("----------------------------------------------------------------")
 
 
-#hibe.destructHIBEChain()
+hibe.destructHIBEChain()
 
 
 
