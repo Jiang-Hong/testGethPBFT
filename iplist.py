@@ -7,8 +7,8 @@ import time
 import subprocess
 import os
 
-USERNAME = 'u0' #"dell"
-PASSWD = 'test' #"dell@2017"
+USERNAME = 'u0' #"dell"u0
+PASSWD = 'test' #"dell@2017"test
 
 class IP():
     '''
@@ -260,6 +260,6 @@ def shutdownServer(IPlist, username=USERNAME, password=PASSWD):
 
 if __name__ == "__main__":
     f = IPList('ip.txt')
-    for i in range(10):
-        print(f.getNewPort())
+#    for i in range(10):
+#        print(f.getNewPort())
     f.startDockerService()

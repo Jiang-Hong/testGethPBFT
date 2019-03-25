@@ -71,15 +71,21 @@ class SingleChain():
         def func(self, *args):
             config(self, *args)
             for serverIP in self._IPs:
-                subprocess.run(['sshpass -p %s scp docker/%s %s@%s:%s' % (self._passwd, self._cfgFile,
+                subprocess.run(['sshpass -p %s scp docker/%s %s@%s:%s && sleep 1' % (self._passwd, self._cfgFile,
                                self._username, serverIP._ipaddr, self._cfgFile) ], stdout=subprocess.PIPE, shell=True)
-                time.sleep(0.5)
+#                time.sleep(0.8)
                 threads = []
+                count = 0
                 for node in self._nodes:
                     if node._IP == serverIP:
-                        CMD = 'docker cp %s %s:/root/%s' % (self._cfgFile, node._name, self._cfgFile)
+                        count += 1
+                        if count == 5:
+                            count = 0
+                            time.sleep(0.5)
+                        CMD = 'docker cp %s %s:/root/%s && sleep 1' % (self._cfgFile, node._name, self._cfgFile)
                         t = threading.Thread(target=serverIP.execCommand, args=(CMD,))
                         t.start()
+                        print('copying genesis file')
                         threads.append(t)
                 for t in threads:
                     t.join()
@@ -96,6 +102,7 @@ class SingleChain():
         else:
             self._cfgFile = '%s.json' % self._id
         confGenesis(self._blockchainid, self._accounts, self._cfgFile)
+        time.sleep(0.5)
 
     @_setGenesisDecorator
     def LeafChainConfig(self, TerminalChains):
@@ -104,6 +111,7 @@ class SingleChain():
         else:
             self._cfgFile = '%s.json' % self._id
         confTerminals(self._cfgFile, TerminalChains)
+        time.sleep(0.5)
 
     @_setGenesisDecorator
     def TerminalConfig(self):
@@ -133,13 +141,12 @@ class SingleChain():
         for serverIP in self._IPs:
             for node in self._nodes:
                 if node._IP == serverIP:
-                    INIT = 'docker exec -t %s geth --datadir abc init %s' % (node._name, self._cfgFile)
+                    INIT = 'docker exec -t %s geth --datadir abc init %s && sleep 1' % (node._name, self._cfgFile)
                     t = threading.Thread(target=serverIP.execCommand, args=(INIT,))
                     t.start()
                     threads.append(t)
         for t in threads:
             t.join()
-        time.sleep(0.3)
 
     def runGethNodes(self):
 #        print('run geth nodes:')
@@ -149,13 +156,13 @@ class SingleChain():
             RUN = ('geth --datadir abc --cache 512 --port 30303 --rpcport 8545 --rpcapi '
                    'admin,eth,miner,web3,net,personal,txpool --rpc --rpcaddr \"0.0.0.0\" '
                    '--pbftid %d --nodeindex %d --blockchainid %d --unlock %s --password '
-                   '\"passfile\" --maxpeers 5000 --maxpendpeers 1000 --syncmode \"full\" --nodiscover') % (node._pbftid,
+                   '\"passfile\" --maxpeers 4096 --maxpendpeers 4096 --syncmode \"full\" --nodiscover') % (node._pbftid,
                                                                 node._nodeindex, node._blockchainid, node._accounts[0])
-            CMD = 'docker exec -td %s %s' % (node._name, RUN)
+            CMD = 'docker exec -td %s %s && sleep 2' % (node._name, RUN)
             print(RUN)
             count += 1
-            if count == 10:
-                time.sleep(0.3)
+            if count == 5:
+                time.sleep(1)
                 count = 0
             t = threading.Thread(target=node._IP.execCommand, args=(CMD,))
             t.start()
@@ -163,7 +170,7 @@ class SingleChain():
         for t in threads:
             t.join()
         print('node starting...')
-        for i in range(8):
+        for i in range(10):
             print('.', end='')
             time.sleep(1)
 
@@ -174,7 +181,7 @@ class SingleChain():
             threads.append(t)
         for t in threads:
             t.join()
-        time.sleep(0.2)
+        time.sleep(0.5)
 
     def getID(self):
         '''
@@ -200,6 +207,7 @@ class SingleChain():
         '''
         Construct a single chain.
         '''
+        time.sleep(0.5)
         if not self._isTerminal:
             print("constructing single chain")
             startTime = time.time()
@@ -208,9 +216,10 @@ class SingleChain():
             for i in range(len(self._nodes)):
                 for j in range(i+1, len(self._nodes)):
                     tmpEnode = self._nodes[j].getEnode()
+#                    self._nodes[i].addPeer((tmpEnode, 0)) #########
                     count += 1
-                    if count == 8:
-                        time.sleep(0.2)
+                    if count == 5:
+                        time.sleep(0.5)
                         count = 0
                     t = threading.Thread(target=self._nodes[i].addPeer, args=(tmpEnode, 0))
                     t.start()
@@ -220,7 +229,7 @@ class SingleChain():
             endTime = time.time()
             print('%.3fs' % (endTime - startTime))
             print("-------------------------")
-            time.sleep(0.2)
+            time.sleep(0.5)
 
     def destructChain(self):
         '''
@@ -346,6 +355,24 @@ class SingleChain():
         else:
             raise RuntimeError("ID of chain %s already set" % self._id)
 
+    def startMiner(self):
+        '''
+        Start miners of all nodes on the chain.
+        '''
+        if not self._isTerminal:
+            threads = []
+            count = 0
+            for node in self._nodes:
+                count += 1
+                if count == 5:
+                    count = 0
+                    time.sleep(0.5)
+                t = threading.Thread(target=node.startMiner, args=())
+                t.start()
+                threads.append(t)
+            for t in threads:
+                t.join()
+
 
 if __name__ == "__main__":
     IPlist = IPList('ip.txt')
@@ -356,6 +383,7 @@ if __name__ == "__main__":
     c.runNodes()
 #    p = c.getPrimer()
 #    print(p.getPeerCount())
+    time.sleep(3)
     for i in range(1, nodeNum+1):
         node = c.getNode(i)
 #        acc = node.getAccounts()[0]

@@ -7,9 +7,46 @@ Created on Sat Mar 16 11:04:55 2019
 """
 
 import json
+from math import ceil
 
-def genCfg(cfgFile='conf.txt'):
-    pass
+def genTestCfg(level=3, cfgFile='conf0.txt'):
+    chainCount = 2 ** (level + 1) - 1
+    IDList = [None] * chainCount
+    IDList[0] = ''
+    threshList = [(20, 16)]
+    for i in range(1, chainCount):
+        if i % 2:
+            IDList[i] = IDList[ceil(i/2)-1] + '0001'
+        else:
+            IDList[i] = IDList[ceil(i/2)-1] + '0002'
+        threshList.append((20, 16))
+    newCount = chainCount
+
+    for i in range(chainCount//2, chainCount):
+        for j in range(1, 9):
+            IDList.append(IDList[i]+'%04d' % j)
+            threshList.append((1,1))
+            newCount += 1
+        break
+    print(IDList)
+    print(threshList)
+    chainCount = newCount
+
+    lines = []
+    for i in range(level+1):
+        index = 2 ** i
+        tmpID = ' '.join(IDList[:index])
+        tmpThresh = ' '.join('%s,%s' % tup for tup in threshList[:index])
+        IDList = IDList[index:]
+        threshList = threshList[index:]
+        lines.append(tmpID)
+        lines.append(tmpThresh)
+    tmpID = ' '.join(IDList)
+    tmpThresh = ' '.join('%s,%s' % tup for tup in threshList)
+    lines.append(tmpID)
+    lines.append(tmpThresh)
+    with open(cfgFile, 'w') as file:
+        file.write('\n'.join(lines))
 
 def loadCfg(cfgFile='conf.txt'):
     IDList = ['']
@@ -45,13 +82,12 @@ def confGenesis(chainId, accounts, cfgFile):
     genesis['extraData'] = extradata
 #    print(genesis) #
 
-    for i in range(0, 5):
-        for j in range(0, 10):
-            for k in range(0, 10):
-                for l in range(0, 10):
-                    ac = hex(ord(str(i)))[2:] + hex(ord(str(j)))[2:] + hex(ord(str(k)))[2:] + hex(ord(str(l)))[2:] + '0' * 31 + '1'
-#                    print(ac)
-                    genesis['alloc'][ac] = {'balance': "0x200000000000000000000000000000000000000000000000000000000000000"}
+#    for i in range(0, 5):
+#        for j in range(0, 10):
+#            for k in range(0, 10):
+#                for l in range(0, 10):
+#                    ac = hex(ord(str(i)))[2:] + hex(ord(str(j)))[2:] + hex(ord(str(k)))[2:] + hex(ord(str(l)))[2:] + '0' * 31 + '1'
+#                    genesis['alloc'][ac] = {'balance': "0x200000000000000000000000000000000000000000000000000000000000000"}
 
     newGenesis = json.dumps(genesis, indent=2)
     with open('docker/%s' % cfgFile, 'w') as f:
@@ -75,3 +111,4 @@ if __name__ == '__main__':
     IDList, threshList = loadCfg()
     print(IDList)
     print(threshList)
+    genTestCfg()

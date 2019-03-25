@@ -7,7 +7,7 @@ from conf import loadCfg
 import time
 import threading
 
-threading.stack_size(100*1024*1024)
+#threading.stack_size(300*1024*1024)
 
 #TODO function annotation
 #TODO log
@@ -41,6 +41,9 @@ print(IDList)
 print(threshList)
 
 nodeCount = sum(n for (n, t) in threshList)
+print('-----')
+print('nodeCount:', nodeCount)
+print('-----')
 
 startTime = time.time()
 hibe = HIBEChain(IDList, threshList, IPlist)
@@ -107,7 +110,7 @@ for chain in hibe._structedChains[-1]:
         time.sleep(0.3)
         count = 0
     tmpNode = chain.getNode(1)
-    t = threading.Thread(target=tmpNode.testSendTransaction, args=("0001", 1, "0x1", 1, 250))
+    t = threading.Thread(target=tmpNode.testSendTransaction, args=("0001", 1, "0x1", 1, 200))
     t.start()
     threads.append(t)
 for t in threads:
@@ -120,18 +123,20 @@ for t in threads:
 
 
 time.sleep(5)
-consensusChain = hibe._structedChains[-2][0]
-p = consensusChain.getPrimer()
-p.txpoolStatus()
+consensusChains = hibe._structedChains[-2]
+for chain in consensusChains:
+    p = chain.getPrimer()
+    p.txpoolStatus()
 
-threads = []
-for node in (n for level in hibe._structedChains[:-1] for chain in level for n in chain._nodes):
-    t = threading.Thread(target=node.startMiner, args=())
-#    rootNode.startMiner()
-    t.start()
-    threads.append(t)
-for t in threads:
-    t.join()
+hibe.startMiner()
+#threads = []
+#for node in (n for level in hibe._structedChains[:-1] for chain in level for n in chain._nodes):
+#    t = threading.Thread(target=node.startMiner, args=())
+##    rootNode.startMiner()
+#    t.start()
+#    threads.append(t)
+#for t in threads:
+#    t.join()
 
 #threadList = []
 #for chainID in IDList[1:]:
@@ -166,7 +171,7 @@ print(time.ctime())
 print("----------------------------------------------------------------")
 
 
-hibe.destructHIBEChain()
+#hibe.destructHIBEChain()
 
 
 

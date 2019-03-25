@@ -64,7 +64,7 @@ class HIBEChain():
         for t in threads:
             t.join()
 
-
+        time.sleep(3)
 
         threads = []
         count = 0
@@ -88,16 +88,18 @@ class HIBEChain():
         Construct the hierarchical construction of the HIBEChain.
         Connect blockchain nodes with their parent blockchain nodes.
         '''
+        print('construct hibechain')
         threadlist = []
         count = 0
         for chain in self._chains[::-1]:
             count += 1
-            if count == 5:
+            if count == 2:
                 time.sleep(0.5)
                 count = 0
                 print("construct HIBEChain wait here...")
             if chain.getID() != '':
                 parentChain = self._chains[self._IDList.index(chain.getID()[:-4])]
+#                parentChain.connectLowerChain(chain)
                 t = threading.Thread(target=parentChain.connectLowerChain,args=(chain, ))
                 t.start()
         for t in threadlist:
@@ -227,18 +229,30 @@ class HIBEChain():
 
             print('waiting for delivering key')
             if n == 0:
-                sleepTime = max([chain.nodeCount for chain in level]) * 5
+                sleepTime = max([chain.nodeCount for chain in level]) * 10
                 print('root level waiting...%ds' % sleepTime)
                 time.sleep(sleepTime)
-            p = level[-1]._nodes[-1]
-            while not p.keyStatus():
-                print('.', end='')
-                time.sleep(1)
+                while not all((node.keyStatus() for node in chain._nodes for chain in level)):
+                    print('root level waiting...')
+                    time.sleep(5)
+
+
+            else:
+#                p = level[-1]._nodes[-1]
+                while not all((node.keyStatus() for node in chain._nodes for chain in level)):
+                    print('.', end='')
+                    time.sleep(2)
+                time.sleep(2)
         self._ifSetID = True
         time.sleep(5)
         print("------setID finished----------------")
         endTime = time.time()
         print('setID elapsed time %.2f' % (endTime - startTime))
+
+    def startMiner(self):
+        for level in self._structedChains[:-1]:
+            for chain in level:
+                chain.startMiner()
 
 
 if __name__ == "__main__":
