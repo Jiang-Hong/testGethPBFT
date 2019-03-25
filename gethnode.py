@@ -7,6 +7,7 @@ import json
 from iplist import IPList, USERNAME, PASSWD
 from time import sleep
 from functools import wraps
+from random import random
 
 
 class GethNode():
@@ -193,7 +194,7 @@ class GethNode():
     def getBalance(self, account, *args, **kwargs):
         '''
         eth.getBalance()
-        ipc form: docker exec -it geth-pbft8515 geth attach ipc:abc/geth.ipc --exec "eth.getBalance(eth.accounts[0])"
+        ipc form: docker exec -it geth-pbft8515 geth attach ipc://abc/geth.ipc --exec "eth.getBalance(eth.accounts[0])"
         '''
         if not account.startswith('0x'):
             account = '0x' + account
@@ -210,14 +211,23 @@ class GethNode():
         params = [hex(index)]
         return method, params
 
-    @rpc
+#    @rpc
+#    def addPeer(self, *args, **kwargs):
+#        '''
+#        admin.addPeer()
+#        '''
+#        sleep(random()+0.3)
+#        method = 'admin_addPeer'
+#        params = args
+#        return method, params
+
     def addPeer(self, *args, **kwargs):
         '''
-        admin.addPeer()
+        IPC version admin.addPeer()
         '''
-        method = 'admin_addPeer'
-        params = args
-        return method, params
+        CMD = "docker exec -t %s geth attach ipc://root/abc/geth.ipc --exec \"admin.addPeer%s\"" %(self._name, args)
+        print(CMD)
+        self._IP.execCommand(CMD)
 
     @rpc
     def setEnode(self, *args, **kwargs):
@@ -290,7 +300,7 @@ class GethNode():
         '''
         Check if the client is running.
         '''
-        CMD = 'docker exec -t %s geth attach ipc:/root/abc/geth.ipc --exec "admin.nodeInfo"' % self._name
+        CMD = 'docker exec -t %s geth attach ipc://root/abc/geth.ipc --exec "admin.nodeInfo"' % self._name
         result = self._IP.execCommand(CMD)
         return False if result.split(':')[0] == 'Fatal' else True
 
