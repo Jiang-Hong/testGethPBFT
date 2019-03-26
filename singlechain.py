@@ -162,7 +162,7 @@ class SingleChain():
             print(RUN)
             count += 1
             if count == 5:
-                time.sleep(1)
+                time.sleep(0.5)
                 count = 0
             t = threading.Thread(target=node._IP.execCommand, args=(CMD,))
             t.start()
@@ -170,7 +170,7 @@ class SingleChain():
         for t in threads:
             t.join()
         print('node starting...')
-        for i in range(10):
+        for i in range(5):
             print('.', end='')
             time.sleep(1)
 

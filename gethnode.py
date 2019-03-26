@@ -216,7 +216,7 @@ class GethNode():
 #        '''
 #        admin.addPeer()
 #        '''
-#        sleep(random()+0.3)
+#        sleep(random()+0.1)
 #        method = 'admin_addPeer'
 #        params = args
 #        return method, params
@@ -253,7 +253,6 @@ class GethNode():
         '''
         if maxLevel < level:
             raise ValueError("level should be no larger than maxLevel")
-#        sleep(0.1)
         method = 'admin_setLevel'
         params = [maxLevel, level]
         return method, params
@@ -263,7 +262,6 @@ class GethNode():
         '''
         admin.setID()
         '''
-#        sleep(0.3)
         method = 'admin_setID'
         params = [ID]
         return method, params

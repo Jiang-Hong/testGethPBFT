@@ -104,7 +104,7 @@ class HIBEChain():
                 t.start()
         for t in threadlist:
             t.join()
-        time.sleep(3)
+        time.sleep(2)
 
     def destructHIBEChain(self):
         '''

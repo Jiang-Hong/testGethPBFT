@@ -7,8 +7,9 @@ import time
 import subprocess
 import os
 
-USERNAME = 'u0' #"dell"u0
-PASSWD = 'test' #"dell@2017"test
+USERNAME = 'u0' # "dell"u0
+PASSWD = 'test' # "dell@2017"test
+MAXPAYLOAD = 20 # maximum number of clients running on one server
 
 class IP():
     '''
@@ -18,7 +19,7 @@ class IP():
         if len(ipaddr.split('.')) < 4:
             print("ip is", ipaddr)
             raise ValueError('format of ip is not correct')
-        self._maxPayload = 20  # maximum number of clients running on one server
+        self._maxPayload = MAXPAYLOAD
         self._currentPort = currentPort
         self._ipaddr = ipaddr
         self._rpcPorts = range(8515, 8515 + self._maxPayload * 10, 10)
@@ -197,7 +198,7 @@ class IPList():
 
 def execCommand(cmd, ipaddr, port=22, username=USERNAME, password=PASSWD):
     '''
-    exec a command on remote server using SSH
+    Exec a command on remote server using SSH
     '''
     client = paramiko.SSHClient()
     client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -250,8 +251,8 @@ def execCommand(cmd, ipaddr, port=22, username=USERNAME, password=PASSWD):
 
 def shutdownServer(IPlist, username=USERNAME, password=PASSWD):
     '''
-    shutdown all server on IPlist
-    note: should set param shell=True
+    Shutdown all server on IPlist
+    Note: should set param shell=True
     '''
     for ip in IPlist._ips:
         my_cmd = 'echo %s | sshpass -p %s ssh -tt %s@%s sudo shutdown now' % (password, password, username, ip)
