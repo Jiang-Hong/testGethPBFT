@@ -11,9 +11,7 @@ from random import random
 
 
 class GethNode():
-    '''
-    Data structure for Geth-pbft client.
-    '''
+    '''Data structure for Geth-pbft client.'''
 
     def __init__(self, IPlist, pbftid, nodeindex, blockchainid, username=USERNAME, passwd=PASSWD):
         self.Enode = ''
@@ -28,11 +26,10 @@ class GethNode():
         self._passwd = PASSWD
         self._accounts = []
         self._tmp = []
+        self._exception = False
 
     def start(self):
-        '''
-        Start a geth-pbft node on remote server.
-        '''
+        '''Start a container for geth on remote server and create a new account.'''
         RUN_DOCKER = ('docker run -td -p %d:8545 -p %d:30303 --rm --name %s rkdghd/geth-pbft:id' % (self._rpcPort,
                                                                                                         self._listenerPort,
                                                                                                         self._name))
@@ -43,17 +40,15 @@ class GethNode():
                                                                                   self._IP._ipaddr, self._rpcPort))
         else:
             raise RuntimeError('Docker start error. Container maybe already exists')
-        sleep(0.6)
+        sleep(0.5)
         NEWACCOUNT = 'docker exec -t %s geth --datadir abc account new --password passfile' % self._name
         account = self._IP.execCommand(NEWACCOUNT).split()[-1][1:-1]
-#        print(account)
+        sleep(0.2)
         if len(account) == 40:
             self._accounts.append(account)
 
     def rpc(fn):
-        '''
-        Decorator for rpc calls.
-        '''
+        '''Decorator for rpc calls.'''
         @wraps(fn)
         def func(self, *args, **kwargs):
             method, params = fn(self, *args, **kwargs)
@@ -65,7 +60,9 @@ class GethNode():
                 })
             url = "http://{}:{}".format(self._IP._ipaddr, self._rpcPort)
             try:
+                sleep(0.2)  # important
                 response = requests.post(url, headers=self._headers, data=data)
+                sleep(0.1)
                 response.close()
                 result = json.loads(response.content.decode(encoding='utf-8'))['result']
             except Exception as e:
@@ -92,59 +89,48 @@ class GethNode():
         return func
 
     def getEnode(self):
-        '''
-        Return enode information from admin.nodeInfo.
-        '''
+        '''Return enode information from admin.nodeInfo'''
         return self.Enode
 
     @rpc
     def getPeerCount(self, *args, **kwargs):
+        '''net.peerCount'''
         method = 'net_peerCount'
         params = []
         return method, params
 
     @rpc
     def getPeers(self, *args, **kwargs):
-        '''
-        admin.peers
-        '''
+        '''admin.peers'''
         method = 'admin_peers'
         params = []
         return method, params
 
     @rpc
     def newAccount(self, password='root', *args, **kwargs):
-        '''
-        personal.newAccount(password)
-        '''
+        '''personal.newAccount(password)'''
         method = 'personal_newAccount'
         params = [password]
         return method, params
 
     @rpc
     def keyStatus(self, *args, **kwargs):
-        '''
-        admin.keystatus()
-        '''
+        '''admin.keystatus()'''
         method = 'admin_keyStatus'
         params = []
         return method, params
 
     @rpc
     def unlockAccount(self, account='0', password='root', duration=86400, **kwargs):
-        '''
-        personal.unlockAccount()
-        '''
+        '''personal.unlockAccount()'''
         method = 'personal_unlockAccount'
         params = [account, password, duration]
         return method, params
 
     @rpc
     def sendOldTransaction(self, toID, toIndex, value, *args, **kwargs):
-        '''
-        eth.sendTransaction()
-        '''
-        if isinstance(value, int):
+        '''eth.sendTransaction()'''
+        if isinstance(value, int):    # if value is int, change it to hex str
             value = hex(value)
         params = [{"toid":toID, "toindex":toIndex, "value":value}]
         method = 'eth_sendTransaction'
@@ -152,10 +138,8 @@ class GethNode():
 
     @rpc
     def sendTransaction(self, toID, toIndex, value, *args, **kwargs):
-        '''
-        eth.sendTransaction2()
-        '''
-        if isinstance(value, int):
+        '''eth.sendTransaction2()'''
+        if isinstance(value, int):    # if value is int, change it to hex str
             value = hex(value)
         params = [{"toid":toID, "toindex":toIndex, "value":value}]
         method = 'eth_sendTransaction2'
@@ -163,10 +147,8 @@ class GethNode():
 
     @rpc
     def testSendTransaction(self, toID, toIndex, value, interval, period, **kwargs):
-        '''
-        eth.testSendTransaction2()
-        '''
-        if isinstance(value, int):
+        '''eth.testSendTransaction2()'''
+        if isinstance(value, int):    # if value is int, change it to hex str
             value = hex(value)
         params = [{"toid":toID, "toindex":toIndex, "value":value, "txinterval":interval, "txperiod":period}]
         method = 'eth_testSendTransaction2'
@@ -174,28 +156,21 @@ class GethNode():
 
     @rpc
     def getTransaction(self, TXID, *args, **kwargs):
-        '''
-        eth.getTransaction()
-        '''
+        '''eth.getTransaction()'''
         method = 'eth_getTransaction'
         params = [TXID]
         return method, params
 
     @rpc
     def getAccounts(self, *args, **kwargs):
-        '''
-        eth.accounts
-        '''
+        '''eth.accounts'''
         method = 'eth_accounts'
         params = []
         return method, params
 
     @rpc
     def getBalance(self, account, *args, **kwargs):
-        '''
-        eth.getBalance()
-        ipc form: docker exec -it geth-pbft8515 geth attach ipc://abc/geth.ipc --exec "eth.getBalance(eth.accounts[0])"
-        '''
+        '''eth.getBalance()'''
         if not account.startswith('0x'):
             account = '0x' + account
         method = 'eth_getBalance'
@@ -204,108 +179,103 @@ class GethNode():
 
     @rpc
     def getBlockTransactionCount(self, index, *args, **kwargs):
-        '''
-        eth.getBlockTransactionCount()
-        '''
+        '''eth.getBlockTransactionCount()'''
         method = 'eth_getBlockTransactionCountByNumber'
         params = [hex(index)]
         return method, params
 
-#    @rpc
-#    def addPeer(self, *args, **kwargs):
-#        '''
-#        admin.addPeer()
-#        '''
-#        sleep(random()+0.1)
-#        method = 'admin_addPeer'
-#        params = args
-#        return method, params
-
+    @rpc
     def addPeer(self, *args, **kwargs):
-        '''
-        IPC version admin.addPeer()
-        '''
-        CMD = "docker exec -t %s geth attach ipc://root/abc/geth.ipc --exec \"admin.addPeer%s\"" %(self._name, args)
-        print(CMD)
-        self._IP.execCommand(CMD)
+        '''admin.addPeer()'''
+        sleep(random()+0.3)
+        method = 'admin_addPeer'
+        params = args
+        return method, params
+
+#    def addPeer(self, *args, **kwargs):
+#        '''IPC version admin.addPeer()'''
+#        try:
+#            CMD = ("docker exec -t %s geth attach ipc://root/abc/geth.ipc "
+#                   "--exec \"admin.addPeer%s\"" %(self._name, args))
+#            self._IP.execCommand(CMD)
+#            sleep(1)
+#        except Exception as e:
+#            if self._exception is False:
+#                self._exception = True
+#                self._IP.execCommand(CMD)
+#                sleep(1)
+#            else:
+#                raise RuntimeError('%s:%s %s %s' % (self._IP, self._listenerPort, self._rpcPort, e))
 
     @rpc
     def setEnode(self, *args, **kwargs):
+        '''Set Enode info of a node.'''
         method = 'admin_nodeInfo'
         params = []
         return method, params
 
     @rpc
     def setNumber(self, n, t, *args, **kwargs):
-        '''
-        admin.setNumber()
-        '''
+        '''admin.setNumber()'''
+        # Check if the input params are legal
         if n < t:
-            raise ValueError("nodeCount should be no less than threshold value")
+            raise ValueError('nodeCount should be no less than threshold value')
+        if t <= 0 or n <= 0:
+            raise ValueError('nodeCount and threshold value should be positive')
+
         method = 'admin_setNumber'
         params = [n, t]
         return method, params
 
     @rpc
     def setLevel(self, level, maxLevel, *args, **kwargs):
-        '''
-        admin.setLevel()
-        '''
+        '''admin.setLevel()'''
+        # Check if the input params are legal
         if maxLevel < level:
-            raise ValueError("level should be no larger than maxLevel")
+            raise ValueError('level should be no larger than maxLevel')
+        if level < 0:
+            raise ValueError('level shoud be non-negative')
+
         method = 'admin_setLevel'
         params = [maxLevel, level]
         return method, params
 
     @rpc
     def setID(self, ID, *args, **kwargs):
-        '''
-        admin.setID()
-        '''
+        '''admin.setID()'''
         method = 'admin_setID'
         params = [ID]
         return method, params
 
     @rpc
     def txpoolStatus(self, *args, **kwargs):
-        '''
-        txpool.status
-        '''
+        '''txpool.status'''
         method = 'txpool_status'
         params = []
         return method, params
-#        print("txpool.status pending:%d, queued:%d" % (int(result['pending'], 16), int(result['queued'], 16)))
 
     @rpc
     def startMiner(self, *args, **kwargs):
-        '''
-        miner.start()
-        '''
+        '''miner.start()'''
         method = 'miner_start'
         params = []
         return method, params
 
     @rpc
     def stopMiner(self, *args, **kwargs):
-        '''
-        miner.stop()
-        '''
+        '''miner.stop()'''
         method = 'miner_stop'
         params = []
         return method, params
 
     def isGethRunning(self):
-        '''
-        Check if the client is running.
-        '''
+        '''Check if the client is running.'''
         CMD = 'docker exec -t %s geth attach ipc://root/abc/geth.ipc --exec "admin.nodeInfo"' % self._name
         result = self._IP.execCommand(CMD)
         return False if result.split(':')[0] == 'Fatal' else True
 
     def stop(self):
-        '''
-        Remove the geth-pbft node container on remote server.
-        '''
+        '''Remove the geth-pbft node container on remote server.'''
         STOP_CONTAINER = "docker stop %s" % self._name
         self._IP.execCommand(STOP_CONTAINER)
         print('node %s of blockchain %s at %s:%s stopped' % (self._nodeindex, self._blockchainid,

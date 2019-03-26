@@ -10,6 +10,7 @@ import json
 from math import ceil
 
 def genTestCfg(level=3, cfgFile='conf0.txt'):
+    '''Generate a HIBEChain file.'''
     chainCount = 2 ** (level + 1) - 1
     IDList = [None] * chainCount
     IDList[0] = ''
@@ -49,6 +50,7 @@ def genTestCfg(level=3, cfgFile='conf0.txt'):
         file.write('\n'.join(lines))
 
 def loadCfg(cfgFile='conf.txt'):
+    '''Get IDList & threshList from a config file.'''
     IDList = ['']
     threshList = []
     with open(cfgFile) as file:
@@ -71,6 +73,7 @@ def loadCfg(cfgFile='conf.txt'):
     return IDList, threshList
 
 def confGenesis(chainId, accounts, cfgFile):
+    '''Generate a genesis file.'''
     with open('docker/120.json', 'rb') as f:
         genesis = json.load(f)
     genesis['config']['chainId'] = chainId
@@ -80,20 +83,13 @@ def confGenesis(chainId, accounts, cfgFile):
     extradata = '0x' + '0'*64 + ''.join(accounts) + '0' * 130
     print("extra data in genesis file", extradata)
     genesis['extraData'] = extradata
-#    print(genesis) #
-
-#    for i in range(0, 5):
-#        for j in range(0, 10):
-#            for k in range(0, 10):
-#                for l in range(0, 10):
-#                    ac = hex(ord(str(i)))[2:] + hex(ord(str(j)))[2:] + hex(ord(str(k)))[2:] + hex(ord(str(l)))[2:] + '0' * 31 + '1'
-#                    genesis['alloc'][ac] = {'balance': "0x200000000000000000000000000000000000000000000000000000000000000"}
 
     newGenesis = json.dumps(genesis, indent=2)
     with open('docker/%s' % cfgFile, 'w') as f:
         print(newGenesis, file=f)
 
 def confTerminals(cfgFile, terminals):
+    '''Generate a genesis file for leaf chains and terminals.'''
     with open('docker/%s' % cfgFile, 'rb') as f:
         genesis = json.load(f)
     for chain in terminals:

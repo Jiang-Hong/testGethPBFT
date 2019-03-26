@@ -7,8 +7,21 @@ import threading
 from conf import confGenesis, confTerminals
 import time
 import subprocess
-
 from functools import wraps
+import functools
+
+class SetGenesis():
+    '''Decorator. Set genesis.json file for a chain.'''
+    def __init__(self, func):
+        self.func = func
+    def __call__(self, *args):
+        pass
+    def __repr__(self):
+        '''Return the function's docstring.'''
+        return self.func.__doc__
+    def __get__(self, obj, objtype):
+        '''Support instance methods.'''
+        return functools.partial(self.__call__, obj)
 
 class SingleChain():
     '''
@@ -16,9 +29,8 @@ class SingleChain():
     '''
 
     def __init__(self, name, level, nodeCount, threshold, blockchainid, IPlist, username=USERNAME, passwd=PASSWD):
-        '''
-        init a set of geth-pbft nodes for one blockchain.
-        '''
+
+        # Check if the input params are legal.
         if nodeCount > IPlist.getFullCount():
             raise ValueError("not enough IPs")
 
@@ -40,10 +52,9 @@ class SingleChain():
         self._accounts = []
 
     def SinglechainStart(self):
-        '''
-        run a singlechain
-        '''
+        '''Start all containers for a single chain.'''
         threadlist = []
+        count = 0
         for index in range(self.nodeCount):
             pbftid = index
             nodeindex = index + 1
@@ -51,6 +62,10 @@ class SingleChain():
             self._IPs.add(tmp._IP)
             self._nodes.append(tmp)
             # xq start a thread， target stand for a function that you want to run ,args stand for the parameters
+            count += 1
+            if count == 5:
+                count = 0
+                time.sleep(0.5)
             t = threading.Thread(target=tmp.start)
             t.start()
             threadlist.append(t)
@@ -64,16 +79,15 @@ class SingleChain():
 #        print(self._accounts)
 
     def _setGenesisDecorator(config):
-        '''
-        Decorator for setting genesis.json file for a chain.
-        '''
+        '''Decorator for setting genesis.json file for a chain.'''
+
         @wraps(config)
         def func(self, *args):
             config(self, *args)
             for serverIP in self._IPs:
-                subprocess.run(['sshpass -p %s scp docker/%s %s@%s:%s && sleep 1' % (self._passwd, self._cfgFile,
+                subprocess.run(['sshpass -p %s scp docker/%s %s@%s:%s' % (self._passwd, self._cfgFile,
                                self._username, serverIP._ipaddr, self._cfgFile) ], stdout=subprocess.PIPE, shell=True)
-#                time.sleep(0.8)
+                time.sleep(0.2)
                 threads = []
                 count = 0
                 for node in self._nodes:
@@ -81,8 +95,8 @@ class SingleChain():
                         count += 1
                         if count == 5:
                             count = 0
-                            time.sleep(0.5)
-                        CMD = 'docker cp %s %s:/root/%s && sleep 1' % (self._cfgFile, node._name, self._cfgFile)
+                            time.sleep(0.1)
+                        CMD = 'docker cp %s %s:/root/%s' % (self._cfgFile, node._name, self._cfgFile)
                         t = threading.Thread(target=serverIP.execCommand, args=(CMD,))
                         t.start()
                         print('copying genesis file')
@@ -94,39 +108,34 @@ class SingleChain():
 
     @_setGenesisDecorator
     def ConsensusChainConfig(self):
-        '''
-        set genesis.json for a blockchain & init with genesis.json
-        '''
+        '''Set genesis.json for a blockchain & init with genesis.json.'''
         if self._id is "":
             self._cfgFile = '0.json'
         else:
             self._cfgFile = '%s.json' % self._id
         confGenesis(self._blockchainid, self._accounts, self._cfgFile)
-        time.sleep(0.5)
+        time.sleep(0.1)
 
     @_setGenesisDecorator
     def LeafChainConfig(self, TerminalChains):
+        '''Set genesis.json for leaf chains.'''
         if self._id is "":
             self._cfgFile = '0.json'
         else:
             self._cfgFile = '%s.json' % self._id
         confTerminals(self._cfgFile, TerminalChains)
-        time.sleep(0.5)
+        time.sleep(0.1)
 
     @_setGenesisDecorator
     def TerminalConfig(self):
-        '''
-        set genesis.json for terminal equipments.
-        '''
+        '''Set genesis.json for terminal equipments.'''
         if len(self._id) == 4:
             self._cfgFile = '0.json'
         else:
             self._cfgFile = '%s.json' % self._id[:-4]
 
     def runNodes(self):
-        '''
-        Run nodes on a chain.
-        '''
+        '''Run nodes on a chain.'''
         self.gethInit()
         self.runGethNodes()
         self.constructChain()
@@ -138,10 +147,15 @@ class SingleChain():
         if self._cfgFile is None:
             raise ValueError("initID is not set")
         threads = []
+        count = 0
         for serverIP in self._IPs:
             for node in self._nodes:
                 if node._IP == serverIP:
-                    INIT = 'docker exec -t %s geth --datadir abc init %s && sleep 1' % (node._name, self._cfgFile)
+                    INIT = 'docker exec -t %s geth --datadir abc init %s' % (node._name, self._cfgFile)
+                    count += 1
+                    if count == 5:
+                        count = 0
+                        time.sleep(0.5)
                     t = threading.Thread(target=serverIP.execCommand, args=(INIT,))
                     t.start()
                     threads.append(t)
@@ -149,7 +163,6 @@ class SingleChain():
             t.join()
 
     def runGethNodes(self):
-#        print('run geth nodes:')
         threads = []
         count = 0
         for node in self._nodes:
@@ -158,19 +171,21 @@ class SingleChain():
                    '--pbftid %d --nodeindex %d --blockchainid %d --unlock %s --password '
                    '\"passfile\" --maxpeers 4096 --maxpendpeers 4096 --syncmode \"full\" --nodiscover') % (node._pbftid,
                                                                 node._nodeindex, node._blockchainid, node._accounts[0])
-            CMD = 'docker exec -td %s %s && sleep 2' % (node._name, RUN)
+            CMD = 'docker exec -td %s %s' % (node._name, RUN)
             print(RUN)
             count += 1
             if count == 5:
-                time.sleep(0.5)
                 count = 0
+                time.sleep(0.5)
             t = threading.Thread(target=node._IP.execCommand, args=(CMD,))
+            time.sleep(1)
             t.start()
             threads.append(t)
         for t in threads:
             t.join()
         print('node starting...')
-        for i in range(5):
+        # must wait here
+        for i in range(10):
             print('.', end='')
             time.sleep(1)
 
@@ -184,43 +199,35 @@ class SingleChain():
         time.sleep(0.5)
 
     def getID(self):
-        '''
-        return ID of the chain.
-        '''
+        '''return ID of the chain.'''
         return self._id
 
     def getPrimer(self):
-        '''
-        Return the primer node of the set of Geth-pbft clients.
-        '''
+        '''Return the primer node of the set of Geth-pbft clients.'''
         return self._nodes[0]
 
     def getNode(self, nodeindex):
-        '''
-        Return the node of a given index.
-        '''
+        '''Return the node of a given index.'''
         if nodeindex <= 0 or nodeindex > len(self._nodes):
             raise ValueError("nodeindex out of range")
         return self._nodes[nodeindex-1]
 
     def constructChain(self):
-        '''
-        Construct a single chain.
-        '''
-        time.sleep(0.5)
+        '''Construct a single chain.'''
         if not self._isTerminal:
             print("constructing single chain")
             startTime = time.time()
             threads = []
             count = 0
-            for i in range(len(self._nodes)):
-                for j in range(i+1, len(self._nodes)):
+            nodeCount = len(self._nodes)
+            for i in range(nodeCount):
+                for j in range(i+1, nodeCount):
                     tmpEnode = self._nodes[j].getEnode()
-#                    self._nodes[i].addPeer((tmpEnode, 0)) #########
+##                    self._nodes[i].addPeer((tmpEnode, 0)) #########
                     count += 1
                     if count == 5:
-                        time.sleep(0.5)
                         count = 0
+                        time.sleep(0.2)
                     t = threading.Thread(target=self._nodes[i].addPeer, args=(tmpEnode, 0))
                     t.start()
                     threads.append(t)
@@ -232,9 +239,7 @@ class SingleChain():
             time.sleep(0.5)
 
     def destructChain(self):
-        '''
-        Remove all the nodes in the chain.
-        '''
+        '''Stop containers to destruct the chain.'''
         threadlist = []
         for node in self._nodes:
             t = threading.Thread(target=node.stop,args=())
@@ -244,10 +249,8 @@ class SingleChain():
             t.join()
 
     def connectLowerChain(self, otherChain):
-        '''
-        Connect to a lower single chain.
-        '''
-        time.sleep(0.3)
+        '''Connect to a lower level single chain.'''
+        time.sleep(0.2)
         threads = []
         count = 0
         for node in self._nodes:
@@ -256,7 +259,7 @@ class SingleChain():
                 count += 1
                 if count == 10:
                     count = 0
-                    time.sleep(0.3)
+                    time.sleep(0.1)
                 t = threading.Thread(target=other.addPeer, args=(ep, 2))
                 t.start()
                 threads.append(t)
@@ -266,19 +269,17 @@ class SingleChain():
 
 
     def connectUpperChain(self, otherChain):
-        '''
-        Connect to an upper single chain.
-        '''
-        time.sleep(0.3)
+        '''Connect to an upper level single chain.'''
+        time.sleep(0.2)
         threads = []
-        count = 0
+#        count = 0
         for node in self._nodes:
             for other in otherChain._nodes:
                 ep = other.Enode
-                count += 1
-                if count == 10:
-                    count = 0
-                    time.sleep(0.3)
+#                count += 1
+#                if count == 10:
+#                    count = 0
+#                    time.sleep(0.3)
                 t = threading.Thread(target=node.addPeer, args=(ep, 2))
                 t.start()
                 threads.append(t)
@@ -288,15 +289,11 @@ class SingleChain():
 
 
     def getNodeCount(self):
-        '''
-        Return the number of nodes of the blockchain.
-        '''
+        '''Return the number of nodes of the blockchain.'''
         return len(self._nodes)
 
     def setNumber(self):
-        '''
-        Set (number, threshold) value for the nodes of the blockchain.
-        '''
+        '''Set (number, threshold) value for the nodes of the blockchain.'''
         if not self._ifSetNumber:
             p = self.getPrimer()
             p.setNumber(self.nodeCount, self.threshold)
@@ -306,17 +303,10 @@ class SingleChain():
         time.sleep(0.1*(len(self._nodes)//10+1))
 
     def setLevel(self, maxLevel):
-        '''
-        Set level info for each node.
-        '''
+        '''Set level info for each node.'''
         threadlist = []
-        count = 0
         if not self._ifSetLevel:
             for node in self._nodes:
-                count += 1
-                if count == 10:
-                    count = 0
-                    time.sleep(0.2)
                 t = threading.Thread(target = node.setLevel,args=(self._level,maxLevel))
                 t.start()
                 threadlist.append(t)
@@ -327,9 +317,7 @@ class SingleChain():
             raise RuntimeError("level of chain %s already set" % self._id)
 
     def setID(self):
-        '''
-        Set ID for a blockchain.
-        '''
+        '''Set ID for a blockchain.'''
         if not self._ifSetNumber and self._ifSetLevel:
             raise RuntimeError("number and level info should be set previously")
         if len(self._id) // 4 != self._level:
@@ -340,12 +328,12 @@ class SingleChain():
                 p.setID("")
             else:
                 theadlist = []
-                count = 0
+#                count = 0
                 for node in self._nodes:
-                    count += 1
-                    if count == 5:
-                        count = 0
-                        time.sleep(0.5)
+#                    count += 1
+#                    if count == 5:
+#                        count = 0
+#                        time.sleep(0.5)
                     t = threading.Thread(target=node.setID,args=(self._id,))
                     t.start()
                     theadlist.append(t)
@@ -356,17 +344,10 @@ class SingleChain():
             raise RuntimeError("ID of chain %s already set" % self._id)
 
     def startMiner(self):
-        '''
-        Start miners of all nodes on the chain.
-        '''
+        '''Start miners of all nodes on the chain.'''
         if not self._isTerminal:
             threads = []
-            count = 0
             for node in self._nodes:
-                count += 1
-                if count == 5:
-                    count = 0
-                    time.sleep(0.5)
                 t = threading.Thread(target=node.startMiner, args=())
                 t.start()
                 threads.append(t)

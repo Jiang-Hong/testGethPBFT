@@ -8,7 +8,7 @@ import time
 
 class HIBEChain():
     '''
-    Data structure for a Hierarchical IBE Chain.
+    Data structure for an Hierarchical Identity Based Encryption Chain.
     '''
     def __init__(self, IDList, threshList, IPlist, username=USERNAME, password=PASSWD):
         # Check if the input params are legal
@@ -34,13 +34,13 @@ class HIBEChain():
         self.initChains()
 
         threads = []
-        count = 0
+#        count = 0
         for level in self._structedChains[:-1]:
             for chain in level:
-                count += 1
-                if count >= 8:
-                    count = 0
-                    time.sleep(0.5)
+#                count += 1
+#                if count >= 8:
+#                    count = 0
+#                    time.sleep(0.5)
                 t = threading.Thread(target=chain.ConsensusChainConfig, args=())
                 t.start()
                 threads.append(t)
@@ -48,7 +48,7 @@ class HIBEChain():
             t.join()
 
         threads = []
-        count = 0
+#        count = 0
         if not self._structedChains[-1][0]._isTerminal:
             for chain in self._structedChains[-1]:
                 t = threading.Thread(target=chain.ConsensusChainConfig, args=())
@@ -67,21 +67,19 @@ class HIBEChain():
         time.sleep(3)
 
         threads = []
-        count = 0
+#        count = 0
         for chain in self._chains:
-            count += 1
-            if count == 5:
-                count = 0
-                time.sleep(0.5)
-                print("-----geth starting---------")
+#            count += 1
+#            if count == 5:
+#                count = 0
+#                time.sleep(0.5)
+#            print("-----geth starting---------")
             t = threading.Thread(target=chain.runNodes, args=())
             t.start()
             threads.append(t)
 
         for t in threads:
             t.join()
-
-        time.sleep(2)
 
     def constructHIBEChain(self):
         '''
@@ -90,13 +88,13 @@ class HIBEChain():
         '''
         print('construct hibechain')
         threadlist = []
-        count = 0
+#        count = 0
         for chain in self._chains[::-1]:
-            count += 1
-            if count == 2:
-                time.sleep(0.5)
-                count = 0
-                print("construct HIBEChain wait here...")
+#            count += 1
+#            if count == 2:
+#                time.sleep(0.5)
+#                count = 0
+#                print("construct HIBEChain wait here...")
             if chain.getID() != '':
                 parentChain = self._chains[self._IDList.index(chain.getID()[:-4])]
 #                parentChain.connectLowerChain(chain)
@@ -107,9 +105,7 @@ class HIBEChain():
         time.sleep(2)
 
     def destructHIBEChain(self):
-        '''
-        Stop all the nodes in the HIBEChain.
-        '''
+        '''Stop all containers to destruct the HIBEChain.'''
         threadlist = []
         for chain in self._chains:
             t = threading.Thread(target=chain.destructChain,args=())
@@ -119,9 +115,7 @@ class HIBEChain():
             t.join()
 
     def getChain(self, ID):
-        '''
-        Return a list of blockchain nodes with a given ID.
-        '''
+        '''Return a list of blockchain nodes with a given chain ID(eg. '00010001').'''
         try:
             index = self._IDList.index(ID)
             return self._chains[index]
@@ -130,7 +124,7 @@ class HIBEChain():
 
     def initChains(self):
         threadlist = []
-        count = 0
+#        count = 0
         level = 0
         tmpChain = []
         for index, name in enumerate(self._IDList):
@@ -150,10 +144,10 @@ class HIBEChain():
                 tmpChain = []
                 tmpChain.append(tmp)
                 level = currentLevel
-            count += 1
-            if count == 5:
-                time.sleep(0.8)
-                count = 0
+#            count += 1
+#            if count == 5:
+#                time.sleep(0.8)
+#                count = 0
             t = threading.Thread(target=tmp.SinglechainStart, args=())
             t.start()
             threadlist.append(t)
@@ -166,16 +160,9 @@ class HIBEChain():
                 ch._isTerminal = True
 
     def setNumber(self):
-        '''
-        set (n, t) value for all the chains in HIBEChain.
-        '''
+        '''Set (n, t) value for all chains in HIBEChain.'''
         threadlist = []
-        count = 0
         for chain in self._chains:
-            count += 1
-            if count == 10:
-                time.sleep(0.5)
-                count = 0
             t = threading.Thread(target = chain.setNumber,args = ())
             t.start()
             threadlist.append(t)
@@ -185,17 +172,10 @@ class HIBEChain():
         time.sleep(1)
 
     def setLevel(self):
-        '''
-        set level value for all the chains in HIBEChain.
-        '''
+        '''Set level value for all chains in HIBEChain.'''
+
         threadlist = []
-        count = 0
         for chain in self._chains:
-            # chain.setLevel(self._maxLevel)
-            count += 1
-            if count == 10:
-                time.sleep(0.5)
-                count = 0
             t = threading.Thread(target=chain.setLevel,args=(self._maxLevel,))
             t.start()
             threadlist.append(t)
@@ -207,20 +187,19 @@ class HIBEChain():
         time.sleep(1)
 
     def setID(self):
-        '''
-        set ID for all the chains in HIBEChain.
-        '''
+        '''Set ID for all chains in HIBEChain.'''
+
         if not self._ifSetNumber and self._ifSetLevel:
             raise RuntimeError("number and level info should be set previously")
         startTime = time.time()
         threads = []
-        count = 0
+#        count = 0
         for n, level in enumerate(self._structedChains):
             for chain in level:
-                count += 1
-                if count == 5:
-                    time.sleep(1)
-                    count = 0
+#                count += 1
+#                if count == 5:
+#                    time.sleep(1)
+#                    count = 0
                 t = threading.Thread(target=chain.setID, args=())
                 t.start()
                 threads.append(t)
@@ -250,6 +229,8 @@ class HIBEChain():
         print('setID elapsed time %.2f' % (endTime - startTime))
 
     def startMiner(self):
+        '''Start miner for all consensus nodes.'''
+
         for level in self._structedChains[:-1]:
             for chain in level:
                 chain.startMiner()

@@ -10,9 +10,10 @@ import threading
 #threading.stack_size(300*1024*1024)
 
 #TODO function annotation
-#TODO log
+#TODO log  print >>
 #TODO connection  peer reset -- set ClientAliveInterval ClientAliveCountMax TCPKeepAlive -- sshd_config all params
-#paramiko auth check_auth decorators
+#TODO paramiko auth check_auth decorators
+#TODO paramiko get_pty
 
 failCount = 0
 
@@ -25,7 +26,7 @@ def checkKeyStatus(node):
 
 IPlist = IPList('ip.txt')
 
-IDList, threshList = loadCfg(cfgFile='conf11.txt')
+IDList, threshList = loadCfg(cfgFile='conf0.txt')
 
 #nodeCount = 20
 #IDList = ['']
@@ -158,9 +159,12 @@ for chain in hibe._chains:
     if count >= 20:
         break
 
+txChainID = hibe._structedChains[-1][0]._id[:-4]
+c = hibe.getChain(txChainID)
+p = c.getPrimer()
+for i in range(1, 10):
+    p.getBlockTransactionCount(i)
 
-for i in range(1, 20):
-    print(p.getBlockTransactionCount(i))
 
 print("----------------------------------------------------------------")
 print("node count", nodeCount)
