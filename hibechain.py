@@ -238,10 +238,9 @@ class HIBEChain():
 
 if __name__ == "__main__":
     IPlist = IPList('ip.txt')
-    # startDockerService(IPlist)
     IDList = ["", "0001", "0002"]
     threshList = [(4,3), (1, 1), (1, 1)]
-    #startTime = time.time()
+
     hibe = HIBEChain(IDList, threshList, IPlist)
     hibe.constructHIBEChain()
 
@@ -249,6 +248,7 @@ if __name__ == "__main__":
     hibe.setLevel()
     hibe.setID()
     time.sleep(1)
+
     a = hibe.getChain("")
     a1 = a.getNode(1)
     print("level 0 keystatus", a1.keyStatus())

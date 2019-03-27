@@ -9,7 +9,7 @@ import os
 
 USERNAME = 'u0' # username of servers
 PASSWD = 'test' # password of servers
-MAXPAYLOAD = 10 # maximum number of clients running on one server
+MAXPAYLOAD = 20 # maximum number of clients running on one server
 
 class IP():
     '''
@@ -114,6 +114,7 @@ class IPList():
                     self._IPs.append(IP(line.strip()))
                 else:
                     break
+        self._initService()
 
     def getIPs(self):
         '''Return an list of IPs.'''
@@ -153,22 +154,29 @@ class IPList():
 #            IP.execCommand("docker stop $(docker ps --format '{{.Names}}')")
 
 
-    def startDockerService(self):
-        '''Start docker service on all servers.'''
+    def _initService(self):
+        '''
+        Add key to know_hosts file.
+        Start docker service on all servers.
+        '''
         startTime = time.time()
+        known_hosts = os.path.expanduser('~/.ssh/known_hosts')
+        keys = paramiko.hostkeys.HostKeys(filename=known_hosts)
         CMD = 'echo %s | sudo systemctl start docker' % (PASSWD)
-        home = os.path.expanduser('~')
-        for ip in self._IPs:
-            myCMD = ['ssh-keyscan'] + [ip._ipaddr]
-            with open('%s/.ssh/known_hosts' % home, 'a') as outfile:
-                subprocess.run(myCMD, stdout=outfile)
+        for IP in self._IPs:
+            if not keys.lookup(IP._ipaddr):
+                print('%s is not in known_hosts' % IP._ipaddr)
+                myCMD = ['ssh-keyscan'] + [IP._ipaddr]
+                with open(known_hosts, 'a') as outfile:
+                    subprocess.run(myCMD, stdout=outfile)
 
         threads = []
         for IP in self._IPs:
-            print("%s at %s" % (CMD, IP._ipaddr))
-            t = threading.Thread(target=IP.execCommand, args=(CMD,))
-            threads.append(t)
-            t.start()
+            if not IP.isDockerRunning():
+                print("%s at %s" % (CMD, IP._ipaddr))
+                t = threading.Thread(target=IP.execCommand, args=(CMD,))
+                threads.append(t)
+                t.start()
         for t in threads:
             t.join()
         endTime = time.time()
@@ -249,4 +257,4 @@ if __name__ == "__main__":
     f = IPList('ip.txt')
 #    for i in range(10):
 #        print(f.getNewPort())
-#    f.startDockerService()
+#    f.initService()
