@@ -14,13 +14,13 @@ def genTestCfg(level=3, cfgFile='conf0.txt'):
     chainCount = 2 ** (level + 1) - 1
     IDList = [None] * chainCount
     IDList[0] = ''
-    threshList = [(20, 16)]
+    threshList = [(10, 9)]
     for i in range(1, chainCount):
         if i % 2:
             IDList[i] = IDList[ceil(i/2)-1] + '0001'
         else:
             IDList[i] = IDList[ceil(i/2)-1] + '0002'
-        threshList.append((20, 16))
+        threshList.append((10, 9))
     newCount = chainCount
 
     for i in range(chainCount//2, chainCount):

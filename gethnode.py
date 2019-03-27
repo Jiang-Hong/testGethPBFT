@@ -33,7 +33,7 @@ class GethNode():
         RUN_DOCKER = ('docker run -td -p %d:8545 -p %d:30303 --rm --name %s rkdghd/geth-pbft:id' % (self._rpcPort,
                                                                                                         self._listenerPort,
                                                                                                         self._name))
-
+        sleep(0.4)
         result = self._IP.execCommand(RUN_DOCKER)
         if result:
             print('container of node %s of blockchain %s at %s:%s started' % (self._nodeindex, self._blockchainid,
@@ -43,7 +43,7 @@ class GethNode():
         sleep(0.5)
         NEWACCOUNT = 'docker exec -t %s geth --datadir abc account new --password passfile' % self._name
         account = self._IP.execCommand(NEWACCOUNT).split()[-1][1:-1]
-        sleep(0.2)
+        sleep(0.3)
         if len(account) == 40:
             self._accounts.append(account)
 
@@ -62,7 +62,7 @@ class GethNode():
             try:
                 sleep(0.2)  # important
                 response = requests.post(url, headers=self._headers, data=data)
-                sleep(0.1)
+                sleep(0.2)
                 response.close()
                 result = json.loads(response.content.decode(encoding='utf-8'))['result']
             except Exception as e:
@@ -187,7 +187,7 @@ class GethNode():
     @rpc
     def addPeer(self, *args, **kwargs):
         '''admin.addPeer()'''
-        sleep(random()+0.3)
+        sleep(1)
         method = 'admin_addPeer'
         params = args
         return method, params

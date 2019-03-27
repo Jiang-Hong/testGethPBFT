@@ -7,9 +7,9 @@ import time
 import subprocess
 import os
 
-USERNAME = 'dell' # username of servers
-PASSWD = 'dell@2017' # password of servers
-MAXPAYLOAD = 15 # maximum number of clients running on one server
+USERNAME = 'u0' # username of servers
+PASSWD = 'test' # password of servers
+MAXPAYLOAD = 10 # maximum number of clients running on one server
 
 class IP():
     '''
@@ -56,10 +56,11 @@ class IP():
         '''
         client = paramiko.SSHClient()
         client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        time.sleep(0.2)
         client.connect(self._ipaddr, port, self._username, self._password)
-        time.sleep(0.1)
+        time.sleep(0.3)
         stdin, stdout, stderr = client.exec_command(cmd)
-        time.sleep(0.1)
+        time.sleep(0.2)
         if not stderr.read():
             result = stdout.read().strip().decode(encoding='utf-8')
             client.close()
@@ -73,9 +74,9 @@ class IP():
 
     def isDockerRunning(self):
         '''Check if docker service is running on specified ip.'''
-        CMD = 'systemctl status docker'
-        result = self.execCommand(CMD).split("\n")
-        return True if len(result) >= 5 else False
+        CMD = 'systemctl is-active docker'
+        result = self.execCommand(CMD)
+        return True if result=='active' else False
 
     def stopContainers(self):
         '''Stop all containers on the server.'''

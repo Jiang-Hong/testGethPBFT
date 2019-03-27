@@ -227,7 +227,7 @@ class SingleChain():
                     count += 1
                     if count == 5:
                         count = 0
-                        time.sleep(0.2)
+                        time.sleep(0.3)
                     t = threading.Thread(target=self._nodes[i].addPeer, args=(tmpEnode, 0))
                     t.start()
                     threads.append(t)
@@ -300,7 +300,7 @@ class SingleChain():
             self._ifSetNumber = True
         else:
             raise RuntimeError("number of chain %s already set" % self._id)
-        time.sleep(0.1*(len(self._nodes)//10+1))
+        time.sleep(0.5*(len(self._nodes)//10+1))
 
     def setLevel(self, maxLevel):
         '''Set level info for each node.'''
@@ -313,6 +313,7 @@ class SingleChain():
             for t in threadlist:
                 t.join()
             self._ifSetLevel = True
+            time.sleep(0.5)
         else:
             raise RuntimeError("level of chain %s already set" % self._id)
 
@@ -328,12 +329,12 @@ class SingleChain():
                 p.setID("")
             else:
                 theadlist = []
-#                count = 0
+                count = 0
                 for node in self._nodes:
-#                    count += 1
-#                    if count == 5:
-#                        count = 0
-#                        time.sleep(0.5)
+                    count += 1
+                    if count == 5:
+                        count = 0
+                        time.sleep(0.5)
                     t = threading.Thread(target=node.setID,args=(self._id,))
                     t.start()
                     theadlist.append(t)

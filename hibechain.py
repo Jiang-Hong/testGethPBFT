@@ -124,7 +124,7 @@ class HIBEChain():
 
     def initChains(self):
         threadlist = []
-#        count = 0
+        count = 0
         level = 0
         tmpChain = []
         for index, name in enumerate(self._IDList):
@@ -144,10 +144,10 @@ class HIBEChain():
                 tmpChain = []
                 tmpChain.append(tmp)
                 level = currentLevel
-#            count += 1
-#            if count == 5:
-#                time.sleep(0.8)
-#                count = 0
+            count += 1
+            if count == 5:
+                time.sleep(0.8)
+                count = 0
             t = threading.Thread(target=tmp.SinglechainStart, args=())
             t.start()
             threadlist.append(t)
@@ -193,13 +193,13 @@ class HIBEChain():
             raise RuntimeError("number and level info should be set previously")
         startTime = time.time()
         threads = []
-#        count = 0
+        count = 0
         for n, level in enumerate(self._structedChains):
             for chain in level:
-#                count += 1
-#                if count == 5:
-#                    time.sleep(1)
-#                    count = 0
+                count += 1
+                if count == 5:
+                    count = 0
+                    time.sleep(0.5)
                 t = threading.Thread(target=chain.setID, args=())
                 t.start()
                 threads.append(t)
@@ -214,16 +214,16 @@ class HIBEChain():
                 while not all((node.keyStatus() for node in chain._nodes for chain in level)):
                     print('root level waiting...')
                     time.sleep(5)
+                time.sleep(5)
 
 
             else:
-#                p = level[-1]._nodes[-1]
+#                thresh = max((chain.threshold for chain in level))
                 while not all((node.keyStatus() for node in chain._nodes for chain in level)):
                     print('.', end='')
                     time.sleep(2)
-                time.sleep(2)
+                time.sleep(5)
         self._ifSetID = True
-        time.sleep(5)
         print("------setID finished----------------")
         endTime = time.time()
         print('setID elapsed time %.2f' % (endTime - startTime))
