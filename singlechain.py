@@ -69,6 +69,7 @@ class SingleChain():
             t = threading.Thread(target=tmp.start)
             t.start()
             threadlist.append(t)
+            time.sleep(0.1)
 
         for t in threadlist:
             # xq threads must run the join function, because the resources of main thread is needed
@@ -89,21 +90,23 @@ class SingleChain():
                                self._username, serverIP._ipaddr, self._cfgFile) ], stdout=subprocess.PIPE, shell=True)
                 time.sleep(0.2)
                 threads = []
-                count = 0
+#                count = 0
                 for node in self._nodes:
-                    if node._IP == serverIP:
-                        count += 1
-                        if count == 5:
-                            count = 0
-                            time.sleep(0.1)
+                    if node._IP == serverIP and node._ifSetGenesis is False:
+#                        count += 1
+#                        if count == 3:
+#                            count = 0
+#                            time.sleep(0.3)
                         CMD = 'docker cp %s %s:/root/%s' % (self._cfgFile, node._name, self._cfgFile)
                         t = threading.Thread(target=serverIP.execCommand, args=(CMD,))
                         t.start()
-                        print('copying genesis file')
                         threads.append(t)
+                        print('copying genesis file')
+                        node._ifSetGenesis = True
+                        time.sleep(0.2)
                 for t in threads:
                     t.join()
-                time.sleep(0.2)
+                time.sleep(1)
         return func
 
     @_setGenesisDecorator
@@ -159,33 +162,34 @@ class SingleChain():
                     t = threading.Thread(target=serverIP.execCommand, args=(INIT,))
                     t.start()
                     threads.append(t)
+                    time.sleep(0.2)
         for t in threads:
             t.join()
 
     def runGethNodes(self):
         threads = []
-        count = 0
+#        count = 0
         for node in self._nodes:
             RUN = ('geth --datadir abc --cache 512 --port 30303 --rpcport 8545 --rpcapi '
                    'admin,eth,miner,web3,net,personal,txpool --rpc --rpcaddr \"0.0.0.0\" '
                    '--pbftid %d --nodeindex %d --blockchainid %d --unlock %s --password '
-                   '\"passfile\" --maxpeers 4096 --maxpendpeers 4096 --syncmode \"full\" --nodiscover') % (node._pbftid,
+                   '\"passfile\" --maxpeers 4096 --maxpendpeers 4096 --syncmode \"full\" --nodiscover && sleep 1') % (node._pbftid,
                                                                 node._nodeindex, node._blockchainid, node._accounts[0])
             CMD = 'docker exec -td %s %s' % (node._name, RUN)
             print(RUN)
-            count += 1
-            if count == 5:
-                count = 0
-                time.sleep(0.5)
+#            count += 1
+#            if count == 5:
+#                count = 0
+#                time.sleep(0.5)
             t = threading.Thread(target=node._IP.execCommand, args=(CMD,))
-            time.sleep(1)
             t.start()
             threads.append(t)
+            time.sleep(1.5)
         for t in threads:
             t.join()
         print('node starting...')
         # must wait here
-        for i in range(10):
+        for i in range(5):
             print('.', end='')
             time.sleep(1)
 
@@ -231,6 +235,7 @@ class SingleChain():
                     t = threading.Thread(target=self._nodes[i].addPeer, args=(tmpEnode, 0))
                     t.start()
                     threads.append(t)
+                    time.sleep(0.2)
             for t in threads:
                 t.join()
             endTime = time.time()
@@ -250,19 +255,20 @@ class SingleChain():
 
     def connectLowerChain(self, otherChain):
         '''Connect to a lower level single chain.'''
-        time.sleep(0.2)
+        time.sleep(0.1)
         threads = []
         count = 0
         for node in self._nodes:
             for other in otherChain._nodes:
                 ep = node.Enode
                 count += 1
-                if count == 10:
+                if count == 5:
                     count = 0
                     time.sleep(0.1)
                 t = threading.Thread(target=other.addPeer, args=(ep, 2))
                 t.start()
                 threads.append(t)
+                time.sleep(0.3)
         for t in threads:
             t.join()
         time.sleep(1)
@@ -270,7 +276,7 @@ class SingleChain():
 
     def connectUpperChain(self, otherChain):
         '''Connect to an upper level single chain.'''
-        time.sleep(0.2)
+        time.sleep(0.1)
         threads = []
 #        count = 0
         for node in self._nodes:
@@ -283,6 +289,7 @@ class SingleChain():
                 t = threading.Thread(target=node.addPeer, args=(ep, 2))
                 t.start()
                 threads.append(t)
+                time.sleep(0.3)
         for t in threads:
             t.join()
         time.sleep(1)
@@ -338,6 +345,7 @@ class SingleChain():
                     t = threading.Thread(target=node.setID,args=(self._id,))
                     t.start()
                     theadlist.append(t)
+                    time.sleep(0.2)
                 for t in theadlist:
                     t.join()
             self._ifSetID = True
@@ -352,6 +360,7 @@ class SingleChain():
                 t = threading.Thread(target=node.startMiner, args=())
                 t.start()
                 threads.append(t)
+                time.sleep(0.1)
             for t in threads:
                 t.join()
 

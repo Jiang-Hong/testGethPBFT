@@ -100,6 +100,8 @@ class HIBEChain():
 #                parentChain.connectLowerChain(chain)
                 t = threading.Thread(target=parentChain.connectLowerChain,args=(chain, ))
                 t.start()
+                threadlist.append(t)
+                time.sleep(0.5)
         for t in threadlist:
             t.join()
         time.sleep(2)

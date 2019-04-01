@@ -7,8 +7,8 @@ import time
 import subprocess
 import os
 
-USERNAME = 'u0' # username of servers
-PASSWD = 'test' # password of servers
+USERNAME = 'dell' # username of servers
+PASSWD = 'dell@2017' # password of servers
 MAXPAYLOAD = 10 # maximum number of containers running on one server
 
 class IP():
@@ -67,6 +67,10 @@ class IP():
             else:
                 result = err
                 if result:
+                    print('-------------')
+                    print(cmd)
+                    print(result)
+                    print('-------------')
                     raise RuntimeError("exec command error: %s" % cmd)
 
     def isDockerRunning(self):
@@ -105,6 +109,7 @@ class IPList():
         '''Read IPs from a file.'''
         self._currentIP = currentIP
         self._IPs = []
+        self._ifInit = False
         with open(ipFile, 'r') as f:
             for line in f.readlines():
                 if line.strip():
@@ -178,22 +183,21 @@ class IPList():
         for i in range(length):
             if not results[i]:
                 print('%s is not in know_hosts. Adding to known_hosts' % self._IPs[i])
-                myCMD = ['ssh-keyscan'] + [IP._ipaddr]
+                myCMD = ['ssh-keyscan'] + [self._IPs[i]._ipaddr]
                 with open(known_hosts, 'a') as outfile:
-                    subprocess.run(myCMD, stdout=outfile)
+                    subprocess.run(myCMD, stdout=outfile, shell=True)
 
-        CMD = 'echo %s | sudo systemctl start docker' % (PASSWD)
+        CMD = 'echo %s | sudo -S systemctl start docker' % PASSWD
+        print('starting docker service on all services')
         threads = []
         for IP in self._IPs:
-            if not IP.isDockerRunning():
-                print("%s at %s" % (CMD, IP._ipaddr))
-                t = threading.Thread(target=IP.execCommand, args=(CMD,))
-                threads.append(t)
-                t.start()
+            t = threading.Thread(target=IP.execCommand, args=(CMD,))
+            threads.append(t)
+            t.start()
         for t in threads:
             t.join()
         endTime = time.time()
-        print('start docker service on all servers. elapsed time: %.3fs' % (endTime-startTime))
+        print('initService elapsed time: %.3fs' % (endTime-startTime))
 
     def rebootServers(self):
         for IP in self._IPs:

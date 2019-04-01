@@ -13,7 +13,10 @@ import threading
 #TODO log  print >>
 #TODO connection  peer reset -- set ClientAliveInterval ClientAliveCountMax TCPKeepAlive -- sshd_config all params
 #TODO class decorators
-#TODO ulimit setting   long-lived SSH connection
+#TODO long-lived SSH connection
+#TODO paramiko connection reset by peer  broken pipe  ## about paramiko
+# sleep after thread starts.  eliminate some sleep time in count block
+#TODO thread pool
 
 failCount = 0
 

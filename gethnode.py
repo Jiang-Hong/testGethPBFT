@@ -27,6 +27,7 @@ class GethNode():
         self._accounts = []
         self._tmp = []
         self._exception = False
+        self._ifSetGenesis = False
 
     def start(self):
         '''Start a container for geth on remote server and create a new account.'''
@@ -191,7 +192,7 @@ class GethNode():
     @rpc
     def addPeer(self, *args, **kwargs):
         '''admin.addPeer()'''
-        sleep(1)
+        # sleep(1)
         method = 'admin_addPeer'
         params = args
         return method, params
@@ -291,4 +292,4 @@ if __name__ == "__main__":
     n = GethNode(IPlist, 0, 1, 121)
     n.start()
     print(n._accounts)
-    # n.stop()
+    n.stop()
