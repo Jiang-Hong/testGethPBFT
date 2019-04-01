@@ -59,15 +59,19 @@ class GethNode():
                 'id':self._id
                 })
             url = "http://{}:{}".format(self._IP._ipaddr, self._rpcPort)
-            try:
-                sleep(0.2)  # important
-                response = requests.post(url, headers=self._headers, data=data)
-                sleep(0.2)
-                response.close()
+            sleep(0.2) # important
+            with requests.Session() as r:
+                response = r.post(url=url, data=data, headers=self._headers)
                 result = json.loads(response.content.decode(encoding='utf-8'))['result']
-            except Exception as e:
-                raise RuntimeError(method, e)
-            print('%s@%s:%s %s' % (method, self._IP._ipaddr, self._rpcPort, result))
+            # try:
+            #     sleep(0.2)  # important
+            #     response = requests.post(url, headers=self._headers, data=data)
+            #     sleep(0.1)  #TODO delete?
+            #     response.close()
+            #     result = json.loads(response.content.decode(encoding='utf-8'))['result']
+            # except Exception as e:
+            #     raise RuntimeError(method, e)
+            print('%s @%s : %s    %s' % (method, self._IP._ipaddr, self._rpcPort, result))
             _setNewAccount = lambda acc: self._accounts.append(acc[2:])
             _printTxpool = lambda result: print("txpool.status pending:%d, queued:%d" % (int(result['pending'], 16),
                                                                                          int(result['queued'], 16)))
@@ -287,4 +291,4 @@ if __name__ == "__main__":
     n = GethNode(IPlist, 0, 1, 121)
     n.start()
     print(n._accounts)
-    n.stop()
+    # n.stop()

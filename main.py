@@ -13,7 +13,7 @@ import threading
 #TODO log  print >>
 #TODO connection  peer reset -- set ClientAliveInterval ClientAliveCountMax TCPKeepAlive -- sshd_config all params
 #TODO class decorators
-#TODO paramiko get_pty
+#TODO ulimit setting   long-lived SSH connection
 
 failCount = 0
 
@@ -25,7 +25,7 @@ def checkKeyStatus(node):
         failCount += 1
 
 IPlist = IPList('ip.txt')
-IDList, threshList = loadCfg(cfgFile='conf11.txt')
+IDList, threshList = loadCfg(cfgFile='conf0.txt')
 
 #nodeCount = 20
 #IDList = ['']

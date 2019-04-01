@@ -9,7 +9,7 @@ import os
 
 USERNAME = 'u0' # username of servers
 PASSWD = 'test' # password of servers
-MAXPAYLOAD = 20 # maximum number of clients running on one server
+MAXPAYLOAD = 10 # maximum number of containers running on one server
 
 class IP():
     '''
@@ -52,25 +52,22 @@ class IP():
     def execCommand(self, cmd, port=22):
         '''
         Exec a command on remote server using SSH connection.
-        Note: If the concurrency of SSH commands is high, waiting time should be set.
         '''
-        client = paramiko.SSHClient()
-        client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        time.sleep(0.2)
-        client.connect(self._ipaddr, port, self._username, self._password)
-        time.sleep(0.3)
-        stdin, stdout, stderr = client.exec_command(cmd)
-        time.sleep(0.2)
-        if not stderr.read():
-            result = stdout.read().strip().decode(encoding='utf-8')
-            client.close()
-            return result
-        else:
-            result = stderr.read().strip().decode(encoding='utf-8')
-            print(result)
-            client.close()
-            if result:
-                raise RuntimeError("exec command error: %s" % cmd)
+        with paramiko.SSHClient() as client:
+            client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+            client.connect(self._ipaddr, port, self._username, self._password)
+            time.sleep(0.2)
+            stdin, stdout, stderr = client.exec_command(cmd, get_pty=True)
+            time.sleep(0.1)
+            out = stdout.read().strip().decode(encoding='utf-8')
+            err = stderr.read().strip().decode(encoding='utf-8')
+            if not err:
+                result = out
+                return result
+            else:
+                result = err
+                if result:
+                    raise RuntimeError("exec command error: %s" % cmd)
 
     def isDockerRunning(self):
         '''Check if docker service is running on specified ip.'''
@@ -153,7 +150,6 @@ class IPList():
 #            print(IP)
 #            IP.execCommand("docker stop $(docker ps --format '{{.Names}}')")
 
-
     def _initService(self):
         '''
         Add key to know_hosts file.
@@ -162,14 +158,31 @@ class IPList():
         startTime = time.time()
         known_hosts = os.path.expanduser('~/.ssh/known_hosts')
         keys = paramiko.hostkeys.HostKeys(filename=known_hosts)
-        CMD = 'echo %s | sudo systemctl start docker' % (PASSWD)
-        for IP in self._IPs:
-            if not keys.lookup(IP._ipaddr):
-                print('%s is not in known_hosts' % IP._ipaddr)
+
+        # get results from multi-threading
+        def _threadResult(IP, results, index):
+            results[index] = keys.lookup(IP._ipaddr)
+
+        length = len(self._IPs)
+        threads = []
+        results = [None] * length
+        for n, IP in enumerate(self._IPs):
+            # use multi-threading to lookup keys
+            t = threading.Thread(target=_threadResult, args=(IP, results, n))
+            t.start()
+            threads.append(t)
+        for t in threads:
+            t.join()
+
+        # add keys to known_hosts one by one
+        for i in range(length):
+            if not results[i]:
+                print('%s is not in know_hosts. Adding to known_hosts' % self._IPs[i])
                 myCMD = ['ssh-keyscan'] + [IP._ipaddr]
                 with open(known_hosts, 'a') as outfile:
                     subprocess.run(myCMD, stdout=outfile)
 
+        CMD = 'echo %s | sudo systemctl start docker' % (PASSWD)
         threads = []
         for IP in self._IPs:
             if not IP.isDockerRunning():
@@ -192,17 +205,18 @@ class IPList():
 
 def execCommand(cmd, ipaddr, port=22, username=USERNAME, password=PASSWD):
     '''Exec a command on remote server using SSH connection.'''
-    client = paramiko.SSHClient()
-    client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    client.connect(ipaddr, port, username, password)
-    time.sleep(0.2)
-    stdin, stdout, stderr = client.exec_command(cmd)
-    time.sleep(0.1)
-    if not stderr.read():
-        result = stdout.read().strip().decode(encoding='utf-8')
-    else:
-        result = stderr.read().strip().decode(encoding='utf-8')
-    client.close()
+    with paramiko.SSHClient() as client:
+        client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        client.connect(ipaddr, port, username, password)
+        time.sleep(0.2)
+        stdin, stdout, stderr = client.exec_command(cmd, get_pty=True)
+        time.sleep(0.1)
+        out = stdout.read().strip().decode(encoding='utf-8')
+        err = stderr.read().strip().decode(encoding='utf-8')
+        if not err:
+            result = out
+        else:
+            result = err
     return result
 
 #def stopAll(IP, username=USERNAME, password=PASSWD):
@@ -248,10 +262,20 @@ def shutdownServer(IPlist, username=USERNAME, password=PASSWD):
     Shutdown all server on IPlist.
     Note: Set param shell=True
     '''
-    for ip in IPlist._ips:
-        my_cmd = 'echo %s | sshpass -p %s ssh -tt %s@%s sudo shutdown now' % (password, password, username, ip)
-        print("server %s poweroff" % ip._ip)
-        subprocess.run(my_cmd, stdout=subprocess.PIPE, shell=True)
+    for IP in IPlist._ips:
+        myCmd = 'echo %s | sshpass -p %s ssh -tt %s@%s sudo shutdown now' % (password, password, username, IP)
+        print("server %s poweroff" % IP._ip)
+        subprocess.run(myCmd, stdout=subprocess.PIPE, shell=True)
+
+def setUlimit(IPlist, username=USERNAME, password=PASSWD):
+    '''Change ulimit value for servers.'''
+    for IP in IPlist._IPs:
+        subprocess.run(['sshpass -p %s scp setUlimit.sh %s@%s:' % (IP._password, IP._username, IP._ipaddr) ], stdout=subprocess.PIPE, shell=True)
+        CMDChmod = 'sshpass -p %s ssh -tt %s@%s chmod +x setUlimit.sh' % (IP._password, IP._username, IP._ipaddr)
+        CMDExec = 'echo %s | sshpass -p %s ssh -tt %s@%s sudo ./setUlimit.sh' % (IP._password, IP._password, IP._username, IP._ipaddr)
+        print('set nopro and nofile')
+        subprocess.run(CMDChmod, stdout=subprocess.PIPE, shell=True)
+        subprocess.run(CMDExec, stdout=subprocess.PIPE, shell=True)
 
 if __name__ == "__main__":
     f = IPList('ip.txt')
