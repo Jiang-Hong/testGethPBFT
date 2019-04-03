@@ -100,17 +100,13 @@ for t in threads:
 
 desChainID = hibe._structedChains[-1][0]._id
 threads = []
-count = 0
 for chain in hibe._structedChains[-1]:
     print("chain id", chain._id)
-    count += 1
-    if count == 10:
-        time.sleep(0.3)
-        count = 0
     tmpNode = chain.getNode(1)
-    t = threading.Thread(target=tmpNode.testSendTransaction, args=(desChainID, 1, "0x1", 1, 200))
+    t = threading.Thread(target=tmpNode.testSendTransaction, args=(desChainID, 1, "0x1", 1, 250))
     t.start()
     threads.append(t)
+    time.sleep(0.1)
 for t in threads:
     t.join()
 
@@ -172,7 +168,7 @@ print(time.ctime())
 print("----------------------------------------------------------------")
 
 
-#hibe.destructHIBEChain()
+hibe.destructHIBEChain()
 
 
 

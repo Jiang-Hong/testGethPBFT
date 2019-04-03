@@ -8,7 +8,6 @@ from conf import confGenesis, confTerminals
 import time
 import subprocess
 from functools import wraps
-import functools
 
 # class SetGenesis():
 #     '''Decorator. Set genesis.json file for a chain.'''
