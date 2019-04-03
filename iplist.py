@@ -7,14 +7,16 @@ import time
 import subprocess
 import os
 
-USERNAME = 'dell' # username of servers
-PASSWD = 'dell@2017' # password of servers
-MAXPAYLOAD = 10 # maximum number of containers running on one server
+USERNAME = 'u0'  # username of servers
+PASSWD = 'test'  # password of servers
+MAXPAYLOAD = 20  # maximum number of containers running on one server
+
 
 class IP():
     '''
     Create an IP object from a server with a list of rpc ports and a list of listener ports.
     '''
+
     def __init__(self, ipaddr, currentPort=0, username=USERNAME, password=PASSWD):
         if len(ipaddr.split('.')) < 4:
             print("ip is", ipaddr)
@@ -77,7 +79,7 @@ class IP():
         '''Check if docker service is running on specified ip.'''
         CMD = 'systemctl is-active docker'
         result = self.execCommand(CMD)
-        return True if result=='active' else False
+        return True if result == 'active' else False
 
     def stopContainers(self):
         '''Stop all containers on the server.'''
@@ -92,19 +94,22 @@ class IP():
 
     def rebootServer(self):
         '''Reboot remote server with SSH connection.'''
-        my_cmd = 'echo %s | sshpass -p %s ssh -tt %s@%s sudo reboot' % (self._password, self._password, self._username, self._ipaddr)
+        my_cmd = 'echo %s | sshpass -p %s ssh -tt %s@%s sudo reboot' % (
+            self._password, self._password, self._username, self._ipaddr)
         print("server %s reboot" % self._ipaddr)
         subprocess.run(my_cmd, stdout=subprocess.PIPE, shell=True)
 
     def shutdownServer(self):
         '''Shutdown remote server with SSH connection.'''
-        my_cmd = 'echo %s | sshpass -p %s ssh -tt %s@%s sudo shutdown now' % (self._password, self._password, self._username, self._ipaddr)
+        my_cmd = 'echo %s | sshpass -p %s ssh -tt %s@%s sudo shutdown now' % (
+            self._password, self._password, self._username, self._ipaddr)
         print("server %s poweroff" % self._ipaddr)
         subprocess.run(my_cmd, stdout=subprocess.PIPE, shell=True)
 
 
 class IPList():
     '''Manage IPs and ports of all servers involved.'''
+
     def __init__(self, ipFile, currentIP=0, username=USERNAME, password=PASSWD):
         '''Read IPs from a file.'''
         self._currentIP = currentIP
@@ -151,9 +156,10 @@ class IPList():
             threads.append(t)
         for t in threads:
             t.join()
-#        for IP in self._IPs:
-#            print(IP)
-#            IP.execCommand("docker stop $(docker ps --format '{{.Names}}')")
+
+    #        for IP in self._IPs:
+    #            print(IP)
+    #            IP.execCommand("docker stop $(docker ps --format '{{.Names}}')")
 
     def _initService(self):
         '''
@@ -165,15 +171,16 @@ class IPList():
         keys = paramiko.hostkeys.HostKeys(filename=known_hosts)
 
         # get results from multi-threading
-        def _threadResult(IP, results, index):
-            results[index] = keys.lookup(IP._ipaddr)
+        # def _threadResult(IP, results, index):
+        #     results[index] = keys.lookup(IP._ipaddr)
+        def _threadResult(IP, results, index): return results.setdefault(str(index), keys.lookup((IP._ipaddr)))
 
         length = len(self._IPs)
         threads = []
-        results = [None] * length
+        results = {}
         for n, IP in enumerate(self._IPs):
             # use multi-threading to lookup keys
-            t = threading.Thread(target=_threadResult, args=(IP, results, n))
+            t = threading.Thread(target=_threadResult, args=(IP, results, str(n)))
             t.start()
             threads.append(t)
         for t in threads:
@@ -181,9 +188,9 @@ class IPList():
 
         # add keys to known_hosts one by one
         for i in range(length):
-            if not results[i]:
+            if not results.get(str(i)):
                 print('%s is not in know_hosts. Adding to known_hosts' % self._IPs[i])
-                myCMD = ['ssh-keyscan'] + [self._IPs[i]._ipaddr]
+                myCMD = 'ssh-keyscan %s' % self._IPs[i]._ipaddr
                 with open(known_hosts, 'a') as outfile:
                     subprocess.run(myCMD, stdout=outfile, shell=True)
 
@@ -197,7 +204,7 @@ class IPList():
         for t in threads:
             t.join()
         endTime = time.time()
-        print('initService elapsed time: %.3fs' % (endTime-startTime))
+        print('initService elapsed time: %.3fs' % (endTime - startTime))
 
     def rebootServers(self):
         for IP in self._IPs:
@@ -206,6 +213,7 @@ class IPList():
     def shutdownServers(self):
         for IP in self._IPs:
             IP.shutdownServer()
+
 
 def execCommand(cmd, ipaddr, port=22, username=USERNAME, password=PASSWD):
     '''Exec a command on remote server using SSH connection.'''
@@ -223,7 +231,8 @@ def execCommand(cmd, ipaddr, port=22, username=USERNAME, password=PASSWD):
             result = err
     return result
 
-#def stopAll(IP, username=USERNAME, password=PASSWD):
+
+# def stopAll(IP, username=USERNAME, password=PASSWD):
 #    '''
 #    Stop all running containers on a server.
 #    '''
@@ -251,7 +260,7 @@ def execCommand(cmd, ipaddr, port=22, username=USERNAME, password=PASSWD):
 #        print('stopAll', e)
 #    ssh.close()
 #
-#def stopAllContainers(IPlist):
+# def stopAllContainers(IPlist):
 #    threads = []
 #    for ip in IPlist._ips:
 #        print("stop all docker containers at %s" % ip._ip)
@@ -271,15 +280,24 @@ def shutdownServer(IPlist, username=USERNAME, password=PASSWD):
         print("server %s poweroff" % IP._ip)
         subprocess.run(myCmd, stdout=subprocess.PIPE, shell=True)
 
+
 def setUlimit(IPlist, username=USERNAME, password=PASSWD):
     '''Change ulimit value for servers.'''
     for IP in IPlist._IPs:
-        subprocess.run(['sshpass -p %s scp setUlimit.sh %s@%s:' % (IP._password, IP._username, IP._ipaddr) ], stdout=subprocess.PIPE, shell=True)
+        subprocess.run(['sshpass -p %s scp setUlimit.sh %s@%s:' % (IP._password, IP._username, IP._ipaddr)],
+                       stdout=subprocess.PIPE, shell=True)
         CMDChmod = 'sshpass -p %s ssh -tt %s@%s chmod +x setUlimit.sh' % (IP._password, IP._username, IP._ipaddr)
-        CMDExec = 'echo %s | sshpass -p %s ssh -tt %s@%s sudo ./setUlimit.sh' % (IP._password, IP._password, IP._username, IP._ipaddr)
+        CMDExec = 'echo %s | sshpass -p %s ssh -tt %s@%s sudo ./setUlimit.sh' % (
+            IP._password, IP._password, IP._username, IP._ipaddr)
         print('set nopro and nofile')
         subprocess.run(CMDChmod, stdout=subprocess.PIPE, shell=True)
         subprocess.run(CMDExec, stdout=subprocess.PIPE, shell=True)
+
+
+# def test(IPlist, username=USERNAME, password=PASSWD):
+#     for IP in IPlist._IPs:
+#         subprocess.run('echo $HOME', shell=True)
+
 
 if __name__ == "__main__":
     f = IPList('ip.txt')

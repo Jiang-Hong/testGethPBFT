@@ -98,6 +98,7 @@ def confTerminals(cfgFile, terminals):
             account.append(hex(ord(char))[2:])
         acc = ''.join(account)
         acc = acc + (40 - len(acc) - 1) * '0' + '1'
+        print(acc)
         genesis['alloc'][acc] = {'balance': "0x200000000000000000000000000000000000000000000000000000000000000"}
     newGenesis = json.dumps(genesis, indent=2)
     with open('docker/%s' % cfgFile, 'w') as f:

@@ -10,18 +10,18 @@ import subprocess
 from functools import wraps
 import functools
 
-class SetGenesis():
-    '''Decorator. Set genesis.json file for a chain.'''
-    def __init__(self, func):
-        self.func = func
-    def __call__(self, *args):
-        pass
-    def __repr__(self):
-        '''Return the function's docstring.'''
-        return self.func.__doc__
-    def __get__(self, obj, objtype):
-        '''Support instance methods.'''
-        return functools.partial(self.__call__, obj)
+# class SetGenesis():
+#     '''Decorator. Set genesis.json file for a chain.'''
+#     def __init__(self, func):
+#         self.func = func
+#     def __call__(self, *args):
+#         pass
+#     def __repr__(self):
+#         '''Return the function's docstring.'''
+#         return self.func.__doc__
+#     def __get__(self, obj, objtype):
+#         '''Support instance methods.'''
+#         return functools.partial(self.__call__, obj)
 
 class SingleChain():
     '''
@@ -54,7 +54,7 @@ class SingleChain():
     def SinglechainStart(self):
         '''Start all containers for a single chain.'''
         threadlist = []
-        count = 0
+        # count = 0
         for index in range(self.nodeCount):
             pbftid = index
             nodeindex = index + 1
@@ -62,10 +62,10 @@ class SingleChain():
             self._IPs.add(tmp._IP)
             self._nodes.append(tmp)
             # xq start a thread， target stand for a function that you want to run ,args stand for the parameters
-            count += 1
-            if count == 5:
-                count = 0
-                time.sleep(0.5)
+            # count += 1
+            # if count == 5:
+            #     count = 0
+            #     time.sleep(0.5)
             t = threading.Thread(target=tmp.start)
             t.start()
             threadlist.append(t)
@@ -150,19 +150,19 @@ class SingleChain():
         if self._cfgFile is None:
             raise ValueError("initID is not set")
         threads = []
-        count = 0
+        # count = 0
         for serverIP in self._IPs:
             for node in self._nodes:
                 if node._IP == serverIP:
                     INIT = 'docker exec -t %s geth --datadir abc init %s' % (node._name, self._cfgFile)
-                    count += 1
-                    if count == 5:
-                        count = 0
-                        time.sleep(0.5)
+                    # count += 1
+                    # if count == 5:
+                    #     count = 0
+                    #     time.sleep(0.5)
                     t = threading.Thread(target=serverIP.execCommand, args=(INIT,))
                     t.start()
                     threads.append(t)
-                    time.sleep(0.2)
+                    time.sleep(0.3)
         for t in threads:
             t.join()
 
@@ -173,7 +173,7 @@ class SingleChain():
             RUN = ('geth --datadir abc --cache 512 --port 30303 --rpcport 8545 --rpcapi '
                    'admin,eth,miner,web3,net,personal,txpool --rpc --rpcaddr \"0.0.0.0\" '
                    '--pbftid %d --nodeindex %d --blockchainid %d --unlock %s --password '
-                   '\"passfile\" --maxpeers 4096 --maxpendpeers 4096 --syncmode \"full\" --nodiscover && sleep 1') % (node._pbftid,
+                   '\"passfile\" --maxpeers 4096 --maxpendpeers 4096 --syncmode \"full\" --nodiscover') % (node._pbftid,
                                                                 node._nodeindex, node._blockchainid, node._accounts[0])
             CMD = 'docker exec -td %s %s' % (node._name, RUN)
             print(RUN)
@@ -222,20 +222,20 @@ class SingleChain():
             print("constructing single chain")
             startTime = time.time()
             threads = []
-            count = 0
+            # count = 0
             nodeCount = len(self._nodes)
             for i in range(nodeCount):
                 for j in range(i+1, nodeCount):
                     tmpEnode = self._nodes[j].getEnode()
 ##                    self._nodes[i].addPeer((tmpEnode, 0)) #########
-                    count += 1
-                    if count == 5:
-                        count = 0
-                        time.sleep(0.3)
+                    # count += 1
+                    # if count == 5:
+                    #     count = 0
+                    #     time.sleep(0.3)
                     t = threading.Thread(target=self._nodes[i].addPeer, args=(tmpEnode, 0))
                     t.start()
                     threads.append(t)
-                    time.sleep(0.2)
+                    time.sleep(0.3)
             for t in threads:
                 t.join()
             endTime = time.time()
@@ -250,6 +250,7 @@ class SingleChain():
             t = threading.Thread(target=node.stop,args=())
             t.start()
             threadlist.append(t)
+            time.sleep(0.1)
         for t in threadlist:
             t.join()
 
@@ -257,14 +258,14 @@ class SingleChain():
         '''Connect to a lower level single chain.'''
         time.sleep(0.1)
         threads = []
-        count = 0
+        # count = 0
         for node in self._nodes:
             for other in otherChain._nodes:
                 ep = node.Enode
-                count += 1
-                if count == 5:
-                    count = 0
-                    time.sleep(0.1)
+                # count += 1
+                # if count == 5:
+                #     count = 0
+                #     time.sleep(0.1)
                 t = threading.Thread(target=other.addPeer, args=(ep, 2))
                 t.start()
                 threads.append(t)
@@ -336,16 +337,16 @@ class SingleChain():
                 p.setID("")
             else:
                 theadlist = []
-                count = 0
+                # count = 0
                 for node in self._nodes:
-                    count += 1
-                    if count == 5:
-                        count = 0
-                        time.sleep(0.5)
+                    # count += 1
+                    # if count == 5:
+                    #     count = 0
+                    #     time.sleep(0.5)
                     t = threading.Thread(target=node.setID,args=(self._id,))
                     t.start()
                     theadlist.append(t)
-                    time.sleep(0.2)
+                    time.sleep(0.3)
                 for t in theadlist:
                     t.join()
             self._ifSetID = True

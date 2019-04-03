@@ -10,13 +10,13 @@ import threading
 #threading.stack_size(300*1024*1024)
 
 #TODO function annotation
-#TODO log  print >>
+#TODO log  print lock
 #TODO connection  peer reset -- set ClientAliveInterval ClientAliveCountMax TCPKeepAlive -- sshd_config all params
 #TODO class decorators
 #TODO long-lived SSH connection
 #TODO paramiko connection reset by peer  broken pipe  ## about paramiko
-# sleep after thread starts.  eliminate some sleep time in count block
 #TODO thread pool
+#TODO invalid TX ?
 
 failCount = 0
 
@@ -28,7 +28,7 @@ def checkKeyStatus(node):
         failCount += 1
 
 IPlist = IPList('ip.txt')
-IDList, threshList = loadCfg(cfgFile='conf0.txt')
+IDList, threshList = loadCfg(cfgFile='conf1.txt')
 
 #nodeCount = 20
 #IDList = ['']
@@ -88,22 +88,17 @@ b1 = b.getNode(1)
 
 
 threads = []
-count = 0
 for chain in hibe._chains[1:]:
     for node in chain._nodes:
-        count += 1
-        if count == 5:
-            time.sleep(0.5)
-            count = 0
         t = threading.Thread(target=checkKeyStatus, args=(node,))
         t.start()
         threads.append(t)
+        time.sleep(0.1)
 #        print(node.getPeerCount())
 for t in threads:
     t.join()
 
-
-
+desChainID = hibe._structedChains[-1][0]._id
 threads = []
 count = 0
 for chain in hibe._structedChains[-1]:
@@ -113,7 +108,7 @@ for chain in hibe._structedChains[-1]:
         time.sleep(0.3)
         count = 0
     tmpNode = chain.getNode(1)
-    t = threading.Thread(target=tmpNode.testSendTransaction, args=("0001", 1, "0x1", 1, 200))
+    t = threading.Thread(target=tmpNode.testSendTransaction, args=(desChainID, 1, "0x1", 1, 200))
     t.start()
     threads.append(t)
 for t in threads:
@@ -161,7 +156,7 @@ for chain in hibe._chains:
     if count >= 20:
         break
 
-txChainID = hibe._structedChains[-1][0]._id[:-4]
+txChainID = hibe._structedChains[-1][0]._id[:-4]  # leaf chain
 c = hibe.getChain(txChainID)
 p = c.getPrimer()
 for i in range(1, 10):

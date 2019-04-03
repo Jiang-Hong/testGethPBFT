@@ -9,6 +9,27 @@ from time import sleep
 from functools import wraps
 from random import random
 
+# class GethNode0(object):
+#     '''data structure for geth client running in a docker container'''
+#
+#     def __init__(self, userName=USERNAME, passWord=PASSWD):
+#         self.Enode = ''
+#         self._IP, self._rpcPort, self._listenerPort = IPlist.getNewPort()
+#         self._name = 'geth-pbft' + str(self._rpcPort)
+#         self._headers = {'Content-Type': 'application/json', 'Connection': 'close'}
+#         self._userName = USERNAME
+#         self._passWord = PASSWD
+#         self._accounts = []
+#         self._ifSetGenesis = False
+#
+#     def start(self):
+#         '''start a container for geth client '''
+#         pass
+
+
+
+
+
 
 class GethNode():
     '''Data structure for Geth-pbft client.'''
@@ -25,8 +46,8 @@ class GethNode():
         self._username = USERNAME
         self._passwd = PASSWD
         self._accounts = []
-        self._tmp = []
-        self._exception = False
+        # self._tmp = []
+        # self._exception = False
         self._ifSetGenesis = False
 
     def start(self):
@@ -64,32 +85,28 @@ class GethNode():
             with requests.Session() as r:
                 response = r.post(url=url, data=data, headers=self._headers)
                 result = json.loads(response.content.decode(encoding='utf-8'))['result']
-            # try:
-            #     sleep(0.2)  # important
-            #     response = requests.post(url, headers=self._headers, data=data)
-            #     sleep(0.1)  #TODO delete?
-            #     response.close()
-            #     result = json.loads(response.content.decode(encoding='utf-8'))['result']
-            # except Exception as e:
-            #     raise RuntimeError(method, e)
+
             print('%s @%s : %s    %s' % (method, self._IP._ipaddr, self._rpcPort, result))
-            _setNewAccount = lambda acc: self._accounts.append(acc[2:])
-            _printTxpool = lambda result: print("txpool.status pending:%d, queued:%d" % (int(result['pending'], 16),
+
+            def _setNewAccount(acc):  return self._accounts.append(acc[2:])
+
+            def _printTxpool(result):  print("txpool.status pending:%d, queued:%d" % (int(result['pending'], 16),
                                                                                          int(result['queued'], 16)))
-            def _hex2Dec(num):
-                return int(num, 16) if num else 0
+            def _hex2Dec(num):  return int(num, 16) if num else 0
+
             def _setEnode(result):
                 enode = result['enode'].split('@')[0]
                 self.Enode = '{}@{}:{}'.format(enode, self._IP._ipaddr, self._listenerPort)
                 return enode
-            table = { 'personal_newAccount': _setNewAccount,
+
+            postRPC = { 'personal_newAccount': _setNewAccount,
                       'net_peerCount': _hex2Dec,
                       'eth_getBlockTransactionCountByNumber': _hex2Dec,
                       'admin_nodeInfo': _setEnode,
                       'txpool_status': _printTxpool
                     }
-            if method in table:
-                result = table[method](result)
+            if method in postRPC:
+                result = postRPC[method](result)
             return result
         return func
 
@@ -198,7 +215,7 @@ class GethNode():
         return method, params
 
 #    def addPeer(self, *args, **kwargs):
-#        '''IPC version admin.addPeer()'''
+#        '''IPC version'''
 #        try:
 #            CMD = ("docker exec -t %s geth attach ipc://root/abc/geth.ipc "
 #                   "--exec \"admin.addPeer%s\"" %(self._name, args))

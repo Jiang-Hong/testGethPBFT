@@ -34,13 +34,8 @@ class HIBEChain():
         self.initChains()
 
         threads = []
-#        count = 0
         for level in self._structedChains[:-1]:
             for chain in level:
-#                count += 1
-#                if count >= 8:
-#                    count = 0
-#                    time.sleep(0.5)
                 t = threading.Thread(target=chain.ConsensusChainConfig, args=())
                 t.start()
                 threads.append(t)
@@ -77,7 +72,7 @@ class HIBEChain():
             t = threading.Thread(target=chain.runNodes, args=())
             t.start()
             threads.append(t)
-
+            time.sleep(1)
         for t in threads:
             t.join()
 
@@ -101,7 +96,7 @@ class HIBEChain():
                 t = threading.Thread(target=parentChain.connectLowerChain,args=(chain, ))
                 t.start()
                 threadlist.append(t)
-                time.sleep(0.5)
+                time.sleep(1)
         for t in threadlist:
             t.join()
         time.sleep(2)
@@ -113,6 +108,7 @@ class HIBEChain():
             t = threading.Thread(target=chain.destructChain,args=())
             t.start()
             threadlist.append(t)
+            time.sleep(0.1)
         for t in threadlist:
             t.join()
 
@@ -126,7 +122,7 @@ class HIBEChain():
 
     def initChains(self):
         threadlist = []
-        count = 0
+        # count = 0
         level = 0
         tmpChain = []
         for index, name in enumerate(self._IDList):
@@ -146,14 +142,17 @@ class HIBEChain():
                 tmpChain = []
                 tmpChain.append(tmp)
                 level = currentLevel
-            count += 1
-            if count == 5:
-                time.sleep(0.8)
-                count = 0
+            # count += 1
+            # if count == 5:
+            #     time.sleep(0.8)
+            #     count = 0
             t = threading.Thread(target=tmp.SinglechainStart, args=())
             t.start()
             threadlist.append(t)
+            time.sleep(0.1)
         self._structedChains.append(tmpChain)
+
+        print()
 
         for t in threadlist:
             t.join()
@@ -195,16 +194,17 @@ class HIBEChain():
             raise RuntimeError("number and level info should be set previously")
         startTime = time.time()
         threads = []
-        count = 0
+        # count = 0
         for n, level in enumerate(self._structedChains):
             for chain in level:
-                count += 1
-                if count == 5:
-                    count = 0
-                    time.sleep(0.5)
+                # count += 1
+                # if count == 5:
+                #     count = 0
+                #     time.sleep(0.5)
                 t = threading.Thread(target=chain.setID, args=())
                 t.start()
                 threads.append(t)
+                time.sleep(0.1)
             for t in threads:
                 t.join()
 
@@ -213,7 +213,7 @@ class HIBEChain():
                 sleepTime = max([chain.nodeCount for chain in level]) * 10
                 print('root level waiting...%ds' % sleepTime)
                 time.sleep(sleepTime)
-                while not all((node.keyStatus() for node in chain._nodes for chain in level)):
+                while not all([node.keyStatus() for node in chain._nodes for chain in level]):
                     print('root level waiting...')
                     time.sleep(5)
                 time.sleep(5)
@@ -221,10 +221,10 @@ class HIBEChain():
 
             else:
 #                thresh = max((chain.threshold for chain in level))
-                while not all((node.keyStatus() for node in chain._nodes for chain in level)):
+                while not all([node.keyStatus() for node in chain._nodes for chain in level]):
                     print('.', end='')
                     time.sleep(2)
-                time.sleep(5)
+                time.sleep(2)
         self._ifSetID = True
         print("------setID finished----------------")
         endTime = time.time()
