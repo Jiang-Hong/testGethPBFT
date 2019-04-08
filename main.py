@@ -105,10 +105,10 @@ for chain in hibe._structedChains[-1]:
     print("chain id", chain._id)
     tmpNode = chain.getNode(1)
     t = threading.Thread(target=tmpNode.testSendTransaction, args=(desChainID, 1, "0x1", 1, 250))
-    time.sleep(0.5)
+    time.sleep(1)
     t.start()
     threads.append(t)
-    time.sleep(0.5)
+    time.sleep(1)
 for t in threads:
     t.join()
 
@@ -118,7 +118,7 @@ for t in threads:
 #    tmpNode.testSendTransaction("0001", 1, "0x1", 1, 250)
 
 
-# time.sleep(5)
+time.sleep(5)
 consensusChains = hibe._structedChains[-2]
 for chain in consensusChains:
     p = chain.getPrimer()
@@ -187,19 +187,40 @@ if tmpChain:
 
 while True:
     tmpChain = hibe.getParentChain(tmpChain)
-    tmpPrimer = tmpChain.getPrimer()
-    time.sleep(1)
-    tmpProof = tmpPrimer.getTxProofByProof(tmpProof)
-    if tmpProof and hibe.isRootChain(tmpChain):
-        break
+    if not hibe.isRootChain(tmpChain):
+        tmpPrimer = tmpChain.getPrimer()
+        time.sleep(0.2)
+        tmpProof = tmpPrimer.getTxProofByProof(tmpProof)
+        if tmpProof:
+            continue
+        else:
+            while True:
+                time.sleep(0.2)
+                try:
+                    tmpProof = tmpPrimer.getTxProofByProof(tmpProof)
+                except Exception:
+                    continue
+                else:
+                    break
+            # if tmpProof.get('error'):
+            #     continue
+            # elif tmpProof:
+            #     break
     else:
-        while True:
-            time.sleep(1)
+        break
+
+tmpPrimer = tmpChain.getPrimer()
+time.sleep(0.2)
+tmpProof = tmpPrimer.getTxProofByProof(tmpProof)
+if not tmpProof:
+    while True:
+        time.sleep(0.2)
+        try:
             tmpProof = tmpPrimer.getTxProofByProof(tmpProof)
-            if tmpProof.get('error'):
-                continue
-            elif tmpProof:
-                break
+        except Exception:
+            continue
+        else:
+            break
 
 print(tmpProof)
 

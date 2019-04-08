@@ -220,23 +220,18 @@ class SingleChain():
         if not self._isTerminal:
             print("constructing single chain")
             startTime = time.time()
-            threads = []
-            # count = 0
+            # threads = []
             nodeCount = len(self._nodes)
             for i in range(nodeCount):
                 for j in range(i+1, nodeCount):
                     tmpEnode = self._nodes[j].getEnode()
-##                    self._nodes[i].addPeer((tmpEnode, 0)) #########
-                    # count += 1
-                    # if count == 5:
-                    #     count = 0
-                    #     time.sleep(0.3)
-                    t = threading.Thread(target=self._nodes[i].addPeer, args=(tmpEnode, 0))
-                    t.start()
-                    threads.append(t)
-                    time.sleep(0.3)
-            for t in threads:
-                t.join()
+                    self._nodes[i].addPeer(tmpEnode, 0) #########
+            #         t = threading.Thread(target=self._nodes[i].addPeer, args=(tmpEnode, 0))
+            #         t.start()
+            #         threads.append(t)
+            #         time.sleep(0.3)
+            # for t in threads:
+            #     t.join()
             endTime = time.time()
             print('%.3fs' % (endTime - startTime))
             print("-------------------------")
@@ -256,21 +251,17 @@ class SingleChain():
     def connectLowerChain(self, otherChain):
         '''Connect to a lower level single chain.'''
         time.sleep(0.05)
-        threads = []
-        # count = 0
+        # threads = []
         for node in self._nodes:
             for other in otherChain._nodes:
                 ep = node.Enode
-                # count += 1
-                # if count == 5:
-                #     count = 0
-                #     time.sleep(0.1)
-                t = threading.Thread(target=other.addPeer, args=(ep, 2))
-                t.start()
-                threads.append(t)
-                time.sleep(0.3)
-        for t in threads:
-            t.join()
+                other.addPeer(ep, 2)
+                # t = threading.Thread(target=other.addPeer, args=(ep, 2))
+                # t.start()
+                # threads.append(t)
+                # time.sleep(0.3)
+        # for t in threads:
+        #     t.join()
         time.sleep(1)
 
 
