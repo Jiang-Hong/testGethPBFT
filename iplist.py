@@ -114,7 +114,7 @@ class IPList():
         '''Read IPs from a file.'''
         self._currentIP = currentIP
         self._IPs = []
-        self._ifInit = False
+#        self._ifInit = False
         with open(ipFile, 'r') as f:
             for line in f.readlines():
                 if line.strip():

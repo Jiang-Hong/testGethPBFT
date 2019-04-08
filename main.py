@@ -16,7 +16,8 @@ import threading
 #TODO long-lived SSH connection
 #TODO paramiko connection reset by peer  broken pipe  ## about paramiko
 #TODO thread pool
-#TODO invalid TX ?
+#TODO PEP8 var name
+#TODO connections  1. delay to all 2. remove some concurrencies
 
 failCount = 0
 
@@ -83,7 +84,7 @@ b = hibe.getChain("0001")
 b1 = b.getNode(1)
 #print("level 1 keystatus", b1.keyStatus())
 #c = hibe.getChain("0002")
-#c1 = c.getNode(1)z
+#c1 = c.getNode(1)
 #print("level 1 keystatus", c1.keyStatus())
 
 
@@ -104,9 +105,10 @@ for chain in hibe._structedChains[-1]:
     print("chain id", chain._id)
     tmpNode = chain.getNode(1)
     t = threading.Thread(target=tmpNode.testSendTransaction, args=(desChainID, 1, "0x1", 1, 250))
+    time.sleep(0.5)
     t.start()
     threads.append(t)
-    time.sleep(0.1)
+    time.sleep(0.5)
 for t in threads:
     t.join()
 
@@ -116,7 +118,7 @@ for t in threads:
 #    tmpNode.testSendTransaction("0001", 1, "0x1", 1, 250)
 
 
-time.sleep(5)
+# time.sleep(5)
 consensusChains = hibe._structedChains[-2]
 for chain in consensusChains:
     p = chain.getPrimer()
@@ -167,8 +169,45 @@ print("failCount", failCount)
 print(time.ctime())
 print("----------------------------------------------------------------")
 
+c1 = hibe.getChain('0001')
+cr = hibe.getChain('')
+p1 = c1._nodes[0]
+pr = cr._nodes[1]
 
-hibe.destructHIBEChain()
+txHash = p.getTransactionByBlockNumberAndIndex(1, 1)
+tmpChain = c
+if tmpChain:
+    tmpPrimer = tmpChain.getPrimer()
+    while True:
+        tmpProof = tmpPrimer.getTxProofByHash(txHash)
+        if tmpProof:
+            break
+        else:
+            time.sleep(0.01)
+
+while True:
+    tmpChain = hibe.getParentChain(tmpChain)
+    tmpPrimer = tmpChain.getPrimer()
+    time.sleep(1)
+    tmpProof = tmpPrimer.getTxProofByProof(tmpProof)
+    if tmpProof and hibe.isRootChain(tmpChain):
+        break
+    else:
+        while True:
+            time.sleep(1)
+            tmpProof = tmpPrimer.getTxProofByProof(tmpProof)
+            if tmpProof.get('error'):
+                continue
+            elif tmpProof:
+                break
+
+print(tmpProof)
+
+
+
+
+
+# hibe.destructHIBEChain()
 
 
 

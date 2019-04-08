@@ -9,28 +9,31 @@ Created on Sat Mar 16 11:04:55 2019
 import json
 from math import ceil
 
-def genTestCfg(level=3, cfgFile='conf0.txt'):
+def genTestCfg(level=3, terminalCount=8, cfgFile='conf0.txt'):
     '''Generate a HIBEChain file.'''
     chainCount = 2 ** (level + 1) - 1
     IDList = [None] * chainCount
     IDList[0] = ''
-    threshList = [(10, 9)]
+    threshList = [(15, 13)]
     for i in range(1, chainCount):
         if i % 2:
             IDList[i] = IDList[ceil(i/2)-1] + '0001'
         else:
             IDList[i] = IDList[ceil(i/2)-1] + '0002'
-        threshList.append((10, 9))
+        threshList.append((13, 11))
     newCount = chainCount
 
     for i in range(chainCount//2, chainCount):
-        for j in range(1, 9):
+        for j in range(1, terminalCount+1):
             IDList.append(IDList[i]+'%04d' % j)
             threshList.append((1,1))
             newCount += 1
         break
+
+    print('Total: %d nodes' % sum([x for x, _ in threshList]))
     print(IDList)
     print(threshList)
+
     chainCount = newCount
 
     lines = []
@@ -49,7 +52,7 @@ def genTestCfg(level=3, cfgFile='conf0.txt'):
     with open(cfgFile, 'w') as file:
         file.write('\n'.join(lines))
 
-def loadCfg(cfgFile='conf.txt'):
+def loadCfg(cfgFile='conf0.txt'):
     '''Get IDList & threshList from a config file.'''
     IDList = ['']
     threshList = []

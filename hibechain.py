@@ -59,7 +59,7 @@ class HIBEChain():
         for t in threads:
             t.join()
 
-        time.sleep(3)
+        time.sleep(2)
 
         threads = []
 #        count = 0
@@ -97,6 +97,7 @@ class HIBEChain():
                 t.start()
                 threadlist.append(t)
                 time.sleep(1)
+                print('active threads:', threading.active_count())
         for t in threadlist:
             t.join()
         time.sleep(2)
@@ -119,6 +120,22 @@ class HIBEChain():
             return self._chains[index]
         except ValueError or IndexError:
             print("ID %s is not in the HIBEChain" % ID)
+
+    def getParentChain(self, chain):
+        '''
+        Return parent chain.
+        Return None if current chain is root chain.
+        '''
+        if chain._id == '':
+            print('root chain does not have a parent chain')
+            return None
+        else:
+            parentID = chain._id[:-4]
+            return self.getChain(parentID)
+
+    def isRootChain(self, chain):
+        '''Check if chain is root chain.'''
+        return chain._id == ''
 
     def initChains(self):
         threadlist = []

@@ -91,7 +91,7 @@ class SingleChain():
                 threads = []
 #                count = 0
                 for node in self._nodes:
-                    if node._IP == serverIP and node._ifSetGenesis is False:
+                    if node._IP == serverIP:
 #                        count += 1
 #                        if count == 3:
 #                            count = 0
@@ -101,8 +101,8 @@ class SingleChain():
                         t.start()
                         threads.append(t)
                         print('copying genesis file')
-                        node._ifSetGenesis = True
-                        time.sleep(0.2)
+#                        node._ifSetGenesis = True
+                        time.sleep(0.1)
                 for t in threads:
                     t.join()
                 time.sleep(1)
@@ -183,7 +183,7 @@ class SingleChain():
             t = threading.Thread(target=node._IP.execCommand, args=(CMD,))
             t.start()
             threads.append(t)
-            time.sleep(1.5)
+            time.sleep(1)
         for t in threads:
             t.join()
         print('node starting...')
@@ -199,7 +199,7 @@ class SingleChain():
             threads.append(t)
         for t in threads:
             t.join()
-        time.sleep(0.5)
+        time.sleep(0.3)
 
     def getID(self):
         '''return ID of the chain.'''
@@ -249,13 +249,13 @@ class SingleChain():
             t = threading.Thread(target=node.stop,args=())
             t.start()
             threadlist.append(t)
-            time.sleep(0.1)
+            time.sleep(0.05)
         for t in threadlist:
             t.join()
 
     def connectLowerChain(self, otherChain):
         '''Connect to a lower level single chain.'''
-        time.sleep(0.1)
+        time.sleep(0.05)
         threads = []
         # count = 0
         for node in self._nodes:
@@ -276,7 +276,7 @@ class SingleChain():
 
     def connectUpperChain(self, otherChain):
         '''Connect to an upper level single chain.'''
-        time.sleep(0.1)
+        time.sleep(0.05)
         threads = []
 #        count = 0
         for node in self._nodes:
@@ -317,10 +317,11 @@ class SingleChain():
                 t = threading.Thread(target = node.setLevel,args=(self._level,maxLevel))
                 t.start()
                 threadlist.append(t)
+                time.sleep(0.05)
             for t in threadlist:
                 t.join()
             self._ifSetLevel = True
-            time.sleep(0.5)
+            time.sleep(0.25)
         else:
             raise RuntimeError("level of chain %s already set" % self._id)
 
@@ -360,7 +361,7 @@ class SingleChain():
                 t = threading.Thread(target=node.startMiner, args=())
                 t.start()
                 threads.append(t)
-                time.sleep(0.1)
+                time.sleep(0.05)
             for t in threads:
                 t.join()
 

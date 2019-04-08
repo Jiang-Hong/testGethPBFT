@@ -46,9 +46,6 @@ class GethNode():
         self._username = USERNAME
         self._passwd = PASSWD
         self._accounts = []
-        # self._tmp = []
-        # self._exception = False
-        self._ifSetGenesis = False
 
     def start(self):
         '''Start a container for geth on remote server and create a new account.'''
@@ -56,12 +53,16 @@ class GethNode():
                                                                                                         self._listenerPort,
                                                                                                         self._name))
         sleep(0.4)
-        result = self._IP.execCommand(RUN_DOCKER)
+        try:
+            result = self._IP.execCommand(RUN_DOCKER)
+        except Exception as e:
+            print('Docker start error. Container maybe already exists')
         if result:
+            print(result)
             print('container of node %s of blockchain %s at %s:%s started' % (self._nodeindex, self._blockchainid,
                                                                                   self._IP._ipaddr, self._rpcPort))
-        else:
-            raise RuntimeError('Docker start error. Container maybe already exists')
+        # else:
+        #     raise RuntimeError('Docker start error. Container maybe already exists')
         sleep(0.5)
         NEWACCOUNT = 'docker exec -t %s geth --datadir abc account new --password passfile' % self._name
         account = self._IP.execCommand(NEWACCOUNT).split()[-1][1:-1]
@@ -84,7 +85,9 @@ class GethNode():
             sleep(0.2) # important
             with requests.Session() as r:
                 response = r.post(url=url, data=data, headers=self._headers)
-                result = json.loads(response.content.decode(encoding='utf-8'))['result']
+                content = json.loads(response.content.decode(encoding='utf-8'))
+                print(content)
+                result = content['result']
 
             print('%s @%s : %s    %s' % (method, self._IP._ipaddr, self._rpcPort, result))
 
@@ -99,11 +102,14 @@ class GethNode():
                 self.Enode = '{}@{}:{}'.format(enode, self._IP._ipaddr, self._listenerPort)
                 return enode
 
+            def _txHash(result):  return result['hash']
+
             postRPC = { 'personal_newAccount': _setNewAccount,
                       'net_peerCount': _hex2Dec,
                       'eth_getBlockTransactionCountByNumber': _hex2Dec,
                       'admin_nodeInfo': _setEnode,
-                      'txpool_status': _printTxpool
+                      'txpool_status': _printTxpool,
+                      'eth_getTransactionByBlockNumberAndIndex': _txHash
                     }
             if method in postRPC:
                 result = postRPC[method](result)
@@ -288,6 +294,41 @@ class GethNode():
         '''miner.stop()'''
         method = 'miner_stop'
         params = []
+        return method, params
+
+    @rpc
+    def getBlockByNumber(self, blockNumber):
+        '''eth.getBlock()'''
+        # check if index is greater than or equal 0
+        if blockNumber < 0:
+            raise ValueError('blockNumber should be non-negative')
+
+        blockNumberStr = hex(blockNumber)
+        method = 'eth_getBlockByNumber'
+        params = [blockNumberStr, 'true']
+        return method, params
+
+    @rpc
+    def getTransactionByBlockNumberAndIndex(self, blockNumber, index):
+
+        blockNumberStr = hex(blockNumber)
+        indexStr = hex(index)
+        method = 'eth_getTransactionByBlockNumberAndIndex'
+        params = [blockNumberStr, indexStr]
+        return method, params
+
+    @rpc
+    def getTxProofByHash(self, TxHash):
+        '''eth.getTxProofByHash()'''
+        method = 'eth_getTxProofByHash'
+        params = [TxHash]
+        return method, params
+
+    @rpc
+    def getTxProofByProof(self, TxProof):
+        '''eth.getTxProofByProf()'''
+        method = 'eth_getTxProofByProof'
+        params = [TxProof]
         return method, params
 
     def isGethRunning(self):
