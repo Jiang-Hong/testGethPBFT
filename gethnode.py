@@ -28,9 +28,6 @@ from random import random
 
 
 
-
-
-
 class GethNode():
     '''Data structure for Geth-pbft client.'''
 
