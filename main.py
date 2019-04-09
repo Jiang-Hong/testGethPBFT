@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 
 from hibechain import HIBEChain
-from iplist import IPList, execCommand
-from conf import loadCfg
+from iplist import IPList, exec_command
+from conf import load_config_file
 import time
 import threading
 
@@ -13,56 +13,47 @@ import threading
 #TODO log  print lock
 #TODO connection  peer reset -- set ClientAliveInterval ClientAliveCountMax TCPKeepAlive -- sshd_config all params
 #TODO class decorators
-#TODO long-lived SSH connection
 #TODO paramiko connection reset by peer  broken pipe  ## about paramiko
-#TODO thread pool
 #TODO PEP8 var name
 #TODO connections  1. delay to all 2. remove some concurrencies
+#TODO thread pool multiprocessing.pool
 
 failCount = 0
 
-def checkKeyStatus(node):
-    if node.keyStatus() is not True:
-        print("keyStatus of node at %s:%s is False" % (node._IP, node._listenerPort))
+
+def check_key_status(node):
+    if node.key_status() is not True:
+        print("keyStatus of node at %s:%s is False" % (node.ip, node.ethereum_network_port))
         print("node peer count is %s" % node.getPeerCount())
         global failCount
         failCount += 1
 
-IPlist = IPList('ip.txt')
-IDList, threshList = loadCfg(cfgFile='conf1.txt')
 
-#nodeCount = 20
-#IDList = ['']
-#threshList = [(4, 3)]
-#for i in range(1, nodeCount-3):
-#    index = str(i)
-#    tmpID = '0' * (4-len(index)) + index
-#    IDList.append(tmpID)
-#    threshList.append((1,1))
-#nodeCount = sum(nodeCount for (nodeCount, _) in threshList)
+ip_list = IPList('ip.txt')
+id_list, thresh_list = load_config_file('conf1.txt')
 
-print(IDList)
-print(threshList)
+print(id_list)
+print(thresh_list)
 
-nodeCount = sum(n for (n, t) in threshList)
+node_count = sum(n for (n, t) in thresh_list)
 print('-----')
-print('nodeCount:', nodeCount)
+print('node_count:', node_count)
 print('-----')
 
-startTime = time.time()
-hibe = HIBEChain(IDList, threshList, IPlist)
-hibe.constructHIBEChain()
+start_time = time.time()
+hibe = HIBEChain(id_list, thresh_list, ip_list)
+hibe.construct_hibe_chain()
 
-connectionTime = time.time()
-print("connect time %.3fs" % (connectionTime-startTime))
+connect_time = time.time()
+print("connect time %.3fs" % (connect_time-start_time))
 
 
-a = hibe.getChain("")
-a1 = a.getNode(1)
+a = hibe.get_chain("")
+a1 = a.get_node_by_index(1)
 
 #print('waiting for addPeer')
 #count = 0
-#while a1.getPeerCount() <= nodeCount-nodeCount//10:
+#while a1.getPeerCount() <= node_count-node_count//10:
 #    print(a1.getPeerCount(), '.', end='')
 #    count += 1
 #    if count >= 20:
@@ -71,27 +62,27 @@ a1 = a.getNode(1)
 
 print('another %s seconds waiting for addPeer' % str(10))
 time.sleep(10)
-print('peer count of a1----', a1.getPeerCount())
+print('peer count of a1----', a1.get_peer_count())
 
-hibe.setNumber()
-hibe.setLevel()
-hibe.setID()
+hibe.set_number()
+hibe.set_level()
+hibe.set_id()
 
-endTime = time.time()
+end_time = time.time()
 
-#print("level 0 keystatus", a1.keyStatus())
-b = hibe.getChain("0001")
-b1 = b.getNode(1)
-#print("level 1 keystatus", b1.keyStatus())
+#print("level 0 keystatus", a1.key_status())
+b = hibe.get_chain("0001")
+b1 = b.get_node_by_index(1)
+#print("level 1 keystatus", b1.key_status())
 #c = hibe.getChain("0002")
 #c1 = c.getNode(1)
-#print("level 1 keystatus", c1.keyStatus())
+#print("level 1 keystatus", c1.key_status())
 
 
 threads = []
-for chain in hibe._chains[1:]:
-    for node in chain._nodes:
-        t = threading.Thread(target=checkKeyStatus, args=(node,))
+for chain in hibe.chains[1:]:
+    for node in chain.nodes:
+        t = threading.Thread(target=check_key_status, args=(node,))
         t.start()
         threads.append(t)
         time.sleep(0.1)
@@ -99,12 +90,12 @@ for chain in hibe._chains[1:]:
 for t in threads:
     t.join()
 
-desChainID = hibe._structedChains[-1][0]._id
+desChainID = hibe.structed_chains[-1][0].chain_id
 threads = []
-for chain in hibe._structedChains[-1]:
-    print("chain id", chain._id)
-    tmpNode = chain.getNode(1)
-    t = threading.Thread(target=tmpNode.testSendTransaction, args=(desChainID, 1, "0x1", 1, 250))
+for chain in hibe.structed_chains[-1]:
+    print("chain id", chain.chain_id)
+    tmpNode = chain.get_node_by_index(1)
+    t = threading.Thread(target=tmpNode.test_send_transaction, args=(desChainID, 1, "0x1", 1, 250))
     time.sleep(1)
     t.start()
     threads.append(t)
@@ -112,123 +103,99 @@ for chain in hibe._structedChains[-1]:
 for t in threads:
     t.join()
 
-#for chain in hibe._chains[1:]:
-#    print("chain id", chain._id)
-#    tmpNode = chain.getNode(1)
-#    tmpNode.testSendTransaction("0001", 1, "0x1", 1, 250)
-
 
 time.sleep(5)
-consensusChains = hibe._structedChains[-2]
-for chain in consensusChains:
-    p = chain.getPrimer()
-    p.txpoolStatus()
+consensus_chains = hibe.structed_chains[-2]
+for chain in consensus_chains:
+    p = chain.get_primer_node()
+    p.txpool_status()
 
-hibe.startMiner()
-#threads = []
-#for node in (n for level in hibe._structedChains[:-1] for chain in level for n in chain._nodes):
-#    t = threading.Thread(target=node.startMiner, args=())
-##    rootNode.startMiner()
-#    t.start()
-#    threads.append(t)
-#for t in threads:
-#    t.join()
-
-#threadList = []
-#for chainID in IDList[1:]:
-#    tmpChain = hibe.getChain(chainID)
-#    print(chainID, end="-")
-#    tmpNode = tmpChain.getNode(1)
-#    t = threading.Thread(target=tmpNode.testSendTransaction, args=("0001",1,'0x1',1,100))
-#    t.start()
-#    threadList.append(t)
-#for t in threadList:
-#    t.join()
+hibe.start_miner()
 
 time.sleep(10)
 count = 0
-for chain in hibe._chains:
-    for node in chain._nodes:
-        print(node.getPeerCount(), end=" ")
+for chain in hibe.chains:
+    for node in chain.nodes:
+        print(node.get_peer_count(), end=" ")
         count += 1
     if count >= 20:
         break
 
-txChainID = hibe._structedChains[-1][0]._id[:-4]  # leaf chain
-c = hibe.getChain(txChainID)
-p = c.getPrimer()
+transaction_chain_id = hibe.structed_chains[-1][0].chain_id[:-4]  # leaf chain
+c = hibe.get_chain(transaction_chain_id)
+p = c.get_primer_node()
 for i in range(1, 10):
-    p.getBlockTransactionCount(i)
+    p.get_block_transaction_count(i)
 
 
 print("----------------------------------------------------------------")
-print("node count", nodeCount)
-print("connection time", connectionTime - startTime)
-print("total elapsed time:", endTime - startTime)
+print("node count", node_count)
+print("connection time", connect_time - start_time)
+print("total elapsed time:", end_time - start_time)
 print("failCount", failCount)
 print(time.ctime())
 print("----------------------------------------------------------------")
 
-c1 = hibe.getChain('0001')
-cr = hibe.getChain('')
-p1 = c1._nodes[0]
-pr = cr._nodes[1]
+c1 = hibe.get_chain('0001')
+cr = hibe.get_chain('')
+p1 = c1.nodes[0]
+pr = cr.nodes[1]
 
-txHash = p.getTransactionByBlockNumberAndIndex(1, 1)
-tmpChain = c
-if tmpChain:
-    tmpPrimer = tmpChain.getPrimer()
+tx_hash = p.get_transaction_by_block_number_and_index(1, 1)
+tmp_chain = c
+if tmp_chain:
+    tmp_primer = tmp_chain.get_primer_node()
     while True:
-        tmpProof = tmpPrimer.getTxProofByHash(txHash)
-        if tmpProof:
+        tmp_proof = tmp_primer.get_transaction_proof_by_hash(tx_hash)
+        if tmp_proof:
             break
         else:
             time.sleep(0.01)
 
 while True:
-    tmpChain = hibe.getParentChain(tmpChain)
-    if not hibe.isRootChain(tmpChain):
-        tmpPrimer = tmpChain.getPrimer()
+    tmp_chain = hibe.get_parent_chain(tmp_chain)
+    if not hibe.is_root_chain(tmp_chain):
+        tmp_primer = tmp_chain.get_primer_node()
         time.sleep(0.2)
-        tmpProof = tmpPrimer.getTxProofByProof(tmpProof)
-        if tmpProof:
+        tmp_proof = tmp_primer.get_transaction_proof_by_proof(tmp_proof)
+        if tmp_proof:
             continue
         else:
             while True:
                 time.sleep(0.2)
                 try:
-                    tmpProof = tmpPrimer.getTxProofByProof(tmpProof)
+                    tmp_proof = tmp_primer.get_transaction_proof_by_proof(tmp_proof)
                 except Exception:
                     continue
                 else:
                     break
-            # if tmpProof.get('error'):
+            # if tmp_proof.get('error'):
             #     continue
-            # elif tmpProof:
+            # elif tmp_proof:
             #     break
     else:
         break
 
-tmpPrimer = tmpChain.getPrimer()
+tmp_primer = tmp_chain.get_primer_node()
 time.sleep(0.2)
-tmpProof = tmpPrimer.getTxProofByProof(tmpProof)
-if not tmpProof:
+tmp_proof = tmp_primer.get_transaction_proof_by_proof(tmp_proof)
+if not tmp_proof:
     while True:
         time.sleep(0.2)
         try:
-            tmpProof = tmpPrimer.getTxProofByProof(tmpProof)
+            tmp_proof = tmp_primer.get_transaction_proof_by_proof(tmp_proof)
         except Exception:
             continue
         else:
             break
 
-print(tmpProof)
+print(tmp_proof)
 
 
 
 
 
-# hibe.destructHIBEChain()
+#hibe.destruct_hibe_chain()
 
 
 

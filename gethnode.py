@@ -1,5 +1,4 @@
-
-#!/usr/bin/env python3
+# !/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 import requests
@@ -9,359 +8,308 @@ from time import sleep
 from functools import wraps
 from random import random
 
+
 # class GethNode0(object):
-#     '''data structure for geth client running in a docker container'''
+#     """data structure for geth client running in a docker container"""
 #
 #     def __init__(self, userName=USERNAME, passWord=PASSWD):
-#         self.Enode = ''
-#         self._IP, self._rpcPort, self._listenerPort = IPlist.getNewPort()
-#         self._name = 'geth-pbft' + str(self._rpcPort)
+#         self.enode = ''
+#         self.ip, self.rpc_port, self.ethereum_network_port = IPlist.getNewPort()
+#         self.name = 'geth-pbft' + str(self.rpc_port)
 #         self._headers = {'Content-Type': 'application/json', 'Connection': 'close'}
 #         self._userName = USERNAME
 #         self._passWord = PASSWD
-#         self._accounts = []
+#         self.accounts = []
 #         self._ifSetGenesis = False
 #
 #     def start(self):
-#         '''start a container for geth client '''
+#         """start a container for geth client """
 #         pass
 
 
-
 class GethNode():
-    '''Data structure for Geth-pbft client.'''
+    """Data structure for Geth-pbft client."""
 
-    def __init__(self, IPlist, pbftid, nodeindex, blockchainid, username=USERNAME, passwd=PASSWD):
-        self.Enode = ''
-        self._id = nodeindex
-        self._IP, self._rpcPort, self._listenerPort = IPlist.getNewPort()
-        self._pbftid = pbftid
-        self._nodeindex = nodeindex
-        self._blockchainid = blockchainid
-        self._name = 'geth-pbft' + str(self._rpcPort)
-        self._headers = {'Content-Type': 'application/json', 'Connection':'close'}
-        self._username = USERNAME
-        self._passwd = PASSWD
-        self._accounts = []
+    def __init__(self, ip_list, pbft_id, node_index, blockchain_id, username=USERNAME, password=PASSWD):
+        self.enode = ''
+        self.id = node_index    # used in rpc call
+        self.ip, self.rpc_port, self.ethereum_network_port = ip_list.get_new_port()
+        self.pbft_id = pbft_id
+        self.node_index = node_index
+        self.blockchain_id = blockchain_id
+        self.name = 'geth-pbft' + str(self.rpc_port)    # docker container name of this node
+        self._headers = {'Content-Type': 'application/json', 'Connection': 'close'}    # for rpc call use
+        self.username = username    # user name of login user of a server
+        self.password = password    # password of login user of a server
+        self.accounts = []    # accounts list of a geth node
 
     def start(self):
-        '''Start a container for geth on remote server and create a new account.'''
-        RUN_DOCKER = ('docker run -td -p %d:8545 -p %d:30303 --rm --name %s rkdghd/geth-pbft:id' % (self._rpcPort,
-                                                                                                        self._listenerPort,
-                                                                                                        self._name))
-        sleep(0.4)
-        try:
-            result = self._IP.execCommand(RUN_DOCKER)
-        except Exception as e:
-            print('Docker start error. Container maybe already exists')
+        """Start a container for geth on remote server and create a new account."""
+        docker_run_command = ('docker run -td -p %d:8545 -p %d:30303 --rm --name %s rkdghd/geth-pbft:id' % (
+            self.rpc_port, self.ethereum_network_port, self.name))
+        sleep(0.1)
+        result = self.ip.exec_command(docker_run_command)
         if result:
-            print(result)
-            print('container of node %s of blockchain %s at %s:%s started' % (self._nodeindex, self._blockchainid,
-                                                                                  self._IP._ipaddr, self._rpcPort))
-        # else:
-        #     raise RuntimeError('Docker start error. Container maybe already exists')
+            if result.startswith('docker: Error'):
+                print(result)
+                raise RuntimeError('An error occurs while starting docker container. Container maybe already exists')
+            print('container of node %s of blockchain %s at %s:%s started' % (self.node_index, self.blockchain_id,
+                                                                              self.ip.address, self.rpc_port))
         sleep(0.5)
-        NEWACCOUNT = 'docker exec -t %s geth --datadir abc account new --password passfile' % self._name
-        account = self._IP.execCommand(NEWACCOUNT).split()[-1][1:-1]
+        new_account_command = 'docker exec -t %s geth --datadir abc account new --password passfile' % self.name
+        account = self.ip.exec_command(new_account_command).split()[-1][1:-1]
         sleep(0.3)
-        if len(account) == 40:
-            self._accounts.append(account)
+        if len(account) == 40:    # check if the account is valid
+            self.accounts.append(account)
 
-    def rpcCall(self, method, params):
-        '''Make a rpc call'''
+    def rpc_call(self, method, params=[]):
+        """Make a rpc call to this geth node."""
         data = json.dumps({  ## json string used in HTTP requests
             'jsonrpc': '2.0',
             'method': method,
             'params': params,
-            'id': self._id
+            'id': self.id
         })
-        url = "http://{}:{}".format(self._IP._ipaddr, self._rpcPort)
+        url = "http://{}:{}".format(self.ip.address, self.rpc_port)
         with requests.Session() as r:
             response = r.post(url=url, data=data, headers=self._headers)
             content = json.loads(response.content.decode(encoding='utf-8'))
             print(content)
             result = content.get('result')
-        print('%s @%s : %s    %s' % (method, self._IP._ipaddr, self._rpcPort, result))
+        err = content.get('error')
+        if err:
+            raise RuntimeError(err.get('message'))
+
+        print('%s @%s : %s    %s' % (method, self.ip.address, self.rpc_port, result))
         return result
 
+    def get_enode(self):
+        """Return enode information from admin.nodeInfo"""
+        return self.enode
 
-
-    # def rpc(fn):
-    #     '''Decorator for rpc calls.'''
-    #     @wraps(fn)
-    #     def func(self, *args, **kwargs):
-    #         method, params = fn(self, *args, **kwargs)
-    #         data = json.dumps({             ## json string used in HTTP requests
-    #             'jsonrpc': '2.0',
-    #             'method': method,
-    #             'params': params,
-    #             'id':self._id
-    #             })
-    #         url = "http://{}:{}".format(self._IP._ipaddr, self._rpcPort)
-    #         sleep(0.2) # important
-    #         with requests.Session() as r:
-    #             response = r.post(url=url, data=data, headers=self._headers)
-    #             content = json.loads(response.content.decode(encoding='utf-8'))
-    #             print(content)
-    #             result = content['result']
-    #
-    #         print('%s @%s : %s    %s' % (method, self._IP._ipaddr, self._rpcPort, result))
-    #
-    #         def _setNewAccount(acc):  return self._accounts.append(acc[2:])
-    #
-    #         def _printTxpool(result):  print("txpool.status pending:%d, queued:%d" % (int(result['pending'], 16),
-    #                                                                                      int(result['queued'], 16)))
-    #         def _hex2Dec(num):  return int(num, 16) if num else 0
-    #
-    #         def _setEnode(result):
-    #             enode = result['enode'].split('@')[0]
-    #             self.Enode = '{}@{}:{}'.format(enode, self._IP._ipaddr, self._listenerPort)
-    #             return enode
-    #
-    #         def _txHash(result):  return result['hash']
-    #
-    #         postRPC = { 'personal_newAccount': _setNewAccount,
-    #                   'net_peerCount': _hex2Dec,
-    #                   'eth_getBlockTransactionCountByNumber': _hex2Dec,
-    #                   'admin_nodeInfo': _setEnode,
-    #                   'txpool_status': _printTxpool,
-    #                   'eth_getTransactionByBlockNumberAndIndex': _txHash
-    #                 }
-    #         if method in postRPC:
-    #             result = postRPC[method](result)
-    #         return result
-    #     return func
-
-    def getEnode(self):
-        '''Return enode information from admin.nodeInfo'''
-        return self.Enode
-
-    def getPeerCount(self):
-        '''net.peerCount'''
+    def get_peer_count(self):
+        """net.peerCount"""
         method = 'net_peerCount'
         params = []
-        result = self.rpcCall(method, params)
-        return int(result, 16) if result else 0    # change hex number to dec
+        result = self.rpc_call(method, params)
+        return int(result, 16) if result else 0  # change hex number to dec
 
-    def getPeers(self):
-        '''admin.peers'''
+    def get_peers(self):
+        """admin.peers"""
         method = 'admin_peers'
         params = []
-        return self.rpcCall(method, params)
+        return self.rpc_call(method, params)
 
-    def newAccount(self, password='root'):
-        '''personal.newAccount(password)'''
+    def new_account(self, password='root'):
+        """personal.newAccount(password)"""
         method = 'personal_newAccount'
         params = [password]
-        account = self.rpcCall(method, params)
+        account = self.rpc_call(method, params)
         sleep(0.1)
-        self._accounts.append(account[2:])
+        self.accounts.append(account[2:])
 
-    def keyStatus(self):
-        '''admin.keystatus()'''
+    def key_status(self):
+        """admin.key_status()"""
         method = 'admin_keyStatus'
-        params = []
-        return self.rpcCall(method, params)
+        return self.rpc_call(method)
 
-    def unlockAccount(self, account='0', password='root', duration=86400):
-        '''personal.unlockAccount()'''
+    def unlock_account(self, account='0', password='root', duration=86400):
+        """personal.unlockAccount()"""
         method = 'personal_unlockAccount'
         params = [account, password, duration]
-        return self.rpcCall(method, params)
+        return self.rpc_call(method, params)
 
-    def sendOldTransaction(self, toID, toIndex, value, *args, **kwargs):
-        '''eth.sendTransaction()'''
-        if isinstance(value, int):    # if value is int, change it to hex str
+    def send_old_transaction(self, to_id, to_index, value):
+        """eth.sendTransaction()"""
+        if isinstance(value, int):  # if value is int, change it to hex str
             value = hex(value)
-        params = [{"toid":toID, "toindex":toIndex, "value":value}]
+        params = [{"toid": to_id, "toindex": to_ndex, "value": value}]
         method = 'eth_sendTransaction'
         sleep(0.2)
-        return self.rpcCall(method, params)
+        return self.rpc_call(method, params)
 
-    def sendTransaction(self, toID, toIndex, value, *args, **kwargs):
-        '''eth.sendTransaction2()'''
-        if isinstance(value, int):    # if value is int, change it to hex str
+    def send_transaction(self, to_id, to_index, value):
+        """eth.sendTransaction2()"""
+        if isinstance(value, int):  # if value is int, change it to hex str
             value = hex(value)
-        params = [{"toid":toID, "toindex":toIndex, "value":value}]
+        params = [{"toid": to_id, "toindex": to_index, "value": value}]
         method = 'eth_sendTransaction2'
         sleep(0.2)
-        return self.rpcCall(method, params)
+        return self.rpc_call(method, params)
 
-    def testSendTransaction(self, toID, toIndex, value, interval, period, **kwargs):
-        '''eth.testSendTransaction2()'''
-        if isinstance(value, int):    # if value is int, change it to hex str
+    def test_send_transaction(self, to_id, to_index, value, interval, period):
+        """eth.testSendTransaction2()"""
+        if isinstance(value, int):  # if value is int, change it to hex str
             value = hex(value)
-        params = [{"toid":toID, "toindex":toIndex, "value":value, "txinterval":interval, "txperiod":period}]
+        params = [{"toid": to_id, "toindex": to_index, "value": value, "txinterval": interval, "txperiod": period}]
         method = 'eth_testSendTransaction2'
         sleep(0.2)
-        return self.rpcCall(method, params)
+        return self.rpc_call(method, params)
 
-    def getTransaction(self, TXID, *args, **kwargs):
-        '''eth.getTransaction()'''
+    def get_transaction(self, transaction_id):
+        """eth.getTransaction()"""
         method = 'eth_getTransaction'
-        params = [TXID]
-        return self.rpcCall(method, params)
+        params = [transaction_id]
+        return self.rpc_call(method, params)
 
-    def getAccounts(self, *args, **kwargs):
-        '''eth.accounts'''
+    def get_accounts(self):
+        """eth.accounts"""
         method = 'eth_accounts'
-        params = []
-        return self.rpcCall(method, params)
+        return self.rpc_call(method)
 
-    def getBalance(self, account, *args, **kwargs):
-        '''eth.getBalance()'''
+    def get_balance(self, account):
+        """eth.getBalance()"""
         if not account.startswith('0x'):
             account = '0x' + account
         method = 'eth_getBalance'
         params = [account, 'latest']
-        return self.rpcCall(method, params)
+        return self.rpc_call(method, params)
 
-    def getBlockTransactionCount(self, index, *args, **kwargs):
-        '''eth.getBlockTransactionCount()'''
+    def get_block_transaction_count(self, index):
+        """eth.getBlockTransactionCount()"""
         method = 'eth_getBlockTransactionCountByNumber'
         params = [hex(index)]
-        result = self.rpcCall(method, params)
+        result = self.rpc_call(method, params)
         return int(result, 16) if result else 0  # change hex number to dec
 
-
-    def addPeer(self, *args, **kwargs):
-        '''admin.addPeer()'''
+    def add_peer(self, *args):
+        """admin.addPeer()"""
         method = 'admin_addPeer'
         params = args
         sleep(0.1)
-        return self.rpcCall(method, params)
+        return self.rpc_call(method, params)
 
-#    def addPeer(self, *args, **kwargs):
-#        '''IPC version'''
-#        try:
-#            CMD = ("docker exec -t %s geth attach ipc://root/abc/geth.ipc "
-#                   "--exec \"admin.addPeer%s\"" %(self._name, args))
-#            self._IP.execCommand(CMD)
-#            sleep(1)
-#        except Exception as e:
-#            if self._exception is False:
-#                self._exception = True
-#                self._IP.execCommand(CMD)
-#                sleep(1)
-#            else:
-#                raise RuntimeError('%s:%s %s %s' % (self._IP, self._listenerPort, self._rpcPort, e))
+    #    def addPeer(self, *args, **kwargs):
+    #        """IPC version"""
+    #        try:
+    #            CMD = ("docker exec -t %s geth attach ipc://root/abc/geth.ipc "
+    #                   "--exec \"admin.addPeer%s\"" %(self.name, args))
+    #            self.ip.exec_command(CMD)
+    #            sleep(1)
+    #        except Exception as e:
+    #            if self._exception is False:
+    #                self._exception = True
+    #                self.ip.exec_command(CMD)
+    #                sleep(1)
+    #            else:
+    #                raise RuntimeError('%s:%s %s %s' % (self.ip, self.ethereum_network_port, self.rpc_port, e))
 
-    def setEnode(self, *args, **kwargs):
-        '''Set Enode info of a node.'''
+    def set_enode(self):
+        """Set enode info of a node."""
         method = 'admin_nodeInfo'
         params = []
-        result = self.rpcCall(method, params)    # result from rpc call
+        result = self.rpc_call(method, params)  # result from rpc call
         enode = result['enode'].split('@')[0]
-        self.Enode = '{}@{}:{}'.format(enode, self._IP._ipaddr, self._listenerPort)
+        self.enode = '{}@{}:{}'.format(enode, self.ip.address, self.ethereum_network_port)
 
-    def setNumber(self, n, t, *args, **kwargs):
-        '''admin.setNumber()'''
+    def set_number(self, node_count, thresh):
+        """admin.set_number()"""
         # Check if the input params are legal
-        if n < t:
+        if node_count < thresh:
             raise ValueError('nodeCount should be no less than threshold value')
-        if t <= 0 or n <= 0:
+        if thresh <= 0 or node_count <= 0:
             raise ValueError('nodeCount and threshold value should be positive')
 
         method = 'admin_setNumber'
-        params = [n, t]
+        params = [node_count, thresh]
         sleep(0.1)
-        return self.rpcCall(method, params)
+        return self.rpc_call(method, params)
 
-    def setLevel(self, level, maxLevel, *args, **kwargs):
-        '''admin.setLevel()'''
+    def set_level(self, level, max_level):
+        """admin.setLevel()"""
         # Check if the input params are legal
-        if maxLevel < level:
+        if max_level < level:
             raise ValueError('level should be no larger than maxLevel')
         if level < 0:
             raise ValueError('level shoud be non-negative')
 
         method = 'admin_setLevel'
-        params = [maxLevel, level]
+        params = [max_level, level]
         sleep(0.1)
-        return self.rpcCall(method, params)
+        return self.rpc_call(method, params)
 
-    def setID(self, ID, *args, **kwargs):
-        '''admin.setID()'''
+    def set_id(self, chain_id):
+        """admin.setID()"""
         method = 'admin_setID'
-        params = [ID]
+        params = [chain_id]
         sleep(0.1)
-        return self.rpcCall(method, params)
+        return self.rpc_call(method, params)
 
-    def txpoolStatus(self, *args, **kwargs):
-        '''txpool.status'''
+    def txpool_status(self):
+        """txpool.status"""
         method = 'txpool_status'
         params = []
-        result = self.rpcCall(method, params)
+        result = self.rpc_call(method, params)
         sleep(0.1)
         print("txpool.status pending:%d, queued:%d" % (int(result['pending'], 16),
-                                                   int(result['queued'], 16)))
+                                                       int(result['queued'], 16)))
 
-    def startMiner(self, *args, **kwargs):
-        '''miner.start()'''
+    def start_miner(self):
+        """miner.start()"""
         method = 'miner_start'
         params = []
-        return self.rpcCall(method, params)
+        return self.rpc_call(method, params)
 
-    def stopMiner(self, *args, **kwargs):
-        '''miner.stop()'''
+    def stop_miner(self):
+        """miner.stop()"""
         method = 'miner_stop'
         params = []
-        return self.rpcCall(method, params)
+        return self.rpc_call(method, params)
 
-    def getBlockByNumber(self, blockNumber):
-        '''eth.getBlock()'''
+    def get_block_by_number(self, block_number):
+        """eth.getBlock()"""
         # check if index is greater than or equal 0
-        if blockNumber < 0:
+        if block_number < 0:
             raise ValueError('blockNumber should be non-negative')
 
-        blockNumberStr = hex(blockNumber)
+        block_number_hex_string = hex(block_number)
         method = 'eth_getBlockByNumber'
-        params = [blockNumberStr, 'true']
+        params = [block_number_hex_string, 'true']
         sleep(0.1)
-        return self.rpcCall(method, params)
+        return self.rpc_call(method, params)
 
-    def getTransactionByBlockNumberAndIndex(self, blockNumber, index):
+    def get_transaction_by_block_number_and_index(self, block_number, index):
 
-        blockNumberStr = hex(blockNumber)
-        indexStr = hex(index)
+        block_number_hex_string = hex(block_number)
+        index_hex_string = hex(index)
         method = 'eth_getTransactionByBlockNumberAndIndex'
-        params = [blockNumberStr, indexStr]
-        result = self.rpcCall(method, params)    # result from rpc call
+        params = [block_number_hex_string, index_hex_string]
+        result = self.rpc_call(method, params)  # result from rpc call
         return result['hash']
 
-    def getTxProofByHash(self, TxHash):
-        '''eth.getTxProofByHash()'''
+    def get_transaction_proof_by_hash(self, transaction_hash):
+        """eth.getTxProofByHash()"""
         method = 'eth_getTxProofByHash'
-        params = [TxHash]
-        result = self.rpcCall(method, params)
-        print("---------", result)
+        params = [transaction_hash]
+        result = self.rpc_call(method, params)
+        print(result)
         return result
 
-    def getTxProofByProof(self, TxProof):
-        '''eth.getTxProofByProf()'''
+    def get_transaction_proof_by_proof(self, transaction_proof):
+        """eth.getTxProofByProf()"""
         method = 'eth_getTxProofByProof'
-        params = [TxProof]
-        result = self.rpcCall(method, params)
-        print("~~~~", result)
+        params = [transaction_proof]
+        result = self.rpc_call(method, params)
+        print(result)
         return result
 
-    def isGethRunning(self):
-        '''Check if the client is running.'''
-        CMD = 'docker exec -t %s geth attach ipc://root/abc/geth.ipc --exec "admin.nodeInfo"' % self._name
-        result = self._IP.execCommand(CMD)
+    def is_geth_running(self):
+        """Check if the client is running."""
+        command = 'docker exec -t %s geth attach ipc://root/abc/geth.ipc --exec "admin.nodeInfo"' % self.name
+        result = self.ip.exec_command(command)
         return False if result.split(':')[0] == 'Fatal' else True
 
     def stop(self):
-        '''Remove the geth-pbft node container on remote server.'''
-        STOP_CONTAINER = "docker stop %s" % self._name
-        self._IP.execCommand(STOP_CONTAINER)
-        print('node %s of blockchain %s at %s:%s stopped' % (self._nodeindex, self._blockchainid,
-                                                             self._IP._ipaddr, self._rpcPort))
+        """Remove the geth-pbft node container on remote server."""
+        stop_command = "docker stop %s" % self.name
+        self.ip.exec_command(stop_command)
+        print('node %s of blockchain %s at %s:%s stopped' % (self.node_index, self.blockchain_id,
+                                                             self.ip.address, self.rpc_port))
 
 
 if __name__ == "__main__":
     IPlist = IPList('ip.txt')
     n = GethNode(IPlist, 0, 1, 121)
     n.start()
-    print(n._accounts)
+    print(n.accounts)
     n.stop()

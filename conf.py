@@ -9,106 +9,110 @@ Created on Sat Mar 16 11:04:55 2019
 import json
 from math import ceil
 
-def genTestCfg(level=3, terminalCount=8, cfgFile='conf0.txt'):
-    '''Generate a HIBEChain file.'''
-    chainCount = 2 ** (level + 1) - 1
-    IDList = [None] * chainCount
-    IDList[0] = ''
-    threshList = [(15, 13)]
-    for i in range(1, chainCount):
-        if i % 2:
-            IDList[i] = IDList[ceil(i/2)-1] + '0001'
-        else:
-            IDList[i] = IDList[ceil(i/2)-1] + '0002'
-        threshList.append((13, 11))
-    newCount = chainCount
 
-    for i in range(chainCount//2, chainCount):
-        for j in range(1, terminalCount+1):
-            IDList.append(IDList[i]+'%04d' % j)
-            threshList.append((1,1))
-            newCount += 1
+def generate_test_config(level=3, terminal_count=8, config_file='conf0.txt'):
+    """Generate a HIBEChain file."""
+    chain_count = 2 ** (level + 1) - 1
+    id_list = [None] * chain_count
+    id_list[0] = ''
+    thresh_list = [(15, 13)]
+    for i in range(1, chain_count):
+        if i % 2:
+            id_list[i] = id_list[ceil(i/2)-1] + '0001'
+        else:
+            id_list[i] = id_list[ceil(i/2)-1] + '0002'
+        thresh_list.append((13, 11))
+    new_count = chain_count
+
+    for i in range(chain_count//2, chain_count):
+        for j in range(1, terminal_count+1):
+            id_list.append(id_list[i]+'%04d' % j)
+            thresh_list.append((1, 1))
+            new_count += 1
         break
 
-    print('Total: %d nodes' % sum([x for x, _ in threshList]))
-    print(IDList)
-    print(threshList)
-
-    chainCount = newCount
+    print('Total: %d nodes' % sum([x for x, _ in thresh_list]))
+    print(id_list)
+    print(thresh_list)
+    # chain_count = new_count
 
     lines = []
     for i in range(level+1):
         index = 2 ** i
-        tmpID = ' '.join(IDList[:index])
-        tmpThresh = ' '.join('%s,%s' % tup for tup in threshList[:index])
-        IDList = IDList[index:]
-        threshList = threshList[index:]
-        lines.append(tmpID)
-        lines.append(tmpThresh)
-    tmpID = ' '.join(IDList)
-    tmpThresh = ' '.join('%s,%s' % tup for tup in threshList)
-    lines.append(tmpID)
-    lines.append(tmpThresh)
-    with open(cfgFile, 'w') as file:
+        tmp_id = ' '.join(id_list[:index])
+        tmp_thresh = ' '.join('%s,%s' % tup for tup in thresh_list[:index])
+        id_list = id_list[index:]
+        thresh_list = thresh_list[index:]
+        lines.append(tmp_id)
+        lines.append(tmp_thresh)
+    tmp_id = ' '.join(id_list)
+    tmp_thresh = ' '.join('%s,%s' % tup for tup in thresh_list)
+    lines.append(tmp_id)
+    lines.append(tmp_thresh)
+    with open(config_file, 'w') as file:
         file.write('\n'.join(lines))
 
-def loadCfg(cfgFile='conf0.txt'):
-    '''Get IDList & threshList from a config file.'''
-    IDList = ['']
-    threshList = []
-    with open(cfgFile) as file:
+
+def load_config_file(config_file='conf0.txt'):
+    """Get id_list & thresh_list from a config file."""
+    id_list = ['']
+    thresh_list = []
+    with open(config_file) as file:
         lines = file.readlines()
         while not lines[-1].split():
             lines.pop(-1)
         if len(lines) % 2:
             raise RuntimeError('line number of configure file should be even')
         while True:
-            ID = lines[0]
+            add_id = lines[0]
             thresh = lines[1]
             lines = lines[2:]
-            IDList += ID.split()
-            threshList += list(map(tuple, [item.split(',') for item in thresh.split()]))
+            id_list += add_id.split()
+            thresh_list += list(map(tuple, [item.split(',') for item in thresh.split()]))
             if not lines:
                 break
-    threshList = [tuple(map(int, thresh)) for thresh in threshList]
-    if len(IDList) != len(threshList):
-        raise RuntimeError('length of IDList should match length of threshList')
-    return IDList, threshList
+    thresh_list = [tuple(map(int, thresh)) for thresh in thresh_list]
+    if len(id_list) != len(thresh_list):
+        raise RuntimeError('length of id_list should match length of thresh_list')
+    return id_list, thresh_list
 
-def confGenesis(chainId, accounts, cfgFile):
-    '''Generate a genesis file.'''
+
+def generate_genesis(chain_id, accounts, config_file):
+    """Generate a genesis file."""
     with open('docker/120.json', 'rb') as f:
         genesis = json.load(f)
-    genesis['config']['chainId'] = chainId
+    genesis['config']['chainId'] = chain_id
 
     for acc in accounts:
         genesis['alloc'][acc] = {'balance': "0x200000000000000000000000000000000000000000000000000000000000000"}
-    extradata = '0x' + '0'*64 + ''.join(accounts) + '0' * 130
-    print("extra data in genesis file", extradata)
-    genesis['extraData'] = extradata
+    extra_data = '0x' + '0'*64 + ''.join(accounts) + '0' * 130
+    print("extra data in genesis file", extra_data)
+    genesis['extraData'] = extra_data
 
-    newGenesis = json.dumps(genesis, indent=2)
-    with open('docker/%s' % cfgFile, 'w') as f:
-        print(newGenesis, file=f)
+    new_genesis = json.dumps(genesis, indent=2)
+    with open('docker/%s' % config_file, 'w') as f:
+        print(new_genesis, file=f)
 
-def confTerminals(cfgFile, terminals):
-    '''Generate a genesis file for leaf chains and terminals.'''
-    with open('docker/%s' % cfgFile, 'rb') as f:
+
+def generate_terminal_genesis(config_file, terminals):
+    """Generate a genesis file for leaf chains and terminals."""
+    with open('docker/%s' % config_file, 'rb') as f:
         genesis = json.load(f)
     for chain in terminals:
         account = []
-        for char in chain._id:
+        for char in chain.chain_id:
             account.append(hex(ord(char))[2:])
         acc = ''.join(account)
         acc = acc + (40 - len(acc) - 1) * '0' + '1'
         print(acc)
         genesis['alloc'][acc] = {'balance': "0x200000000000000000000000000000000000000000000000000000000000000"}
-    newGenesis = json.dumps(genesis, indent=2)
-    with open('docker/%s' % cfgFile, 'w') as f:
-        print(newGenesis, file=f)
+    new_genesis = json.dumps(genesis, indent=2)
+    with open('docker/%s' % config_file, 'w') as f:
+        print(new_genesis, file=f)
+
 
 if __name__ == '__main__':
-    IDList, threshList = loadCfg()
-    print(IDList)
-    print(threshList)
-    genTestCfg()
+    id_list, thresh_list = load_config_file()
+    print(id_list)
+    print(thresh_list)
+    generate_test_config()
