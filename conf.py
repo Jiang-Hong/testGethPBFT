@@ -12,16 +12,18 @@ from math import ceil
 
 def generate_test_config(level=3, terminal_count=8, config_file='conf0.txt'):
     """Generate a HIBEChain file."""
+    if level > 3:
+        raise ValueError("level number should not exceeds 3")
     chain_count = 2 ** (level + 1) - 1
     id_list = [None] * chain_count
     id_list[0] = ''
-    thresh_list = [(15, 13)]
+    thresh_list = [(21, 18)]
     for i in range(1, chain_count):
         if i % 2:
             id_list[i] = id_list[ceil(i/2)-1] + '0001'
         else:
             id_list[i] = id_list[ceil(i/2)-1] + '0002'
-        thresh_list.append((13, 11))
+        thresh_list.append((20, 17))
     new_count = chain_count
 
     for i in range(chain_count//2, chain_count):
@@ -104,6 +106,9 @@ def generate_terminal_genesis(config_file, terminals):
             account.append(hex(ord(char))[2:])
         acc = ''.join(account)
         acc = acc + (40 - len(acc) - 1) * '0' + '1'
+        if len(acc) != 40:
+            print('account:', acc)
+            raise ValueError('length of account should be 40')
         print(acc)
         genesis['alloc'][acc] = {'balance': "0x200000000000000000000000000000000000000000000000000000000000000"}
     new_genesis = json.dumps(genesis, indent=2)

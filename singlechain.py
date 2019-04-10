@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+from const import USERNAME, PASSWD, SEMAPHORE
 from gethnode import GethNode
-from iplist import IPList, USERNAME, PASSWD
+from iplist import IPList
 from conf import generate_genesis, generate_terminal_genesis
 from functools import wraps
 import time
@@ -23,13 +24,16 @@ import threading
 #         """Support instance methods."""
 #         return functools.partial(self.__call__, obj)
 
-SEMAPHORE = threading.BoundedSemaphore(7)
 
-def add_peer(node1:GethNode, node2:GethNode, addKey:int):
+
+
+def add_peer(node1: GethNode, node2: GethNode, label: int):
     # Use semaphore to limit number of concurrent threads
     SEMAPHORE.acquire()
-    node1.add_peer(node2.get_enode(), addKey)
+    node1.add_peer(node2.get_enode(), label)
+    # time.sleep(0.5)
     SEMAPHORE.release()
+    # print(threading.active_count())
 
 
 class SingleChain():
@@ -73,7 +77,7 @@ class SingleChain():
             t = threading.Thread(target=tmp.start)
             t.start()
             threads.append(t)
-            time.sleep(0.1)
+            time.sleep(0.3)
 
         for t in threads:
             # xq threads must run the join function, because the resources of main thread is needed
@@ -105,7 +109,7 @@ class SingleChain():
                         time.sleep(0.1)
                 for t in threads:
                     t.join()
-                time.sleep(1)
+            time.sleep(1)
         return func
 
     @set_genesis
@@ -190,7 +194,7 @@ class SingleChain():
             threads.append(t)
         for t in threads:
             t.join()
-        time.sleep(0.2)
+        time.sleep(0.3)
 
     def get_chain_id(self):
         """return chain id of the chain."""
@@ -216,15 +220,22 @@ class SingleChain():
 
             # connect nodes in a single chain with each other
             for i in range(node_count):
+                # for j in range(node_count):
                 for j in range(i+1, node_count):
                     # add_peer(self.nodes[i], self.nodes[j], 0)  ### limit number of concurrent threads
 
                     # tmpEnode = self.nodes[j].getEnode()
                     # self.nodes[i].add_peer(tmpEnode, 0) #########
-                    t = threading.Thread(target=add_peer, args=(self.nodes[i], self.nodes[j], 0))
-                    t.start()
-                    threads.append(t)
+                    t1 = threading.Thread(target=add_peer, args=(self.nodes[i], self.nodes[j], 0))
+                    t1.start()
+                    time.sleep(0.05)    # if fail. add this line.
+                    # t2 = threading.Thread(target=add_peer, args=(self.nodes[j], self.nodes[i], 0))
+                    # t2.start()
+                    # time.sleep(0.1)    # O(n)
+                    threads.append(t1)
+                    # threads.append(t2)
                     # time.sleep(0.3)
+                break
             for t in threads:
                 t.join()
             print('active threads:', threading.active_count())
@@ -256,8 +267,12 @@ class SingleChain():
 
                 t = threading.Thread(target=add_peer, args=(other, node, 2))
                 t.start()
+                time.sleep(0.05)    # if fail. add this line.
                 threads.append(t)
                 # time.sleep(0.3)
+                break
+            break
+
         for t in threads:
             t.join()
         # time.sleep(1)
@@ -351,18 +366,24 @@ class SingleChain():
 
 if __name__ == "__main__":
     ip_list = IPList('ip.txt')
-    node_count = 4
-    c = SingleChain('0001', 1, node_count, node_count*3//4+1, 121, ip_list)
+    node_count = 20
+    c = SingleChain('zzzz', 1, node_count, node_count*3//4+1, 121, ip_list)
     c.singlechain_start()
     c.config_consensus_chain()
     c.run_nodes()
 #    p = c.get_primer_node()
 #    print(p.get_peer_count())
-    time.sleep(5)
-    for i in range(1, node_count+1):
+
+    time.sleep(node_count//3)
+    fail_count = 0
+    for i in range(1, node_count + 1):
         node = c.get_node_by_index(i)
-#        acc = node.getAccounts()[0]
-#        print(acc)
-#        print(node.getBalance(acc))
-        print(node.get_peer_count())
+        #        acc = node.getAccounts()[0]
+        #        print(acc)
+        #        print(node.getBalance(acc))
+        count = node.get_peer_count()
+        print(count)
+        if count != node_count - 1:
+            fail_count += 1
+    print("fail count:", fail_count)
     c.destruct_chain()

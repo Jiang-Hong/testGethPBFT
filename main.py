@@ -17,6 +17,7 @@ import threading
 #TODO PEP8 var name
 #TODO connections  1. delay to all 2. remove some concurrencies
 #TODO thread pool multiprocessing.pool
+#TODO design limitation  shorten chain id
 
 failCount = 0
 

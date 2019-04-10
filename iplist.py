@@ -1,15 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+from const import USERNAME, PASSWD, MAXPAYLOAD
 import paramiko
 import threading
 import time
 import subprocess
 import os
 
-USERNAME = 'u0'  # username of servers
-PASSWD = 'test'  # password of servers
-MAXPAYLOAD = 20  # maximum number of containers running on one server
+
 
 
 class IP(object):
@@ -96,7 +95,7 @@ class IP(object):
     def reboot_server(self):
         """Reboot remote server with SSH connection."""
         ssh_reboot_command = 'echo %s | sshpass -p %s ssh -tt %s@%s sudo reboot' % (
-            self._password, self._password, self.username, self.address)
+            self.password, self.password, self.username, self.address)
         print("server %s reboot" % self.address)
         subprocess.run(ssh_reboot_command, stdout=subprocess.PIPE, shell=True)
 
@@ -159,7 +158,7 @@ class IPList(object):
 
     #        for IP in self.ips:
     #            print(IP)
-    #            IP.exec_command("docker stop $(docker ps --format '{{.Names}}')")
+    #            ip.exec_command("docker stop $(docker ps --format '{{.Names}}')")
 
     def _init_service(self):
         """
@@ -172,7 +171,7 @@ class IPList(object):
 
         # get results from multi-threading
         # def _set_thread_result(IP, results, index):
-        #     results[index] = keys.lookup(IP.address)
+        #     results[index] = keys.lookup(ip.address)
         def _set_thread_result(ip: IP, results: dict, index: int):
             return results.setdefault(str(index), keys.lookup(ip.address))
 
@@ -208,12 +207,22 @@ class IPList(object):
         print('initService elapsed time: %.3fs' % (end_time - start_time))
 
     def reboot_servers(self):
+        threads = []
         for ip in self.ips:
-            ip.reboot_server()
+            t = threading.Thread(target=ip.reboot_server)
+            t.start()
+            threads.append(t)
+        for t in threads:
+            t.join()
 
     def shutdown_servers(self):
+        threads = []
         for ip in self.ips:
-            ip.shutdown_server()
+            t = threading.Thread(target=ip.shutdown_server)
+            t.start()
+            threads.append(t)
+        for t in threads:
+            t.join()
 
 
 def exec_command(cmd, ip_address, port=22, username=USERNAME, password=PASSWD):
@@ -249,7 +258,7 @@ def set_ulimit(ip_list):
     for ip in ip_list.ips:
         subprocess.run(['sshpass -p %s scp setUlimit.sh %s@%s:' % (ip.password, ip.username, ip.address)],
                        stdout=subprocess.PIPE, shell=True)
-        chmod_command = 'sshpass -p %s ssh -tt %s@%s chmod +x setUlimit.sh' % (IP._password, IP.username, IP.address)
+        chmod_command = 'sshpass -p %s ssh -tt %s@%s chmod +x setUlimit.sh' % (ip.password, ip.username, ip.address)
         exec_script_command = 'echo %s | sshpass -p %s ssh -tt %s@%s sudo ./setUlimit.sh' % (
             ip.password, ip.password, ip.username, ip.address)
         print('set nopro and nofile')

@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+from const import USERNAME, PASSWD
 from singlechain import SingleChain
-from iplist import IPList, USERNAME, PASSWD
+from iplist import IPList
 import threading
 import time
 

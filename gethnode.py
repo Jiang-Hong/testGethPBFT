@@ -3,10 +3,9 @@
 
 import requests
 import json
-from iplist import IPList, USERNAME, PASSWD
+from iplist import IPList
+from const import USERNAME, PASSWD
 from time import sleep
-from functools import wraps
-from random import random
 
 
 # class GethNode0(object):
@@ -18,7 +17,7 @@ from random import random
 #         self.name = 'geth-pbft' + str(self.rpc_port)
 #         self._headers = {'Content-Type': 'application/json', 'Connection': 'close'}
 #         self._userName = USERNAME
-#         self._passWord = PASSWD
+#         self.password = PASSWD
 #         self.accounts = []
 #         self._ifSetGenesis = False
 #
@@ -47,7 +46,7 @@ class GethNode():
         """Start a container for geth on remote server and create a new account."""
         docker_run_command = ('docker run -td -p %d:8545 -p %d:30303 --rm --name %s rkdghd/geth-pbft:id' % (
             self.rpc_port, self.ethereum_network_port, self.name))
-        sleep(0.1)
+        sleep(0.4)
         result = self.ip.exec_command(docker_run_command)
         if result:
             if result.startswith('docker: Error'):
@@ -55,8 +54,8 @@ class GethNode():
                 raise RuntimeError('An error occurs while starting docker container. Container maybe already exists')
             print('container of node %s of blockchain %s at %s:%s started' % (self.node_index, self.blockchain_id,
                                                                               self.ip.address, self.rpc_port))
-        sleep(0.5)
         new_account_command = 'docker exec -t %s geth --datadir abc account new --password passfile' % self.name
+        sleep(0.1)
         account = self.ip.exec_command(new_account_command).split()[-1][1:-1]
         sleep(0.3)
         if len(account) == 40:    # check if the account is valid
@@ -90,15 +89,14 @@ class GethNode():
     def get_peer_count(self):
         """net.peerCount"""
         method = 'net_peerCount'
-        params = []
-        result = self.rpc_call(method, params)
+        sleep(0.1)
+        result = self.rpc_call(method)
         return int(result, 16) if result else 0  # change hex number to dec
 
     def get_peers(self):
         """admin.peers"""
         method = 'admin_peers'
-        params = []
-        return self.rpc_call(method, params)
+        return self.rpc_call(method)
 
     def new_account(self, password='root'):
         """personal.newAccount(password)"""
@@ -175,8 +173,8 @@ class GethNode():
     def add_peer(self, *args):
         """admin.addPeer()"""
         method = 'admin_addPeer'
-        params = args
-        sleep(0.1)
+        params = list(args)
+        # sleep(0.02)
         return self.rpc_call(method, params)
 
     #    def addPeer(self, *args, **kwargs):
@@ -197,8 +195,7 @@ class GethNode():
     def set_enode(self):
         """Set enode info of a node."""
         method = 'admin_nodeInfo'
-        params = []
-        result = self.rpc_call(method, params)  # result from rpc call
+        result = self.rpc_call(method)  # result from rpc call
         enode = result['enode'].split('@')[0]
         self.enode = '{}@{}:{}'.format(enode, self.ip.address, self.ethereum_network_port)
 
@@ -238,8 +235,7 @@ class GethNode():
     def txpool_status(self):
         """txpool.status"""
         method = 'txpool_status'
-        params = []
-        result = self.rpc_call(method, params)
+        result = self.rpc_call(method)
         sleep(0.1)
         print("txpool.status pending:%d, queued:%d" % (int(result['pending'], 16),
                                                        int(result['queued'], 16)))
@@ -247,14 +243,12 @@ class GethNode():
     def start_miner(self):
         """miner.start()"""
         method = 'miner_start'
-        params = []
-        return self.rpc_call(method, params)
+        return self.rpc_call(method)
 
     def stop_miner(self):
         """miner.stop()"""
         method = 'miner_stop'
-        params = []
-        return self.rpc_call(method, params)
+        return self.rpc_call(method)
 
     def get_block_by_number(self, block_number):
         """eth.getBlock()"""
