@@ -106,6 +106,7 @@ class IP(object):
         ssh_shutdown_command = 'echo %s | sshpass -p %s ssh -tt %s@%s sudo shutdown now' % (
             self.password, self.password, self.username, self.address)
         print("server %s shutdown" % self.address)
+        time.sleep(0.02)
         subprocess.run(ssh_shutdown_command, stdout=subprocess.PIPE, shell=True)
 
 

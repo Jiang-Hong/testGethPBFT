@@ -3,8 +3,8 @@
 
 import threading
 
-CONFIG = 'conf1.txt'
-USERNAME = 'u0'  # username of servers
-PASSWD = 'test'  # password of servers
-MAXPAYLOAD = 20  # maximum number of containers running on one server
+CONFIG = 'conf0.txt'
+USERNAME = 'dell'  # username of servers
+PASSWD = 'dell@2017'  # password of servers
+MAXPAYLOAD = 15  # maximum number of containers running on one server
 SEMAPHORE = threading.BoundedSemaphore(10)

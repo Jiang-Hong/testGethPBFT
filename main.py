@@ -10,15 +10,12 @@ import threading
 
 #threading.stack_size(300*1024*1024)
 
-#TODO function annotation
+#TODO function annotation && docstring
 #TODO log  print lock
-#TODO connection  peer reset -- set ClientAliveInterval ClientAliveCountMax TCPKeepAlive -- sshd_config all params
 #TODO class decorators
 #TODO paramiko connection reset by peer  broken pipe  ## about paramiko
-#TODO PEP8 var name
-#TODO connections  1. delay to all 2. remove some concurrencies
-#TODO thread pool multiprocessing.pool
-#TODO design limitation  shorten chain id
+#TODO change to shorter chain id
+#TODO finish benchmark function
 
 failCount = 0
 
@@ -26,7 +23,7 @@ failCount = 0
 def check_key_status(node):
     if node.key_status() is not True:
         print("keyStatus of node at %s:%s is False" % (node.ip, node.ethereum_network_port))
-        print("node peer count is %s" % node.getPeerCount())
+        print("node peer count is %s" % node.get_peer_count())
         global failCount
         failCount += 1
 

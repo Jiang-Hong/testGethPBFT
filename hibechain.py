@@ -54,6 +54,7 @@ class HIBEChain():
         else:
             for chain in self.structed_chains[-2]:
                 chain.config_leaf_chain(self.structed_chains[-1])
+                break  # TODO need to be optimized later
             for chain in self.structed_chains[-1]:
                 t = threading.Thread(target=chain.config_terminal, args=())
                 t.start()

@@ -11,8 +11,8 @@ from math import ceil
 
 
 def generate_test_config(level=3, terminal_count=8, config_file='conf0.txt'):
-    """Generate a HIBEChain file."""
-    if level > 3:
+    """Generate a HIBEChain config file."""
+    if level > 3:    # level starts from 0
         raise ValueError("level number should not exceeds 3")
     chain_count = 2 ** (level + 1) - 1
     id_list = [None] * chain_count
@@ -32,7 +32,6 @@ def generate_test_config(level=3, terminal_count=8, config_file='conf0.txt'):
             thresh_list.append((1, 1))
             new_count += 1
         break
-
     print('Total: %d nodes' % sum([x for x, _ in thresh_list]))
     print(id_list)
     print(thresh_list)
@@ -41,6 +40,52 @@ def generate_test_config(level=3, terminal_count=8, config_file='conf0.txt'):
     lines = []
     for i in range(level+1):
         index = 2 ** i
+        tmp_id = ' '.join(id_list[:index])
+        tmp_thresh = ' '.join('%s,%s' % tup for tup in thresh_list[:index])
+        id_list = id_list[index:]
+        thresh_list = thresh_list[index:]
+        lines.append(tmp_id)
+        lines.append(tmp_thresh)
+    tmp_id = ' '.join(id_list)
+    tmp_thresh = ' '.join('%s,%s' % tup for tup in thresh_list)
+    lines.append(tmp_id)
+    lines.append(tmp_thresh)
+    with open(config_file, 'w') as file:
+        file.write('\n'.join(lines))
+
+
+def generate__tri_test_config(level=3, terminal_count=8, config_file='conf0.txt'):
+    """Generate a HIBEChain config file."""
+    if level > 3:    # level starts from 0
+        raise ValueError("level number should not exceeds 3")
+    chain_count = (3 ** (level + 1) - 1) // 2
+    id_list = [None] * chain_count
+    id_list[0] = ''
+    thresh_list = [(21, 18)]
+    for i in range(1, chain_count):
+        if i % 3 == 1:
+            id_list[i] = id_list[ceil(i/3)-1] + '0001'
+        elif i % 3 == 2:
+            id_list[i] = id_list[ceil(i/3)-1] + '0002'
+        else:
+            id_list[i] = id_list[ceil(i/3)-1] + '0003'
+        thresh_list.append((16, 14))
+    new_count = chain_count
+
+    for i in range(chain_count//3, chain_count):
+        for j in range(1, terminal_count+1):
+            id_list.append(id_list[i]+'%04d' % j)
+            thresh_list.append((1, 1))
+            new_count += 1
+        break
+    print('Total: %d nodes' % sum([x for x, _ in thresh_list]))
+    print(id_list)
+    print(thresh_list)
+    # chain_count = new_count
+
+    lines = []
+    for i in range(level+1):
+        index = 3 ** i
         tmp_id = ' '.join(id_list[:index])
         tmp_thresh = ' '.join('%s,%s' % tup for tup in thresh_list[:index])
         id_list = id_list[index:]

@@ -44,8 +44,9 @@ class GethNode():
 
     def start(self):
         """Start a container for geth on remote server and create a new account."""
-        docker_run_command = ('docker run -td -p %d:8545 -p %d:30303 --rm --name %s rkdghd/geth-pbft:id' % (
-            self.rpc_port, self.ethereum_network_port, self.name))
+        # --ulimit nofile=<soft limit>:<hard limit> set the limit for open files
+        docker_run_command = ('docker run --ulimit nofile=65535:65535 -td -p %d:8545 -p %d:30303 --rm --name %s '
+                              'rkdghd/geth-pbft:id' % (self.rpc_port, self.ethereum_network_port, self.name))
         sleep(0.4)
         result = self.ip.exec_command(docker_run_command)
         if result:

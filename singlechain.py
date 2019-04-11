@@ -107,7 +107,7 @@ class SingleChain():
                         time.sleep(0.1)
                 for t in threads:
                     t.join()
-            time.sleep(1)
+            time.sleep(0.5)
         return func
 
     @set_genesis
@@ -118,7 +118,7 @@ class SingleChain():
         else:
             self.config_file = '%s.json' % self.chain_id
         generate_genesis(self.blockchain_id, self.accounts, self.config_file)
-        time.sleep(0.1)
+        time.sleep(0.02)
 
     @set_genesis
     def config_leaf_chain(self, terminal_chains):
@@ -128,7 +128,7 @@ class SingleChain():
         else:
             self.config_file = '%s.json' % self.chain_id
         generate_terminal_genesis(self.config_file, terminal_chains)
-        time.sleep(0.1)
+        time.sleep(0.02)
 
     @set_genesis
     def config_terminal(self):
@@ -158,7 +158,7 @@ class SingleChain():
                     t = threading.Thread(target=server_ip.exec_command, args=(init_geth_command,))
                     t.start()
                     threads.append(t)
-                    time.sleep(0.3)
+                    time.sleep(0.1)
         for t in threads:
             t.join()
 
@@ -192,7 +192,7 @@ class SingleChain():
             threads.append(t)
         for t in threads:
             t.join()
-        time.sleep(0.2)
+        time.sleep(0.1)
 
     def get_chain_id(self):
         """return chain id of the chain."""
@@ -250,7 +250,6 @@ class SingleChain():
             t = threading.Thread(target=node.stop)
             t.start()
             threads.append(t)
-            time.sleep(0.01)
         for t in threads:
             t.join()
 
@@ -265,7 +264,7 @@ class SingleChain():
                 # ep = node.enode
                 # other.add_peer(ep, 2)
 
-                t = threading.Thread(target=other.add_peer, args=(node.get_enode(), 2))
+                t = threading.Thread(target=other.add_peer, args=(node.get_enode(), 2))    # 2 means upper pear
                 t.start()
                 time.sleep(0.05)    # if fail. add this line.
                 threads.append(t)
