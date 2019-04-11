@@ -100,7 +100,6 @@ class HIBEChain():
             t = threading.Thread(target=chain.destruct_chain, args=())
             t.start()
             threads.append(t)
-            time.sleep(0.1)
         for t in threads:
             t.join()
 
@@ -154,7 +153,7 @@ class HIBEChain():
             t = threading.Thread(target=tmp.singlechain_start)
             t.start()
             threads.append(t)
-            time.sleep(0.1)
+            # time.sleep(0.1)   ####
         self.structed_chains.append(tmp_chain)
 
         print()
@@ -175,7 +174,7 @@ class HIBEChain():
         for t in threads:
             t.join()
         self.if_set_number = True
-        time.sleep(1)
+        time.sleep(0.3)
 
     def set_level(self):
         """Set level value for all chains in HIBEChain."""
@@ -190,7 +189,7 @@ class HIBEChain():
             print('.', end='')
             t.join()
         self.if_set_level = True
-        time.sleep(1)
+        time.sleep(0.3)
 
     def set_id(self):
         """Set ID for all chains in HIBEChain."""

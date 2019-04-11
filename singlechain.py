@@ -25,15 +25,13 @@ import threading
 #         return functools.partial(self.__call__, obj)
 
 
-
-
-def add_peer(node1: GethNode, node2: GethNode, label: int):
-    # Use semaphore to limit number of concurrent threads
-    SEMAPHORE.acquire()
-    node1.add_peer(node2.get_enode(), label)
-    # time.sleep(0.5)
-    SEMAPHORE.release()
-    # print(threading.active_count())
+# def add_peer(node1: GethNode, node2: GethNode, label: int):
+#     # Use semaphore to limit number of concurrent threads
+#     SEMAPHORE.acquire()
+#     node1.add_peer(node2.get_enode(), label)
+#     # time.sleep(0.5)
+#     SEMAPHORE.release()
+#     # print(threading.active_count())
 
 
 class SingleChain():
@@ -182,7 +180,7 @@ class SingleChain():
             t.join()
         print('node starting')
         # must wait here
-        for _ in range(5):
+        for _ in range(3):
             print('.', end='')
             time.sleep(1)
         print()
@@ -194,7 +192,7 @@ class SingleChain():
             threads.append(t)
         for t in threads:
             t.join()
-        time.sleep(0.3)
+        time.sleep(0.2)
 
     def get_chain_id(self):
         """return chain id of the chain."""
@@ -226,7 +224,8 @@ class SingleChain():
 
                     # tmpEnode = self.nodes[j].getEnode()
                     # self.nodes[i].add_peer(tmpEnode, 0) #########
-                    t1 = threading.Thread(target=add_peer, args=(self.nodes[i], self.nodes[j], 0))
+                    # t1 = threading.Thread(target=add_peer, args=(self.nodes[i], self.nodes[j], 0))
+                    t1 = threading.Thread(target=self.nodes[i].add_peer, args=(self.nodes[j].get_enode(), 0))
                     t1.start()
                     time.sleep(0.05)    # if fail. add this line.
                     # t2 = threading.Thread(target=add_peer, args=(self.nodes[j], self.nodes[i], 0))
@@ -242,6 +241,7 @@ class SingleChain():
             end_time = time.time()
             print('%.3fs' % (end_time - start_time))
             print("-------------------------")
+            time.sleep(len(self.nodes)//10)
 
     def destruct_chain(self):
         """Stop containers to destruct the chain."""
@@ -250,7 +250,7 @@ class SingleChain():
             t = threading.Thread(target=node.stop)
             t.start()
             threads.append(t)
-            time.sleep(0.05)
+            time.sleep(0.01)
         for t in threads:
             t.join()
 
@@ -265,17 +265,15 @@ class SingleChain():
                 # ep = node.enode
                 # other.add_peer(ep, 2)
 
-                t = threading.Thread(target=add_peer, args=(other, node, 2))
+                t = threading.Thread(target=other.add_peer, args=(node.get_enode(), 2))
                 t.start()
                 time.sleep(0.05)    # if fail. add this line.
                 threads.append(t)
                 # time.sleep(0.3)
-                break
-            break
 
         for t in threads:
             t.join()
-        # time.sleep(1)
+        time.sleep(0.5)
 
     def connect_upper_chain(self, other_chain):
         """Connect to an upper level single chain."""
@@ -283,7 +281,7 @@ class SingleChain():
         threads = []
         for node in self.nodes:
             for other in other_chain.nodes:
-                ep = other.Enode
+                ep = other.enode
                 t = threading.Thread(target=node.add_peer, args=(ep, 2))
                 t.start()
                 threads.append(t)
@@ -291,7 +289,6 @@ class SingleChain():
         for t in threads:
             t.join()
         time.sleep(1)
-
 
     def get_node_count(self):
         """Return the number of nodes of the blockchain."""
@@ -315,11 +312,11 @@ class SingleChain():
                 t = threading.Thread(target=node.set_level, args=(self.level, max_level))
                 t.start()
                 threads.append(t)
-                time.sleep(0.05)
+                time.sleep(0.02)
             for t in threads:
                 t.join()
             self.if_set_level = True
-            time.sleep(0.25)
+            time.sleep(0.05)
         else:
             raise RuntimeError("level of chain %s already set" % self.chain_id)
 
@@ -359,7 +356,7 @@ class SingleChain():
                 t = threading.Thread(target=node.start_miner)
                 t.start()
                 threads.append(t)
-                time.sleep(0.05)
+                time.sleep(0.02)
             for t in threads:
                 t.join()
 

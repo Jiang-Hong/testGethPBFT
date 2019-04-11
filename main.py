@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+from const import CONFIG
 from hibechain import HIBEChain
-from iplist import IPList, exec_command
+from iplist import IPList
 from conf import load_config_file
 import time
 import threading
@@ -31,7 +32,7 @@ def check_key_status(node):
 
 
 ip_list = IPList('ip.txt')
-id_list, thresh_list = load_config_file('conf1.txt')
+id_list, thresh_list = load_config_file(CONFIG)
 
 print(id_list)
 print(thresh_list)
@@ -52,15 +53,6 @@ print("connect time %.3fs" % (connect_time-start_time))
 a = hibe.get_chain("")
 a1 = a.get_node_by_index(1)
 
-#print('waiting for addPeer')
-#count = 0
-#while a1.getPeerCount() <= node_count-node_count//10:
-#    print(a1.getPeerCount(), '.', end='')
-#    count += 1
-#    if count >= 20:
-#        break
-#    time.sleep(0.5)
-
 print('another %s seconds waiting for addPeer' % str(10))
 time.sleep(10)
 print('peer count of a1----', a1.get_peer_count())
@@ -71,13 +63,8 @@ hibe.set_id()
 
 end_time = time.time()
 
-#print("level 0 keystatus", a1.key_status())
 b = hibe.get_chain("0001")
 b1 = b.get_node_by_index(1)
-#print("level 1 keystatus", b1.key_status())
-#c = hibe.getChain("0002")
-#c1 = c.getNode(1)
-#print("level 1 keystatus", c1.key_status())
 
 
 threads = []
@@ -178,11 +165,11 @@ while True:
         break
 
 tmp_primer = tmp_chain.get_primer_node()
-time.sleep(0.2)
+time.sleep(0.5)
 tmp_proof = tmp_primer.get_transaction_proof_by_proof(tmp_proof)
 if not tmp_proof:
     while True:
-        time.sleep(0.2)
+        time.sleep(0.5)
         try:
             tmp_proof = tmp_primer.get_transaction_proof_by_proof(tmp_proof)
         except Exception:

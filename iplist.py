@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from const import USERNAME, PASSWD, MAXPAYLOAD
+from const import USERNAME, PASSWD, MAXPAYLOAD, SEMAPHORE
 import paramiko
 import threading
 import time
@@ -55,12 +55,14 @@ class IP(object):
         """
         Exec a command on remote server using SSH connection.
         """
+        SEMAPHORE.acquire()
         with paramiko.SSHClient() as client:
             client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
             client.connect(self.address, port, self.username, self.password)
-            time.sleep(0.2)
+            # time.sleep(0.2)
             stdin, stdout, stderr = client.exec_command(cmd, get_pty=True)
-            time.sleep(0.1)
+            SEMAPHORE.release()
+            # time.sleep(0.1)
             out = stdout.read().strip().decode(encoding='utf-8')
             err = stderr.read().strip().decode(encoding='utf-8')
             if not err:

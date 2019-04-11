@@ -4,7 +4,7 @@
 import requests
 import json
 from iplist import IPList
-from const import USERNAME, PASSWD
+from const import USERNAME, PASSWD, SEMAPHORE
 from time import sleep
 
 
@@ -57,7 +57,7 @@ class GethNode():
         new_account_command = 'docker exec -t %s geth --datadir abc account new --password passfile' % self.name
         sleep(0.1)
         account = self.ip.exec_command(new_account_command).split()[-1][1:-1]
-        sleep(0.3)
+        sleep(0.2)
         if len(account) == 40:    # check if the account is valid
             self.accounts.append(account)
 
@@ -70,11 +70,13 @@ class GethNode():
             'id': self.id
         })
         url = "http://{}:{}".format(self.ip.address, self.rpc_port)
+        SEMAPHORE.acquire()
         with requests.Session() as r:
             response = r.post(url=url, data=data, headers=self._headers)
             content = json.loads(response.content.decode(encoding='utf-8'))
             print(content)
             result = content.get('result')
+        SEMAPHORE.release()
         err = content.get('error')
         if err:
             raise RuntimeError(err.get('message'))
@@ -89,7 +91,7 @@ class GethNode():
     def get_peer_count(self):
         """net.peerCount"""
         method = 'net_peerCount'
-        sleep(0.1)
+        sleep(0.02)
         result = self.rpc_call(method)
         return int(result, 16) if result else 0  # change hex number to dec
 
@@ -175,7 +177,8 @@ class GethNode():
         method = 'admin_addPeer'
         params = list(args)
         # sleep(0.02)
-        return self.rpc_call(method, params)
+        result = self.rpc_call(method, params)
+        return result
 
     #    def addPeer(self, *args, **kwargs):
     #        """IPC version"""
