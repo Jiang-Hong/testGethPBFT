@@ -32,12 +32,12 @@ class HIBEChain():
         self.if_set_number = False
         self.if_set_level = False
         self.if_set_id = False
-        self.structed_chains = []
+        self.structured_chains = []
 
         self.init_chains()
 
         threads = []
-        for level in self.structed_chains[:-1]:
+        for level in self.structured_chains[:-1]:
             for chain in level:
                 t = threading.Thread(target=chain.config_consensus_chain, args=())
                 t.start()
@@ -46,16 +46,16 @@ class HIBEChain():
             t.join()
 
         threads = []
-        if not self.structed_chains[-1][0].is_terminal:
-            for chain in self.structed_chains[-1]:
+        if not self.structured_chains[-1][0].is_terminal:
+            for chain in self.structured_chains[-1]:
                 t = threading.Thread(target=chain.config_consensus_chain, args=())
                 t.start()
                 threads.append(t)
         else:
-            for chain in self.structed_chains[-2]:
-                chain.config_leaf_chain(self.structed_chains[-1])
+            for chain in self.structured_chains[-2]:
+                chain.config_leaf_chain(self.structured_chains[-1])
                 break  # TODO need to be optimized later
-            for chain in self.structed_chains[-1]:
+            for chain in self.structured_chains[-1]:
                 t = threading.Thread(target=chain.config_terminal, args=())
                 t.start()
                 threads.append(t)
@@ -124,10 +124,6 @@ class HIBEChain():
             parent_chain_id = chain.chain_id[:-4]
             return self.get_chain(parent_chain_id)
 
-    def is_root_chain(self, chain):
-        """Check if chain is root chain."""
-        return chain.chain_id == ''
-
     def init_chains(self):
         threads = []
         # count = 0
@@ -147,7 +143,7 @@ class HIBEChain():
             if current_level == level:
                 tmp_chain.append(tmp)
             else:
-                self.structed_chains.append(tmp_chain)
+                self.structured_chains.append(tmp_chain)
                 tmp_chain = list()
                 tmp_chain.append(tmp)
                 level = current_level
@@ -155,13 +151,13 @@ class HIBEChain():
             t.start()
             threads.append(t)
             # time.sleep(0.1)   ####
-        self.structed_chains.append(tmp_chain)
+        self.structured_chains.append(tmp_chain)
 
         print()
 
         for t in threads:
             t.join()
-        for ch in self.structed_chains[-1]:
+        for ch in self.structured_chains[-1]:
             if ch.threshold == 1:
                 ch.is_terminal = True
 
@@ -199,7 +195,7 @@ class HIBEChain():
             raise RuntimeError("number and level info should be set previously")
         start_time = time.time()
         threads = []
-        for index, level in enumerate(self.structed_chains):
+        for index, level in enumerate(self.structured_chains):
             for chain in level:
                 t = threading.Thread(target=chain.set_id)
                 t.start()
@@ -231,7 +227,7 @@ class HIBEChain():
     def start_miner(self):
         """Start miner for all consensus nodes."""
 
-        for level in self.structed_chains[:-1]:
+        for level in self.structured_chains[:-1]:
             for chain in level:
                 chain.start_miner()
 

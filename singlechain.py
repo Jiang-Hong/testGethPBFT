@@ -85,32 +85,26 @@ class SingleChain():
             self.accounts.append(self.nodes[index].accounts[0])
 #        print(self.accounts)
 
-    def set_genesis(config):
-        """Decorator for setting genesis.json file for a chain."""
-
-        @wraps(config)
-        def func(self, *args):
-            config(self, *args)
-            for server_ip in self.ips:
-                subprocess.run(['sshpass -p %s scp docker/%s %s@%s:%s' % (self.password, self.config_file,
-                               self.username, server_ip.address, self.config_file)], stdout=subprocess.PIPE, shell=True)
-                time.sleep(0.2)
-                threads = []
-                for node in self.nodes:
-                    if node.ip == server_ip:
-                        command = 'docker cp %s %s:/root/%s' % (self.config_file, node.name, self.config_file)
-                        t = threading.Thread(target=server_ip.exec_command, args=(command,))
-                        t.start()
-                        threads.append(t)
-                        print('copying genesis file')
+    def config_genesis(self):
+        """Copy genesis.json file into a container."""
+        for server_ip in self.ips:
+            subprocess.run(['sshpass -p %s scp docker/%s %s@%s:%s' % (self.password, self.config_file,
+                           self.username, server_ip.address, self.config_file)], stdout=subprocess.PIPE, shell=True)
+            time.sleep(0.2)
+            threads = []
+            for node in self.nodes:
+                if node.ip == server_ip:
+                    command = 'docker cp %s %s:/root/%s' % (self.config_file, node.name, self.config_file)
+                    t = threading.Thread(target=server_ip.exec_command, args=(command,))
+                    t.start()
+                    threads.append(t)
+                    print('copying genesis file')
 #                        node._ifSetGenesis = True
-                        time.sleep(0.1)
-                for t in threads:
-                    t.join()
-            time.sleep(0.5)
-        return func
+                    time.sleep(0.1)
+            for t in threads:
+                t.join()
+        time.sleep(0.5)
 
-    @set_genesis
     def config_consensus_chain(self):
         """Set genesis.json for a blockchain & init with genesis.json."""
         if self.chain_id is "":
@@ -119,8 +113,8 @@ class SingleChain():
             self.config_file = '%s.json' % self.chain_id
         generate_genesis(self.blockchain_id, self.accounts, self.config_file)
         time.sleep(0.02)
+        self.config_genesis()
 
-    @set_genesis
     def config_leaf_chain(self, terminal_chains):
         """Set genesis.json for leaf chains."""
         if self.chain_id is "":
@@ -129,14 +123,15 @@ class SingleChain():
             self.config_file = '%s.json' % self.chain_id
         generate_terminal_genesis(self.config_file, terminal_chains)
         time.sleep(0.02)
+        self.config_genesis()
 
-    @set_genesis
     def config_terminal(self):
         """Set genesis.json for terminal equipments."""
         if len(self.chain_id) == 4:
             self.config_file = '0.json'
         else:
             self.config_file = '%s.json' % self.chain_id[:-4]
+        self.config_genesis()
 
     def run_nodes(self):
         """Run nodes on a chain."""
@@ -198,6 +193,10 @@ class SingleChain():
         """return chain id of the chain."""
         return self.chain_id
 
+    def is_root_chain(self):
+        """Check if chain is root chain."""
+        return self.chain_id == ""
+
     def get_primer_node(self):
         """Return the primer node of the set of Geth-pbft clients."""
         return self.nodes[0]
@@ -237,7 +236,7 @@ class SingleChain():
                 break
             for t in threads:
                 t.join()
-            print('active threads:', threading.active_count())
+            # print('active threads:', threading.active_count())
             end_time = time.time()
             print('%.3fs' % (end_time - start_time))
             print("-------------------------")

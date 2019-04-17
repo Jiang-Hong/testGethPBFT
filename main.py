@@ -75,22 +75,22 @@ for chain in hibe.chains[1:]:
 for t in threads:
     t.join()
 
-desChainID = hibe.structed_chains[-1][0].chain_id
+desChainID = hibe.structured_chains[-1][0].chain_id
 threads = []
-for chain in hibe.structed_chains[-1]:
+for chain in hibe.structured_chains[-1]:
     print("chain id", chain.chain_id)
     tmpNode = chain.get_node_by_index(1)
+    time.sleep(2)
     t = threading.Thread(target=tmpNode.test_send_transaction, args=(desChainID, 1, "0x1", 1, 250))
-    time.sleep(1)
     t.start()
     threads.append(t)
-    time.sleep(1)
+    time.sleep(2)
 for t in threads:
     t.join()
 
+time.sleep(10)
 
-time.sleep(5)
-consensus_chains = hibe.structed_chains[-2]
+consensus_chains = hibe.structured_chains[-2]
 for chain in consensus_chains:
     p = chain.get_primer_node()
     p.txpool_status()
@@ -106,7 +106,7 @@ for chain in hibe.chains:
     if count >= 20:
         break
 
-transaction_chain_id = hibe.structed_chains[-1][0].chain_id[:-4]  # leaf chain
+transaction_chain_id = hibe.structured_chains[-1][0].chain_id[:-4]  # leaf chain
 c = hibe.get_chain(transaction_chain_id)
 p = c.get_primer_node()
 for i in range(1, 10):
@@ -139,7 +139,7 @@ if tmp_chain:
 
 while True:
     tmp_chain = hibe.get_parent_chain(tmp_chain)
-    if not hibe.is_root_chain(tmp_chain):
+    if not tmp_chain.is_root_chain:
         tmp_primer = tmp_chain.get_primer_node()
         time.sleep(0.2)
         tmp_proof = tmp_primer.get_transaction_proof_by_proof(tmp_proof)
