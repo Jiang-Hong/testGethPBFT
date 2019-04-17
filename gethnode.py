@@ -177,7 +177,6 @@ class GethNode():
         """admin.addPeer()"""
         method = 'admin_addPeer'
         params = list(args)
-        # sleep(0.02)
         result = self.rpc_call(method, params)
         return result
 
@@ -233,7 +232,7 @@ class GethNode():
         """admin.setID()"""
         method = 'admin_setID'
         params = [chain_id]
-        sleep(0.1)
+        # sleep(0.1)
         return self.rpc_call(method, params)
 
     def txpool_status(self):
