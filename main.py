@@ -60,7 +60,7 @@ hibe.set_id()
 
 end_time = time.time()
 
-b = hibe.get_chain("0001")
+b = hibe.get_chain("01")
 b1 = b.get_node_by_index(1)
 
 

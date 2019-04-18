@@ -60,8 +60,8 @@ class IP(object):
                 # time.sleep(0.2)
                 stdin, stdout, stderr = client.exec_command(cmd, get_pty=True)
                 # time.sleep(0.1)
-        out = stdout.read().strip().decode(encoding='utf-8')
-        err = stderr.read().strip().decode(encoding='utf-8')
+                out = stdout.read().strip().decode(encoding='utf-8')
+                err = stderr.read().strip().decode(encoding='utf-8')
         if not err:
             result = out
             return result
@@ -89,6 +89,17 @@ class IP(object):
         stop_all_containers_command = 'docker stop %s' % ' '.join(result)
         self.exec_command(stop_all_containers_command)
         print("all nodes at %s stopped" % self.address)
+        print('-----------')
+
+    def remove_containers(self):
+        """Remove all containers on the server."""
+        get_names_command = "docker ps -a --format '{{.Names}}'"
+        result = self.exec_command(get_names_command).split()
+        print('-----------')
+        print(' '.join(result))
+        stop_all_containers_command = 'docker rm %s' % ' '.join(result)
+        self.exec_command(stop_all_containers_command)
+        print("all nodes at %s removed" % self.address)
         print('-----------')
 
     def reboot_server(self):
@@ -156,9 +167,15 @@ class IPList(object):
         for t in threads:
             t.join()
 
-    #        for IP in self.ips:
-    #            print(IP)
-    #            ip.exec_command("docker stop $(docker ps --format '{{.Names}}')")
+    def remove_all_containers(self):
+        """Remove all containers running on the servers."""
+        threads = []
+        for ip in self.ips:
+            t = threading.Thread(target=ip.remove_containers)
+            t.start()
+            threads.append(t)
+        for t in threads:
+            t.join()
 
     def _init_service(self):
         """
