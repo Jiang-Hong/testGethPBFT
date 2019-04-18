@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from const import USERNAME, PASSWD, SEMAPHORE
+from const import USERNAME, PASSWD
 from gethnode import GethNode
 from iplist import IPList
 from conf import generate_genesis, generate_terminal_genesis
@@ -127,10 +127,10 @@ class SingleChain():
 
     def config_terminal(self):
         """Set genesis.json for terminal equipments."""
-        if len(self.chain_id) == 4:
+        if len(self.chain_id) == 2:
             self.config_file = '0.json'
         else:
-            self.config_file = '%s.json' % self.chain_id[:-4]
+            self.config_file = '%s.json' % self.chain_id[:-2]
         self.config_genesis()
 
     def run_nodes(self):
@@ -322,7 +322,7 @@ class SingleChain():
         """Set ID for a blockchain."""
         if not self.if_set_number and self.if_set_level:
             raise RuntimeError("number and level info should be set previously")
-        if len(self.chain_id) // 4 != self.level:
+        if len(self.chain_id) // 2 != self.level:
             raise ValueError("length of id should match level number")
         if not self.if_set_id:
             if self.level == 0:
@@ -362,7 +362,7 @@ class SingleChain():
 if __name__ == "__main__":
     ip_list = IPList('ip.txt')
     node_count = 20
-    c = SingleChain('zzzz', 1, node_count, node_count*3//4+1, 121, ip_list)
+    c = SingleChain('01', 1, node_count, node_count*3//4+1, 121, ip_list)
     c.singlechain_start()
     c.config_consensus_chain()
     c.run_nodes()

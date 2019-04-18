@@ -3,7 +3,7 @@
 
 import threading
 
-CONFIG = 'conf1.txt'
+CONFIG = 'conf1.txt'  # config file for HIBEChain
 USERNAME = 'u0'  # username of servers
 PASSWD = 'test'  # password of servers
 MAXPAYLOAD = 20  # maximum number of containers running on one server

@@ -46,7 +46,7 @@ class GethNode():
         """Start a container for geth on remote server and create a new account."""
         # --ulimit nofile=<soft limit>:<hard limit> set the limit for open files
         docker_run_command = ('docker run --ulimit nofile=65535:65535 -td -p %d:8545 -p %d:30303 --rm --name %s '
-                              'rkdghd/geth-pbft:id' % (self.rpc_port, self.ethereum_network_port, self.name))
+                              'rkdghd/geth-pbft:latest' % (self.rpc_port, self.ethereum_network_port, self.name))
         sleep(0.4)
         result = self.ip.exec_command(docker_run_command)
         if result:
@@ -71,13 +71,12 @@ class GethNode():
             'id': self.id
         })
         url = "http://{}:{}".format(self.ip.address, self.rpc_port)
-        SEMAPHORE.acquire()
-        with requests.Session() as r:
-            response = r.post(url=url, data=data, headers=self._headers)
-            content = json.loads(response.content.decode(encoding='utf-8'))
-            print(content)
-            result = content.get('result')
-        SEMAPHORE.release()
+        with SEMAPHORE:
+            with requests.Session() as r:
+                response = r.post(url=url, data=data, headers=self._headers)
+                content = json.loads(response.content.decode(encoding='utf-8'))
+                print(content)
+                result = content.get('result')
         err = content.get('error')
         if err:
             raise RuntimeError(err.get('message'))

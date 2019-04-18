@@ -28,7 +28,7 @@ class HIBEChain():
         self.chain_id_list = chain_id_list
         self.thresh_list = thresh_list
         self.ip_list = ip_list
-        self.max_level = len(chain_id_list[-1]) // 4
+        self.max_level = len(chain_id_list[-1]) // 2
         self.if_set_number = False
         self.if_set_level = False
         self.if_set_id = False
@@ -83,13 +83,13 @@ class HIBEChain():
         threads = []
         for chain in self.chains[::-1]:
             if chain.get_chain_id() != '':
-                parent_chain = self.chains[self.chain_id_list.index(chain.get_chain_id()[:-4])]
+                parent_chain = self.chains[self.chain_id_list.index(chain.get_chain_id()[:-2])]
                 #                parent_chain.connect_lower_chain(chain)
                 t = threading.Thread(target=parent_chain.connect_lower_chain, args=(chain,))
                 t.start()
                 threads.append(t)
                 # time.sleep(1)
-        print('active threads:', threading.active_count())
+        # print('active threads:', threading.active_count())
         for t in threads:
             t.join()
         time.sleep(2)
@@ -104,13 +104,13 @@ class HIBEChain():
         for t in threads:
             t.join()
 
-    def get_chain(self, ID):
+    def get_chain(self, chain_id):
         """Return a list of blockchain nodes with a given chain ID(eg. '00010001')."""
         try:
-            index = self.chain_id_list.index(ID)
+            index = self.chain_id_list.index(chain_id)
             return self.chains[index]
         except ValueError or IndexError:
-            print("ID %s is not in the HIBEChain" % ID)
+            print("ID %s is not in the HIBEChain" % chain_id)
 
     def get_parent_chain(self, chain):
         """
@@ -121,7 +121,7 @@ class HIBEChain():
             print('root chain does not have a parent chain')
             return None
         else:
-            parent_chain_id = chain.chain_id[:-4]
+            parent_chain_id = chain.chain_id[:-2]
             return self.get_chain(parent_chain_id)
 
     def init_chains(self):
@@ -134,7 +134,7 @@ class HIBEChain():
                 print("name is %s" % name, end=" ")
             else:
                 print("name is blank", end=" ")
-            current_level = len(name) // 4
+            current_level = len(name) // 2
             node_count, threshold = self.thresh_list[index][0], self.thresh_list[index][1]
             blockchain_id = 120 + index
             tmp = SingleChain(name, current_level, node_count, threshold, blockchain_id, self.ip_list, self.username,
@@ -234,7 +234,7 @@ class HIBEChain():
 
 if __name__ == "__main__":
     ip_list = IPList('ip.txt')
-    chain_id_list = ["", "0001", "0002"]
+    chain_id_list = ["", "01", "02"]
     thresh_list = [(4, 3), (1, 1), (1, 1)]
 
     hibe = HIBEChain(chain_id_list, thresh_list, ip_list)
@@ -247,9 +247,9 @@ if __name__ == "__main__":
 
     a = hibe.get_chain("")
     a1 = a.get_node_by_index(1)
-    print("level 0 keystatus", a1.key_status())
-    b = hibe.get_chain("0001")
+    print("level 0 key status", a1.key_status())
+    b = hibe.get_chain("01")
     b1 = b.get_node_by_index(1)
-    print("level 1 keystatus", b1.key_status())
+    print("level 1 key status", b1.key_status())
 
     hibe.destruct_hibe_chain()

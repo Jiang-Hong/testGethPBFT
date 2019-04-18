@@ -9,8 +9,6 @@ import subprocess
 import os
 
 
-
-
 class IP(object):
     """
     Create an IP object from a server with a list of rpc ports and a list of listener ports.
@@ -55,27 +53,26 @@ class IP(object):
         """
         Exec a command on remote server using SSH connection.
         """
-        SEMAPHORE.acquire()
-        with paramiko.SSHClient() as client:
-            client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-            client.connect(self.address, port, self.username, self.password)
-            # time.sleep(0.2)
-            stdin, stdout, stderr = client.exec_command(cmd, get_pty=True)
-            SEMAPHORE.release()
-            # time.sleep(0.1)
-            out = stdout.read().strip().decode(encoding='utf-8')
-            err = stderr.read().strip().decode(encoding='utf-8')
-            if not err:
-                result = out
-                return result
-            else:
-                result = err
-                if result:
-                    print('-------------')
-                    print(cmd)
-                    print(result)
-                    print('-------------')
-                    raise RuntimeError("exec command error: %s" % cmd)
+        with SEMAPHORE:
+            with paramiko.SSHClient() as client:
+                client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+                client.connect(self.address, port, self.username, self.password)
+                # time.sleep(0.2)
+                stdin, stdout, stderr = client.exec_command(cmd, get_pty=True)
+                # time.sleep(0.1)
+        out = stdout.read().strip().decode(encoding='utf-8')
+        err = stderr.read().strip().decode(encoding='utf-8')
+        if not err:
+            result = out
+            return result
+        else:
+            result = err
+            if result:
+                print('-------------')
+                print(cmd)
+                print(result)
+                print('-------------')
+                raise RuntimeError("exec command error: %s" % cmd)
 
     def is_docker_running(self):
         """Check if docker service is running on specified ip."""
