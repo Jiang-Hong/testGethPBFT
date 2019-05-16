@@ -1,13 +1,13 @@
-FROM ubuntu:bionic
+FROM debian:stretch-slim
 WORKDIR /root
 COPY geth /usr/bin/geth
-COPY 10.json core.yaml config.yaml /root/
-RUN apt update && apt install -y --reinstall ca-certificates \
-    && echo "deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ bionic main restricted universe multiverse" > /etc/apt/sources.list \
-    && echo "deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ bionic-updates main restricted universe multiverse" >> /etc/apt/sources.list \
-    && echo "deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ bionic-backports main restricted universe multiverse" >> /etc/apt/sources.list \
-    && echo "deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ bionic-security main restricted universe multiverse" >> /etc/apt/sources.list \
-    && apt update -q && apt install --yes --no-install-recommends build-essential flex bison wget subversion m4 python3 python3-dev python3-setuptools libgmp-dev libssl-dev git curl \
+COPY passfile core.yaml config.yaml /root/
+RUN echo "deb http://mirrors.tuna.tsinghua.edu.cn/debian/ stretch main non-free contrib" > /etc/apt/sources.list \
+    && echo "deb http://mirrors.tuna.tsinghua.edu.cn/debian/ stretch-updates main non-free contrib" >> /etc/apt/sources.list \
+    && echo "deb http://mirrors.tuna.tsinghua.edu.cn/debian/ stretch-backports main non-free contrib" >> /etc/apt/sources.list \
+    && echo "deb http://mirrors.tuna.tsinghua.edu.cn/debian-security/ stretch/updates main non-free contrib" >> /etc/apt/sources.list \
+    && apt-get clean && apt-get update -o Acquire::CompressionTypes::Order::=gz && apt-get update\
+    && apt-get install -yq --no-install-recommends build-essential flex bison subversion m4 python3 python3-dev python3-setuptools libgmp-dev libssl-dev git curl \
     && curl -SL https://crypto.stanford.edu/pbc/files/pbc-0.5.14.tar.gz | tar xzC ./ && cd pbc-0.5.14 && ./configure LDFLAGS="-lgmp" && make && make install \
     && cd .. && rm pbc-0.5.14 -rf && git clone https://github.com/facebook/rocksdb.git && cd rocksdb && git checkout 4.1.fb && make shared_lib \
     && rm .git -rf \
@@ -16,10 +16,9 @@ RUN apt update && apt install -y --reinstall ca-certificates \
     && ln -sf /root/rocksdb/librocksdb.so.4.1.0 /usr/local/lib/librocksdb.so.4.1 \
     && ln -sf /root/rocksdb/librocksdb.so.4.1.0 /usr/local/lib/librocksdb.so.4.1.0 \
     && cp include/rocksdb /usr/include/ -r && ldconfig \
-    && rm /var/cache/apt/archives/* -rf \
-    && apt purge git -y \
-    && apt autoremove -y \
-    && mkdir /root/.geth-pbft && mv /root/config.yaml /root/.geth-pbft \
-    && /usr/bin/geth --datadir /root/abc init /root/10.json
-EXPOSE 8545 30303
-ENTRYPOINT [ "geth" ]
+    && rm /var/cache/apt/archives/* /var/lib/apt/lists/* -rf \
+    && apt-get remove git curl -y \
+    && apt-get autoremove -y \
+    && mkdir /root/.geth-pbft && mv /root/config.yaml /root/.geth-pbft 
+EXPOSE 8545 8546 30303
+#ENTRYPOINT [ "geth" ]

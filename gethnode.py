@@ -26,10 +26,10 @@ from time import sleep
 #         pass
 
 
-class GethNode():
+class GethNode(object):
     """Data structure for Geth-pbft client."""
 
-    def __init__(self, ip_list, pbft_id, node_index, blockchain_id, username=USERNAME, password=PASSWD):
+    def __init__(self, ip_list: IPList, pbft_id: int, node_index: int, blockchain_id: int, username=USERNAME, password=PASSWD):
         self.enode = ''
         self.id = node_index    # used in rpc call
         self.ip, self.rpc_port, self.ethereum_network_port = ip_list.get_new_port()
@@ -46,8 +46,8 @@ class GethNode():
         """Start a container for geth on remote server and create a new account."""
         # --ulimit nofile=<soft limit>:<hard limit> set the limit for open files
         docker_run_command = ('docker run --ulimit nofile=65535:65535 -td -p %d:8545 -p %d:30303 --rm --name %s '
-                              'rkdghd/geth-pbft:latest' % (self.rpc_port, self.ethereum_network_port, self.name))
-        sleep(0.4)
+                              'rkdghd/geth-pbft:59000' % (self.rpc_port, self.ethereum_network_port, self.name))
+        sleep(0.5)
         result = self.ip.exec_command(docker_run_command)
         if result:
             if result.startswith('docker: Error'):
@@ -56,15 +56,15 @@ class GethNode():
             print('container of node %s of blockchain %s at %s:%s started' % (self.node_index, self.blockchain_id,
                                                                               self.ip.address, self.rpc_port))
         new_account_command = 'docker exec -t %s geth --datadir abc account new --password passfile' % self.name
-        sleep(0.1)
-        account = self.ip.exec_command(new_account_command).split()[-1][1:-1]
         sleep(0.2)
+        account = self.ip.exec_command(new_account_command).split()[-1][1:-1]
+        sleep(0.3)
         if len(account) == 40:    # check if the account is valid
             self.accounts.append(account)
 
-    def rpc_call(self, method, params=[]):
+    def rpc_call(self, method: 'str', params=[]):
         """Make a rpc call to this geth node."""
-        data = json.dumps({  ## json string used in HTTP requests
+        data = json.dumps({    # json string used in HTTP requests
             'jsonrpc': '2.0',
             'method': method,
             'params': params,
@@ -84,11 +84,11 @@ class GethNode():
         print('%s @%s : %s    %s' % (method, self.ip.address, self.rpc_port, result))
         return result
 
-    def get_enode(self):
+    def get_enode(self) -> str:
         """Return enode information from admin.nodeInfo"""
         return self.enode
 
-    def get_peer_count(self):
+    def get_peer_count(self) -> int:
         """net.peerCount"""
         method = 'net_peerCount'
         sleep(0.02)
@@ -119,22 +119,31 @@ class GethNode():
         params = [account, password, duration]
         return self.rpc_call(method, params)
 
-    def send_old_transaction(self, to_id, to_index, value):
+    def send_old_transaction(self, to_id: str, to_index: int, value='0x0'):
         """eth.sendTransaction()"""
         if isinstance(value, int):  # if value is int, change it to hex str
             value = hex(value)
-        params = [{"toid": to_id, "toindex": to_ndex, "value": value}]
+        params = [{"toid": to_id, "toindex": to_index, "value": value}]
         method = 'eth_sendTransaction'
-        sleep(0.2)
         return self.rpc_call(method, params)
 
-    def send_transaction(self, to_id, to_index, value):
+    def send_transaction(self, to_id: str, to_index: int, value='0x0'):
         """eth.sendTransaction2()"""
         if isinstance(value, int):  # if value is int, change it to hex str
             value = hex(value)
         params = [{"toid": to_id, "toindex": to_index, "value": value}]
         method = 'eth_sendTransaction2'
         sleep(0.2)
+        return self.rpc_call(method, params)
+
+    def send_transaction3(self, terminal_number: int, iter_round: int, nonce='0x0', value='0x1'):
+        """eth.sendTransaction3()"""
+        if isinstance(value, int):  # if value is int, change it to hex str
+            value = hex(value)
+        if isinstance(nonce, int):
+            nonce = hex(nonce)
+        params = [{"terminal": terminal_number, "round": iter_round, "nonce": nonce, "value": value}]
+        method = 'eth_sendTransaction3'
         return self.rpc_call(method, params)
 
     def test_send_transaction(self, to_id, to_index, value, interval, period):
@@ -171,6 +180,11 @@ class GethNode():
         params = [hex(index)]
         result = self.rpc_call(method, params)
         return int(result, 16) if result else 0  # change hex number to dec
+
+    def remove_transaction(self):
+        """eth.removeTx()"""
+        method = 'eth_removeTx'
+        return self.rpc_call(method)
 
     def add_peer(self, *args):
         """admin.addPeer()"""
@@ -231,16 +245,23 @@ class GethNode():
         """admin.setID()"""
         method = 'admin_setID'
         params = [chain_id]
+        print('id is:', chain_id)
         # sleep(0.1)
         return self.rpc_call(method, params)
 
-    def txpool_status(self):
+    def key_count(self):
+        """eth.keyCount()"""
+        method = 'eth_keyCount'
+        return self.rpc_call(method)
+
+    def txpool_status(self) -> int:
         """txpool.status"""
         method = 'txpool_status'
         result = self.rpc_call(method)
         sleep(0.1)
         print("txpool.status pending:%d, queued:%d" % (int(result['pending'], 16),
                                                        int(result['queued'], 16)))
+        return int(result['pending'], 16) + int(result['queued'], 16)
 
     def start_miner(self):
         """miner.start()"""
@@ -252,17 +273,17 @@ class GethNode():
         method = 'miner_stop'
         return self.rpc_call(method)
 
-    def get_block_by_number(self, block_number):
-        """eth.getBlock()"""
-        # check if index is greater than or equal 0
-        if block_number < 0:
-            raise ValueError('blockNumber should be non-negative')
-
-        block_number_hex_string = hex(block_number)
-        method = 'eth_getBlockByNumber'
-        params = [block_number_hex_string, 'true']
-        sleep(0.1)
-        return self.rpc_call(method, params)
+    # def get_block_by_number(self, block_number):
+    #     """eth.getBlock()"""
+    #     # check if index is greater than or equal 0
+    #     if block_number < 0:
+    #         raise ValueError('blockNumber should be non-negative')
+    #
+    #     block_number_hex_string = hex(block_number)
+    #     method = 'eth_getBlockByNumber'
+    #     params = [block_number_hex_string, 'true']
+    #     sleep(0.1)
+    #     return self.rpc_call(method, params)
 
     def get_transaction_by_block_number_and_index(self, block_number, index):
 
@@ -271,7 +292,7 @@ class GethNode():
         method = 'eth_getTransactionByBlockNumberAndIndex'
         params = [block_number_hex_string, index_hex_string]
         result = self.rpc_call(method, params)  # result from rpc call
-        return result['hash']
+        return result['hash'] if result else None
 
     def get_transaction_proof_by_hash(self, transaction_hash):
         """eth.getTxProofByHash()"""

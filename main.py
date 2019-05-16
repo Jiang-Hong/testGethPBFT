@@ -11,9 +11,8 @@ import threading
 #threading.stack_size(300*1024*1024)
 
 #TODO function annotation && docstring
-#TODO log  print lock
+#TODO logging module
 #TODO class decorators
-#TODO paramiko connection reset by peer  broken pipe  ## about paramiko
 #TODO change to shorter chain id
 #TODO finish benchmark function
 
@@ -106,7 +105,7 @@ for chain in hibe.chains:
     if count >= 20:
         break
 
-transaction_chain_id = hibe.structured_chains[-1][0].chain_id[:-4]  # leaf chain
+transaction_chain_id = hibe.structured_chains[-1][0].chain_id[:-2]  # leaf chain
 c = hibe.get_chain(transaction_chain_id)
 p = c.get_primer_node()
 for i in range(1, 10):
@@ -121,7 +120,7 @@ print("failCount", failCount)
 print(time.ctime())
 print("----------------------------------------------------------------")
 
-c1 = hibe.get_chain('0001')
+c1 = hibe.get_chain('01')
 cr = hibe.get_chain('')
 p1 = c1.nodes[0]
 pr = cr.nodes[1]

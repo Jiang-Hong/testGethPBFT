@@ -4,7 +4,7 @@
 from const import USERNAME, PASSWD
 from gethnode import GethNode
 from iplist import IPList
-from conf import generate_genesis, generate_terminal_genesis
+from conf import generate_genesis, generate_leaf_genesis
 from functools import wraps
 import time
 import subprocess
@@ -34,7 +34,7 @@ import threading
 #     # print(threading.active_count())
 
 
-class SingleChain():
+class SingleChain(object):
     """
     Data structure for a set of Geth-pbft clients for a single blockchain.
     """
@@ -85,6 +85,14 @@ class SingleChain():
             self.accounts.append(self.nodes[index].accounts[0])
 #        print(self.accounts)
 
+    def __repr__(self):
+        return self.chain_id
+
+    @property
+    def get_nodes(self) -> [GethNode]:
+        """Return nodes in the chain"""
+        return self.nodes
+
     def config_genesis(self):
         """Copy genesis.json file into a container."""
         for server_ip in self.ips:
@@ -103,7 +111,7 @@ class SingleChain():
                     time.sleep(0.1)
             for t in threads:
                 t.join()
-        time.sleep(0.5)
+        time.sleep(0.5)    #TODO necessary?
 
     def config_consensus_chain(self):
         """Set genesis.json for a blockchain & init with genesis.json."""
@@ -115,13 +123,13 @@ class SingleChain():
         time.sleep(0.02)
         self.config_genesis()
 
-    def config_leaf_chain(self, terminal_chains):
+    def config_leaf_chain(self, leaf_chains):
         """Set genesis.json for leaf chains."""
         if self.chain_id is "":
             self.config_file = '0.json'
         else:
             self.config_file = '%s.json' % self.chain_id
-        generate_terminal_genesis(self.config_file, terminal_chains)
+        generate_leaf_genesis(self.config_file, leaf_chains)
         time.sleep(0.02)
         self.config_genesis()
 
@@ -163,7 +171,8 @@ class SingleChain():
             start_geth_command = ('geth --datadir abc --cache 512 --port 30303 --rpcport 8545 --rpcapi '
                    'admin,eth,miner,web3,net,personal,txpool --rpc --rpcaddr \"0.0.0.0\" '
                    '--pbftid %d --nodeindex %d --blockchainid %d --unlock %s --password '
-                   '\"passfile\" --maxpeers 4096 --maxpendpeers 4096 --syncmode \"full\" --nodiscover') % (node.pbft_id,
+                   '\"passfile\" --maxpeers 1024 --maxpendpeers 1024 --txpool.globalslots 81920 '
+                   '--txpool.globalqueue 81920 --syncmode \"full\" --nodiscover') % (node.pbft_id,
                                                                 node.node_index, node.blockchain_id, node.accounts[0])
             command = 'docker exec -td %s %s' % (node.name, start_geth_command)
             print(start_geth_command)
@@ -201,7 +210,7 @@ class SingleChain():
         """Return the primer node of the set of Geth-pbft clients."""
         return self.nodes[0]
 
-    def get_node_by_index(self, node_index):
+    def get_node_by_index(self, node_index:int) -> GethNode:
         """Return the node of a given index."""
         if node_index <= 0 or node_index > len(self.nodes):
             raise ValueError("node index out of range")
@@ -242,6 +251,14 @@ class SingleChain():
             print("-------------------------")
             time.sleep(len(self.nodes)//10)
 
+    def get_parent_chain_id(self) -> str:
+        """Return chain id of parent chain"""
+        if self.chain_id == '':
+            print("Root chain has no parent chain.")
+            return ''
+        else:
+            return self.chain_id[2:]
+
     def destruct_chain(self):
         """Stop containers to destruct the chain."""
         threads = []
@@ -252,7 +269,7 @@ class SingleChain():
         for t in threads:
             t.join()
 
-    def connect_lower_chain(self, other_chain):
+    def connect_lower_chain(self, other_chain: 'SingleChain'):
         """Connect to a lower level single chain."""
         time.sleep(0.05)
         threads = []
@@ -273,7 +290,7 @@ class SingleChain():
             t.join()
         time.sleep(0.5)
 
-    def connect_upper_chain(self, other_chain):
+    def connect_upper_chain(self, other_chain: 'SingleChain'):
         """Connect to an upper level single chain."""
         time.sleep(0.05)
         threads = []
@@ -361,7 +378,7 @@ class SingleChain():
 
 if __name__ == "__main__":
     ip_list = IPList('ip.txt')
-    node_count = 20
+    node_count = 4
     c = SingleChain('01', 1, node_count, node_count*3//4+1, 121, ip_list)
     c.singlechain_start()
     c.config_consensus_chain()

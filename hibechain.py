@@ -8,7 +8,7 @@ import threading
 import time
 
 
-class HIBEChain():
+class HIBEChain(object):
     """
     Data structure for an Hierarchical Identity Based Encryption Chain.
     """
@@ -39,24 +39,28 @@ class HIBEChain():
         threads = []
         for level in self.structured_chains[:-1]:
             for chain in level:
-                t = threading.Thread(target=chain.config_consensus_chain, args=())
+                t = threading.Thread(target=chain.config_consensus_chain)
                 t.start()
                 threads.append(t)
         for t in threads:
             t.join()
 
         threads = []
-        if not self.structured_chains[-1][0].is_terminal:
+        if not self.structured_chains[-1][0].is_terminal:    # no terminals
             for chain in self.structured_chains[-1]:
-                t = threading.Thread(target=chain.config_consensus_chain, args=())
+                t = threading.Thread(target=chain.config_consensus_chain)
                 t.start()
                 threads.append(t)
-        else:
+        else:    #terminals
             for chain in self.structured_chains[-2]:
-                chain.config_leaf_chain(self.structured_chains[-1])
+                print('--------------')
+                print('config leaf chains-----------------------')
+                chain.config_leaf_chain(self.structured_chains[-1])    # config leaf chains
                 break  # TODO need to be optimized later
             for chain in self.structured_chains[-1]:
-                t = threading.Thread(target=chain.config_terminal, args=())
+                print('-----------------')
+                print('----------------------config terminals')
+                t = threading.Thread(target=chain.config_terminal)    # config terminals
                 t.start()
                 threads.append(t)
         for t in threads:
@@ -66,7 +70,7 @@ class HIBEChain():
 
         threads = []
         for chain in self.chains:
-            t = threading.Thread(target=chain.run_nodes, args=())
+            t = threading.Thread(target=chain.run_nodes)
             t.start()
             threads.append(t)
             # time.sleep(1)
@@ -104,7 +108,7 @@ class HIBEChain():
         for t in threads:
             t.join()
 
-    def get_chain(self, chain_id):
+    def get_chain(self, chain_id:str) -> SingleChain:
         """Return a list of blockchain nodes with a given chain ID(eg. '00010001')."""
         try:
             index = self.chain_id_list.index(chain_id)
@@ -210,7 +214,7 @@ class HIBEChain():
                 print('root level waiting...%ds' % sleep_time)
                 time.sleep(sleep_time)
                 while not all([node.key_status() for node in chain.nodes for chain in level]):
-                    print('root level waiting...')
+                    print('root level waiting ')
                     time.sleep(5)
                 time.sleep(5)
             else:

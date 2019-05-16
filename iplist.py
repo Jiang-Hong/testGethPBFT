@@ -290,6 +290,7 @@ def set_ulimit(ip_list):
 
 if __name__ == "__main__":
     f = IPList('ip.txt')
+    f.stop_all_containers()
 #    for i in range(10):
 #        print(f.get_new_port())
 #    f.initService()

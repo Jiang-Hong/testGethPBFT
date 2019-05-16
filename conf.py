@@ -12,17 +12,17 @@ from math import ceil
 
 def generate_test_config(level=3, terminal_count=8, config_file='conf0.txt'):
     """Generate a HIBEChain config file."""
-    if level > 3:    # level starts from 0
-        raise ValueError("level number should not exceeds 3")
+    if level > 9:    # level starts from 0
+        raise ValueError("level number should not exceeds 9")
     chain_count = 2 ** (level + 1) - 1
     id_list = [None] * chain_count
     id_list[0] = ''
     thresh_list = [(21, 18)]
     for i in range(1, chain_count):
         if i % 2:
-            id_list[i] = id_list[ceil(i/2)-1] + '0001'
+            id_list[i] = id_list[ceil(i/2)-1] + '01'
         else:
-            id_list[i] = id_list[ceil(i/2)-1] + '0002'
+            id_list[i] = id_list[ceil(i/2)-1] + '02'
         thresh_list.append((20, 17))
     new_count = chain_count
 
@@ -141,24 +141,51 @@ def generate_genesis(chain_id, accounts, config_file):
         print(new_genesis, file=f)
 
 
-def generate_terminal_genesis(config_file, terminals):
+def generate_leaf_genesis(config_file, leaves):
     """Generate a genesis file for leaf chains and terminals."""
     with open('docker/%s' % config_file, 'rb') as f:
         genesis = json.load(f)
-    for chain in terminals:
-        account = []
-        for char in chain.chain_id:
-            account.append(hex(ord(char))[2:])
-        acc = ''.join(account)
-        acc = acc + (40 - len(acc) - 1) * '0' + '1'
-        if len(acc) != 40:
-            print('account:', acc)
-            raise ValueError('length of account should be 40')
-        print(acc)
-        genesis['alloc'][acc] = {'balance': "0x200000000000000000000000000000000000000000000000000000000000000"}
-    new_genesis = json.dumps(genesis, indent=2)
-    with open('docker/%s' % config_file, 'w') as f:
-        print(new_genesis, file=f)
+
+    for chain in leaves:
+        print('--------------leaf-------------------------------')
+        print('-------------file name', config_file)
+        account_ascii = []
+        terminal_id = chain.chain_id[:-2]
+        for char in terminal_id:
+            account_ascii.append(hex(ord(char))[2:])
+        tmp_account = ''.join(account_ascii)
+        for i in range(0, 41):
+            for j in range(0, 256):
+                terminal_account = tmp_account
+                terminal_account += hex(i)[2:].zfill(2) + hex(j)[2:].zfill(2)
+                terminal_account = terminal_account + (40 - len(terminal_account) - 1) * '0' + '1'
+                # print(terminal_account)
+                if len(terminal_account) != 40:
+                    print('terminal account:', terminal_account)
+                    raise ValueError('length of account should be 40')
+                genesis['alloc'][terminal_account] = {'balance': "0x200000000000000000000000000000000000000000000000000000000000000"}
+        new_genesis = json.dumps(genesis, indent=2)
+        with open('docker/%s' % config_file, 'w') as f:
+            print(new_genesis, file=f)
+
+# def generate_terminal_genesis(config_file, terminals):
+#     """Generate a genesis file for leaf chains and terminals."""
+#     with open('docker/%s' % config_file, 'rb') as f:
+#         genesis = json.load(f)
+#     for chain in terminals:
+#         account = []
+#         for char in chain.chain_id:
+#             account.append(hex(ord(char))[2:])
+#         acc = ''.join(account)
+#         acc = acc + (40 - len(acc) - 1) * '0' + '1'
+#         if len(acc) != 40:
+#             print('account:', acc)
+#             raise ValueError('length of account should be 40')
+#         print(acc)
+#         genesis['alloc'][acc] = {'balance': "0x200000000000000000000000000000000000000000000000000000000000000"}
+#     new_genesis = json.dumps(genesis, indent=2)
+#     with open('docker/%s' % config_file, 'w') as f:
+#         print(new_genesis, file=f)
 
 
 if __name__ == '__main__':
