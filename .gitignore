@@ -1,4 +1,4 @@
-docker/geth
+docker/geth*
 docker/*.json
 ip.txt
 __pycache__/
@@ -8,4 +8,5 @@ test.py
 docker/0.json.bak
 conf1*.txt
 conf0*.txt
+test*.txt
 .idea/*
