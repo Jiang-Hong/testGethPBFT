@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from const import USERNAME, PASSWD
+from const import USERNAME, PASSWD, IP_CONFIG
 from singlechain import SingleChain
 from iplist import IPList
 import threading
@@ -13,7 +13,8 @@ class HIBEChain(object):
     Data structure for an Hierarchical Identity Based Encryption Chain.
     """
 
-    def __init__(self, chain_id_list, thresh_list, ip_list, username=USERNAME, password=PASSWD):
+    def __init__(self, chain_id_list: [str], thresh_list: [tuple], ip_list: IPList,
+                 username: str = USERNAME, password: str = PASSWD) -> None:
         # Check if the input params are legal
         if not len(chain_id_list) == len(thresh_list):
             raise ValueError("length of chain_id_list should match length of thresh_list")
@@ -56,7 +57,7 @@ class HIBEChain(object):
                 print('--------------')
                 print('config leaf chains-----------------------')
                 chain.config_leaf_chain(self.structured_chains[-1])    # config leaf chains
-                break  # TODO need to be optimized later
+                # break  # TODO need to be optimized later
             for chain in self.structured_chains[-1]:
                 print('-----------------')
                 print('----------------------config terminals')
@@ -76,13 +77,14 @@ class HIBEChain(object):
             # time.sleep(1)
         for t in threads:
             t.join()
-        time.sleep(3)
+        time.sleep(0.5)
 
-    def construct_hibe_chain(self):
+    def construct_hibe_chain(self) -> None:
         """
         Construct the hierarchical construction of the HIBEChain.
         Connect blockchain nodes with their parent blockchain nodes.
         """
+        time.sleep(1)
         print('construct hibe chain')
         threads = []
         for chain in self.chains[::-1]:
@@ -96,13 +98,30 @@ class HIBEChain(object):
         # print('active threads:', threading.active_count())
         for t in threads:
             t.join()
-        time.sleep(2)
+        time.sleep(1)
+        # TODO check peer count
 
-    def destruct_hibe_chain(self):
+    def is_connected(self) -> bool:
+        for level in self.structured_chains:
+            for chain in level:
+                parent = self.get_parent_chain(chain)
+                children = self.get_child_chains(chain)
+                peer_count = chain.node_count - 1
+                if parent:
+                    peer_count += parent.node_count
+                if children:
+                    for child in children:
+                        peer_count += child.node_count
+                for node in chain.get_nodes:
+                    if node.get_peer_count() != peer_count:
+                        return False
+        return True
+
+    def destruct_hibe_chain(self) -> None:
         """Stop all containers to destruct the HIBEChain."""
         threads = []
         for chain in self.chains:
-            t = threading.Thread(target=chain.destruct_chain, args=())
+            t = threading.Thread(target=chain.destruct_chain)
             t.start()
             threads.append(t)
         for t in threads:
@@ -116,7 +135,7 @@ class HIBEChain(object):
         except ValueError or IndexError:
             print("ID %s is not in the HIBEChain" % chain_id)
 
-    def get_parent_chain(self, chain):
+    def get_parent_chain(self, chain: SingleChain) -> SingleChain:
         """
         Return parent chain.
         Return None if current chain is root chain.
@@ -128,7 +147,18 @@ class HIBEChain(object):
             parent_chain_id = chain.chain_id[:-2]
             return self.get_chain(parent_chain_id)
 
-    def init_chains(self):
+    def get_child_chains(self, chain: SingleChain) -> [SingleChain]:
+        """
+        Return a list of child chains.
+        Return empty list if no child chain.
+        """
+        child_chains = []
+        for level in self.structured_chains[1:]:
+            if level[0].chain_id[:-2] == chain.chain_id:
+                child_chains.extend(level)
+        return child_chains
+
+    def init_chains(self) -> None:
         threads = []
         # count = 0
         level = 0
@@ -165,7 +195,7 @@ class HIBEChain(object):
             if ch.threshold == 1:
                 ch.is_terminal = True
 
-    def set_number(self):
+    def set_number(self) -> None:
         """Set (n, t) value for all chains in HIBEChain."""
         threads = []
         for chain in self.chains:
@@ -177,7 +207,7 @@ class HIBEChain(object):
         self.if_set_number = True
         time.sleep(0.3)
 
-    def set_level(self):
+    def set_level(self) -> None:
         """Set level value for all chains in HIBEChain."""
 
         threads = []
@@ -192,7 +222,7 @@ class HIBEChain(object):
         self.if_set_level = True
         time.sleep(0.3)
 
-    def set_id(self):
+    def set_id(self) -> None:
         """Set ID for all chains in HIBEChain."""
 
         if not self.if_set_number and self.if_set_level:
@@ -200,35 +230,50 @@ class HIBEChain(object):
         start_time = time.time()
         threads = []
         for index, level in enumerate(self.structured_chains):
+            # variable level means all chains in the same level
             for chain in level:
                 t = threading.Thread(target=chain.set_id)
                 t.start()
                 threads.append(t)
-                time.sleep(0.1)
             for t in threads:
                 t.join()
 
             print('waiting for delivering key')
             if index == 0:
-                sleep_time = max([chain.node_count for chain in level]) * 10
-                print('root level waiting...%ds' % sleep_time)
-                time.sleep(sleep_time)
+                time.sleep(max([chain.node_count for chain in level])) # *5
+                # sleep_time = max([chain.node_count for chain in level]) * 10
+                # print('root level waiting...%ds' % sleep_time)
+                # time.sleep(sleep_time)
                 while not all([node.key_status() for node in chain.nodes for chain in level]):
                     print('root level waiting ')
                     time.sleep(5)
-                time.sleep(5)
             else:
-                #                thresh = max((chain.threshold for chain in level))
-                while not all([node.key_status() for node in chain.nodes for chain in level]):
-                    print('.', end='')
-                    time.sleep(2)
+                true_count = 0
+                for chain1 in level:
+                    while True:
+                        for node in chain1.get_nodes:
+                            result = node.key_status()
+                            if result is True:
+                                true_count += 1
+                            else:
+                                node.set_id(chain1.chain_id)
+                        print('______________true count is', true_count)
+                        if true_count == len(chain1.nodes):
+                            break
+                        else:
+                            time.sleep(2)
+
+
+                # while not all([node.key_status() for node in chain.nodes for chain in level]):
+                #     print('level %d is not ready, waiting...' % index)
+                #     time.sleep(5)
                 time.sleep(2)
         self.if_set_id = True
         print("------setID finished----------------")
         end_time = time.time()
         print('setID elapsed time %.2f' % (end_time - start_time))
 
-    def start_miner(self):
+    def start_miner(self) -> None:
         """Start miner for all consensus nodes."""
 
         for level in self.structured_chains[:-1]:
@@ -237,7 +282,7 @@ class HIBEChain(object):
 
 
 if __name__ == "__main__":
-    ip_list = IPList('ip.txt')
+    ip_list = IPList(IP_CONFIG)
     chain_id_list = ["", "01", "02"]
     thresh_list = [(4, 3), (1, 1), (1, 1)]
 

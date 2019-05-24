@@ -13,7 +13,6 @@ import threading
 #TODO function annotation && docstring
 #TODO logging module
 #TODO class decorators
-#TODO change to shorter chain id
 #TODO finish benchmark function
 
 failCount = 0

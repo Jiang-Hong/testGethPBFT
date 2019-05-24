@@ -7,10 +7,11 @@ Created on Sat Mar 16 11:04:55 2019
 """
 
 import json
+import time
 from math import ceil
 
 
-def generate_test_config(level=3, terminal_count=8, config_file='conf0.txt'):
+def generate_test_config(level: int =3, terminal_count: int = 8, config_file: str = 'conf0.txt') -> None:
     """Generate a HIBEChain config file."""
     if level > 9:    # level starts from 0
         raise ValueError("level number should not exceeds 9")
@@ -54,7 +55,7 @@ def generate_test_config(level=3, terminal_count=8, config_file='conf0.txt'):
         file.write('\n'.join(lines))
 
 
-def generate__tri_test_config(level=3, terminal_count=8, config_file='conf0.txt'):
+def generate__tri_test_config(level: int = 3, terminal_count: int = 8, config_file: str = 'conf0.txt') -> None:
     """Generate a HIBEChain config file."""
     if level > 3:    # level starts from 0
         raise ValueError("level number should not exceeds 3")
@@ -100,7 +101,7 @@ def generate__tri_test_config(level=3, terminal_count=8, config_file='conf0.txt'
         file.write('\n'.join(lines))
 
 
-def load_config_file(config_file='conf0.txt'):
+def load_config_file(config_file: str = 'conf0.txt') -> tuple:
     """Get id_list & thresh_list from a config file."""
     id_list = ['']
     thresh_list = []
@@ -124,7 +125,7 @@ def load_config_file(config_file='conf0.txt'):
     return id_list, thresh_list
 
 
-def generate_genesis(chain_id, accounts, config_file):
+def generate_genesis(chain_id: int, accounts: list, config_file: str) -> None:
     """Generate a genesis file."""
     with open('docker/120.json', 'rb') as f:
         genesis = json.load(f)
@@ -139,9 +140,9 @@ def generate_genesis(chain_id, accounts, config_file):
     new_genesis = json.dumps(genesis, indent=2)
     with open('docker/%s' % config_file, 'w') as f:
         print(new_genesis, file=f)
+    time.sleep(0.05)
 
-
-def generate_leaf_genesis(config_file, leaves):
+def generate_leaf_genesis(config_file: str, leaves: list) -> None:
     """Generate a genesis file for leaf chains and terminals."""
     with open('docker/%s' % config_file, 'rb') as f:
         genesis = json.load(f)
@@ -154,7 +155,7 @@ def generate_leaf_genesis(config_file, leaves):
         for char in terminal_id:
             account_ascii.append(hex(ord(char))[2:])
         tmp_account = ''.join(account_ascii)
-        for i in range(0, 41):
+        for i in range(0, 2):
             for j in range(0, 256):
                 terminal_account = tmp_account
                 terminal_account += hex(i)[2:].zfill(2) + hex(j)[2:].zfill(2)
@@ -167,6 +168,7 @@ def generate_leaf_genesis(config_file, leaves):
         new_genesis = json.dumps(genesis, indent=2)
         with open('docker/%s' % config_file, 'w') as f:
             print(new_genesis, file=f)
+        time.sleep(0.05)
 
 # def generate_terminal_genesis(config_file, terminals):
 #     """Generate a genesis file for leaf chains and terminals."""

@@ -1,6 +1,5 @@
 docker/geth*
 docker/*.json
-ip.txt
 __pycache__/
 .vscode/
 *.pyc
@@ -10,3 +9,6 @@ conf1*.txt
 conf0*.txt
 test*.txt
 .idea/*
+*ip.txt
+thresh2latency.txt
+
