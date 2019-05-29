@@ -5,7 +5,6 @@ from const import IP_CONFIG, USERNAME, PASSWD
 from gethnode import GethNode
 from iplist import IPList
 from conf import generate_genesis, generate_leaf_genesis
-from functools import wraps
 import time
 import subprocess
 import threading
@@ -28,7 +27,7 @@ import threading
 # def add_peer(node1: GethNode, node2: GethNode, label: int):
 #     # Use semaphore to limit number of concurrent threads
 #     SEMAPHORE.acquire()
-#     node1.add_peer(node2.get_enode(), label)
+#     node1.add_peer(node2.enode, label)
 #     # time.sleep(0.5)
 #     SEMAPHORE.release()
 #     # print(threading.active_count())
@@ -46,14 +45,14 @@ class SingleChain(object):
             raise ValueError("not enough IPs")
         self.username = username
         self.password = password
-        self.level = level
-        self.chain_id = name    # chain id
+        self._level = level
+        self._chain_id = name    # chain id
         self.node_count = node_count
         self.threshold = threshold
         self.blockchain_id = blockchain_id
         self.ip_list = ip_list
-        self.nodes = []
-        self.ips = set()
+        self._nodes = []
+        self._ips = set()
         self.if_set_number = False
         self.if_set_level = False
         self.if_set_id = False
@@ -80,36 +79,43 @@ class SingleChain(object):
             # xq threads must run the join function, because the resources of main thread is needed
             t.join()
 
+
+        time.sleep(0.1)
         for index in range(self.node_count):
-            self.accounts.append(self.get_nodes[index].accounts[0])
+            self.accounts.append(self.nodes[index].accounts[0])
 #        print(self.accounts)
 
     def __repr__(self) -> str:
         return self.chain_id if self.chain_id else 'root chain'
 
     @property
-    def get_nodes(self) -> [GethNode]:
+    def nodes(self) -> [GethNode]:
         """Return nodes in the chain"""
-        return self.nodes
+        return self._nodes
 
     @property
-    def get_ips(self) -> set:
+    def ips(self) -> set:
         """Return a set of IP objects in the chain"""
-        return self.ips
+        return self._ips
 
     @property
-    def get_level(self) -> int:
+    def level(self) -> int:
         """Return level of the chain in HIBE chain."""
-        return self.level
+        return self._level
+
+    @property
+    def chain_id(self) -> str:
+        """return chain id of the chain."""
+        return self._chain_id
 
     def config_genesis(self) -> None:
         """Copy genesis.json file into a container."""
-        for server_ip in self.get_ips:
+        for server_ip in self.ips:
             subprocess.run(['sshpass -p %s scp docker/%s %s@%s:%s' % (self.password, self.config_file,
                            self.username, server_ip.address, self.config_file)], stdout=subprocess.PIPE, shell=True)
             time.sleep(self.node_count/50)
             threads = []
-            for node in self.get_nodes:
+            for node in self.nodes:
                 if node.ip == server_ip:
                     command = 'docker cp %s %s:/root/%s' % (self.config_file, node.name, self.config_file)
                     t = threading.Thread(target=server_ip.exec_command, args=(command,))
@@ -208,10 +214,6 @@ class SingleChain(object):
             t.join()
         time.sleep(2)
 
-    def get_chain_id(self) -> str:
-        """return chain id of the chain."""
-        return self.chain_id
-
     def is_root_chain(self):
         """Check if chain is root chain."""
         return self.chain_id == ""
@@ -220,7 +222,7 @@ class SingleChain(object):
         """Return the primer node of the set of Geth-pbft clients."""
         return self.nodes[0]
 
-    def get_node_by_index(self, node_index:int) -> GethNode:
+    def get_node_by_index(self, node_index: int) -> GethNode:
         """Return the node of a given index."""
         if node_index <= 0 or node_index > len(self.nodes):
             raise ValueError("node index out of range")
@@ -232,31 +234,53 @@ class SingleChain(object):
             print("constructing single chain")
             start_time = time.time()
             threads = []
-            node_count = len(self.nodes)
 
             # connect nodes in a single chain with each other
-            for i in range(node_count):
-                for j in range(i+1, node_count):
-                    t1 = threading.Thread(target=self.nodes[i].add_peer, args=(self.nodes[j].get_enode(), 0))
+            for i in range(self.node_count):
+                for j in range(i+1, self.node_count):
+                    t1 = threading.Thread(target=self.nodes[i].add_peer, args=(self.nodes[j].enode, 0))
                     t1.start()
-                    time.sleep(0.1)    # necessary
+                    time.sleep(0.01)    # necessary
                     threads.append(t1)
                 break
             for t in threads:
                 t.join()
             # print('active threads:', threading.active_count())
-            end_time = time.time()
-            print('%.3fs' % (end_time - start_time))
+
             print("-------------------------")
             time.sleep(len(self.nodes)//10)  #
+
             iter_count = 0
-            while not all([node.get_peer_count() == node_count-1 for node in self.nodes]):
+            while True:
+                node_ready_count = 0
                 iter_count += 1
-                print('waiting time: %f' % (0.5 * iter_count))
-                if iter_count == 10:
-                    for node in self.nodes[1:]:
-                        node.add_peer(self.nodes[0].get_enode, 0)
-                time.sleep(0.8)
+
+                if iter_count >= 10:
+                    # reconnect nodes in a single chain
+                    print('!!!!!!!!!!!!!!!!! reconnect')
+                    for i in range(self.node_count):
+                        for j in range(i + 1, self.node_count):
+                            self.nodes[i].add_peer(self.nodes[j].enode, 0)
+                for node in self.nodes:
+                    if node.get_peer_count() == self.node_count - 1:
+                        node_ready_count += 1
+                if node_ready_count <= self.threshold:
+                    time.sleep(1)
+                else:
+                    break
+            end_time = time.time()
+            print('%.3fs' % (end_time - start_time))
+
+            # while not all([node.get_peer_count() == self.node_count-1 for node in self.nodes]):
+            #     iter_count += 1
+            #     print('waiting time: %f, waiting round is %d' % (0.5 * iter_count, iter_count))
+            #     if iter_count == 10:
+            #         for node in self.nodes[1:]:
+            #             if node.get_peer_count() != self.nodes[0].get_peer_count():
+            #                 print('add peer again')
+            #                 node.add_peer(self.nodes[0].enode, 0)
+            #         iter_count = 0
+            time.sleep(1)
 
     def get_parent_chain_id(self) -> str:
         """Return chain ID of parent chain."""
@@ -282,7 +306,7 @@ class SingleChain(object):
         threads = []
         for node in self.nodes:
             for other in other_chain.nodes:
-                t = threading.Thread(target=other.add_peer, args=(node.get_enode(), 2))    # param 2 means upper peer
+                t = threading.Thread(target=other.add_peer, args=(node.enode, 2))    # param 2 means upper peer
                 t.start()
                 time.sleep(0.1)    # if fail. add this line.
                 threads.append(t)
@@ -379,8 +403,8 @@ if __name__ == "__main__":
     ip_list.stop_all_containers()
     time.sleep(0.2)
     ip_list.remove_all_containers()
-    node_count = 4
-    c = SingleChain('01', 1, node_count, node_count*3//4+1, 121, ip_list)
+    node_count = 100
+    c = SingleChain('01', 1, node_count, node_count*2//3+1, 121, ip_list)
     c.singlechain_start()
     c.config_consensus_chain()
     c.run_nodes()

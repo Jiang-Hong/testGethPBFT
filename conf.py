@@ -142,6 +142,7 @@ def generate_genesis(chain_id: int, accounts: list, config_file: str) -> None:
         print(new_genesis, file=f)
     time.sleep(0.05)
 
+
 def generate_leaf_genesis(config_file: str, leaves: list) -> None:
     """Generate a genesis file for leaf chains and terminals."""
     with open('docker/%s' % config_file, 'rb') as f:

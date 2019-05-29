@@ -88,8 +88,8 @@ class HIBEChain(object):
         print('construct hibe chain')
         threads = []
         for chain in self.chains[::-1]:
-            if chain.get_chain_id() != '':
-                parent_chain = self.chains[self.chain_id_list.index(chain.get_chain_id()[:-2])]
+            if chain.chain_id != '':
+                parent_chain = self.chains[self.chain_id_list.index(chain.chain_id[:-2])]
                 #                parent_chain.connect_lower_chain(chain)
                 t = threading.Thread(target=parent_chain.connect_lower_chain, args=(chain,))
                 t.start()
@@ -112,7 +112,7 @@ class HIBEChain(object):
                 if children:
                     for child in children:
                         peer_count += child.node_count
-                for node in chain.get_nodes:
+                for node in chain.nodes:
                     if node.get_peer_count() != peer_count:
                         return False
         return True
@@ -251,7 +251,7 @@ class HIBEChain(object):
                 true_count = 0
                 for chain1 in level:
                     while True:
-                        for node in chain1.get_nodes:
+                        for node in chain1.nodes:
                             result = node.key_status()
                             if result is True:
                                 true_count += 1

@@ -31,17 +31,31 @@ class GethNode(object):
 
     def __init__(self, ip_list: IPList, pbft_id: int, node_index: int, blockchain_id: int,
                  username: str = USERNAME, password: str = PASSWD) -> None:
-        self.enode = ''
         self.id = node_index    # used in rpc call
         self.ip, self.rpc_port, self.ethereum_network_port = ip_list.get_new_port()
         self.pbft_id = pbft_id
         self.node_index = node_index
         self.blockchain_id = blockchain_id
         self.name = 'geth-pbft' + str(self.rpc_port)    # docker container name of this node
+        self._enode = ''
+        self._accounts = []  # accounts list of a geth node
         self._headers = {'Content-Type': 'application/json', 'Connection': 'close'}    # for rpc call use
         self.username = username    # user name of login user of a server
         self.password = password    # password of login user of a server
-        self.accounts = []    # accounts list of a geth node
+
+    @property
+    def enode(self) -> str:
+        """Return enode information from admin.nodeInfo"""
+        return self._enode
+
+    @enode.setter
+    def enode(self, enode_str: str) -> None:
+        self._enode = enode_str
+
+    @property
+    def accounts(self) -> list:
+        """Return a accounts list of a geth node"""
+        return self._accounts
 
     def start(self) -> None:
         """Start a container for geth on remote server and create a new account."""
@@ -93,10 +107,6 @@ class GethNode(object):
         params = kwargs['params']
         return self.rpc_call(method, params)
 
-    def get_enode(self) -> str:
-        """Return enode information from admin.nodeInfo"""
-        return self.enode
-
     def get_peer_count(self) -> int:
         """net.peerCount"""
         method = 'net_peerCount'
@@ -115,7 +125,7 @@ class GethNode(object):
         method = 'personal_newAccount'
         params = [password]
         account = self.rpc_call(method, params)
-        sleep(0.1)
+        sleep(0.05)
         self.accounts.append(account[2:])
 
     def key_status(self) -> bool:
@@ -203,6 +213,7 @@ class GethNode(object):
         """admin.addPeer()"""
         method = 'admin_addPeer'
         params = list(args)
+        # sleep(0.01)
         result = self.rpc_call(method, params)
         return result
 

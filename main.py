@@ -14,6 +14,7 @@ import threading
 #TODO logging module
 #TODO class decorators
 #TODO finish benchmark function
+#TODO ports on different ips
 
 failCount = 0
 

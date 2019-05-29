@@ -23,7 +23,7 @@ class IP(object):
             print("ip is", ip_address)
             raise ValueError('format of ip is not correct')
 
-        self.max_payload = MAXPAYLOAD
+        self._max_payload = MAXPAYLOAD
         self.current_port = current_port
         self.address = ip_address
         self.rpc_ports = range(8515, 8515 + self.max_payload * 10, 10)
@@ -42,9 +42,16 @@ class IP(object):
         self.current_port += 1
         return result
 
-    def get_max_payload(self) -> int:
+    @property
+    def max_payload(self) -> int:
         """Return the maximum containers able to run on the server."""
-        return self.max_payload
+        return self._max_payload
+
+    @max_payload.setter
+    def max_payload(self, payload: int) -> None:
+        """Set maximum payload value."""
+        print("set new maximum payload for %s" % self.address)
+        self._max_payload = payload
 
     def is_full_loaded(self) -> bool:
         """Decide whether the server is full loaded."""
@@ -129,10 +136,12 @@ class IPList(object):
                  username: str = USERNAME, password: str = PASSWD) -> None:
         """Read IPs from a file."""
         self.current_ip = current_ip
-        self.ips = []
+        self._ips = []
         self.username = username
         self.password = password
         with open(ip_file, 'r') as f:
+            # read servers' IPs from an IP config file
+            # stop at an empty line
             for line in f.readlines():
                 if line.strip():
                     self.ips.append(IP(line.strip()))
@@ -141,13 +150,13 @@ class IPList(object):
         self._init_service()
 
     @property
-    def get_ips(self) -> list:
+    def ips(self) -> list:
         """Return a list of IPs."""
-        return self.ips
+        return self._ips
 
     def get_full_count(self) -> int:
         """Return the number of containers when all servers are full loaded."""
-        return len(self.ips) * self.ips[0].get_max_payload() if len(self.ips) else 0
+        return len(self.ips) * self.ips[0].max_payload if len(self.ips) else 0
 
     def get_new_port(self) -> tuple:
         """
@@ -168,7 +177,7 @@ class IPList(object):
     def exec_commands(self, cmd: str, port: int = 22) -> None:
         """Exec an uniform command on all servers"""
         threads = []
-        for ip in self.get_ips:
+        for ip in self.ips:
             t = threading.Thread(target=ip.exec_command, args=(cmd,), kwargs={'port': port})
             t.start()
             threads.append(t)
@@ -284,7 +293,7 @@ def shutdown_server(ip_list: IPList, username: str = USERNAME, password: str = P
     Shutdown all server on IPlist.
     Note: Set param shell=True
     """
-    for ip in ip_list.get_ips:
+    for ip in ip_list.ips:
         shutdown_command = 'echo %s | sshpass -p %s ssh -tt %s@%s sudo shutdown now' \
                            % (password, password, username, IP)
         print("server %s shutdown" % ip.address)
@@ -293,7 +302,7 @@ def shutdown_server(ip_list: IPList, username: str = USERNAME, password: str = P
 
 def set_ulimit(ip_list: IPList) -> None:
     """Change ulimit for servers."""
-    for ip in ip_list.get_ips:
+    for ip in ip_list.ips:
         subprocess.run(['sshpass -p %s scp setUlimit.sh %s@%s:' % (ip.password, ip.username, ip.address)],
                        stdout=subprocess.PIPE, shell=True)
         chmod_command = 'sshpass -p %s ssh -tt %s@%s chmod +x setUlimit.sh' % (ip.password, ip.username, ip.address)
