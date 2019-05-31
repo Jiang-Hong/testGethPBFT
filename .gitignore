@@ -10,5 +10,5 @@ conf0*.txt
 test*.txt
 .idea/*
 *ip.txt
-thresh2latency.txt
+thresh2latency*.txt
 

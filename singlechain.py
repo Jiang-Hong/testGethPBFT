@@ -59,6 +59,8 @@ class SingleChain(object):
         self.is_terminal = False
         self.config_file = None
         self.accounts = []
+        self.all_ip_port = set() # set of (ip_address, port)
+        self.map = {} # map of (ip_address, port) to node
 
     def singlechain_start(self) -> None:
         """Start all containers for a single chain."""
@@ -67,6 +69,9 @@ class SingleChain(object):
             pbft_id = index
             node_index = index + 1
             tmp = GethNode(self.ip_list, pbft_id, node_index, self.blockchain_id, self.username, self.password)
+            ip_port = (tmp.ip.address, tmp.ethereum_network_port)
+            self.all_ip_port.add(ip_port)
+            self.map.setdefault(ip_port, tmp)
             self.ips.add(tmp.ip)
             self.nodes.append(tmp)
             # xq start a thread， target stand for a function that you want to run ,args stand for the parameters
@@ -78,7 +83,6 @@ class SingleChain(object):
         for t in threads:
             # xq threads must run the join function, because the resources of main thread is needed
             t.join()
-
 
         time.sleep(0.1)
         for index in range(self.node_count):
@@ -182,14 +186,14 @@ class SingleChain(object):
     def run_geth_nodes(self):
         threads = []
         for node in self.nodes:
-            start_geth_command = ('geth --datadir abc --cache 512 --port 30303 --rpcport 8545 --rpcapi '
-                                  'admin,eth,miner,web3,net,personal,txpool --rpc --rpcaddr \"0.0.0.0\" '
+            start_geth_command = ('/usr/bin/geth --datadir abc --cache 512 --port 30303 --rpcport 8545 --rpcapi '
+                                  'admin,eth,miner,web3,net,personal,txpool --rpc --rpcaddr 0.0.0.0 '
                                   '--pbftid %d --nodeindex %d --blockchainid %d --unlock %s --password '
-                                  '\"passfile\" --maxpeers 1024 --maxpendpeers 1024 --txpool.globalslots 81920 '
-                                  '--txpool.globalqueue 81920 --syncmode \"full\" '
-                                  '--nodiscover') % (node.pbft_id, node.node_index,
-                                                     node.blockchain_id, node.accounts[0])
-            command = 'docker exec -td %s %s' % (node.name, start_geth_command)
+                                  'passfile --maxpeers 1024 --maxpendpeers 1024 --txpool.globalslots 81920 '
+                                  '--txpool.globalqueue 81920 --syncmode full '
+                                  '--nodiscover >> %s.log 2>&1') % (node.pbft_id, node.node_index,
+                                                     node.blockchain_id, node.accounts[0], node.name)
+            command = 'docker exec -td %s bash -c  \"%s\" ' % (node.name, start_geth_command)
             print(start_geth_command)
             t = threading.Thread(target=node.ip.exec_command, args=(command,))
             t.start()
@@ -238,38 +242,69 @@ class SingleChain(object):
             # connect nodes in a single chain with each other
             for i in range(self.node_count):
                 for j in range(i+1, self.node_count):
+                    # self.nodes[i].add_peer(self.nodes[j].enode, 0)
                     t1 = threading.Thread(target=self.nodes[i].add_peer, args=(self.nodes[j].enode, 0))
                     t1.start()
-                    time.sleep(0.01)    # necessary
+                    time.sleep(0.02)    # necessary
                     threads.append(t1)
-                break
+                # break
             for t in threads:
                 t.join()
             # print('active threads:', threading.active_count())
 
-            print("-------------------------")
-            time.sleep(len(self.nodes)//10)  #
+            print("-----------chain construction waiting--------------")
+            time.sleep(len(self.nodes)//4 + 2)  #
 
-            iter_count = 0
-            while True:
-                node_ready_count = 0
-                iter_count += 1
+            # iter_count = 0
+            # while True:
+            #     node_ready_count = 0
+            #     iter_count += 1
+            #
+            #     # if iter_count >= 10:
+            #     #     # reconnect nodes in a single chain
+            #     #     print('!!!!!!!!!!!!!!!!! connect again')
+            #     #     threads = []
+            #     #     for i in range(self.node_count):
+            #     #         if self.nodes[i].get_peer_count() == self.node_count - 1:
+            #     #             continue
+            #     #         for j in range(i + 1, self.node_count):
+            #     #             # self.nodes[i].add_peer(self.nodes[j].enode, 0)
+            #     #             t2 = threading.Thread(target=self.nodes[i].add_peer, args=(self.nodes[j].enode, 0))
+            #     #             t2.start()
+            #     #             time.sleep(0.01)    # necessary
+            #     #             threads.append(t2)
+            #     #     for t in threads:
+            #     #         t.join()
+            #     #     iter_count = 0
+            #     #     time.sleep(5)
+            for node in self.nodes:
+                while node.get_peer_count() != self.node_count - 1:
+                    node_peers_info = node.get_peers()
+                    node_peers = {tuple(item['network']['remoteAddress'].split(':')) for item in node_peers_info}
+                    node_peers.add((node.ip.address, node.ethereum_network_port))
+                    un_connected_peers = self.all_ip_port.difference(node_peers)
+                    print('------------------')
+                    print(un_connected_peers)
+                    print('------------------')
+                    threads = []
+                    for ip_port in un_connected_peers:
+                        peer2connect = self.map[ip_port]
+                        t = threading.Thread(target=node.add_peer, args=(peer2connect.enode, 0))
+                        t.start()
+                        time.sleep(0.02)
+                        threads.append(t)
+                    for t in threads:
+                        t.join()
+                    print('unconnected peers: %d' % len(un_connected_peers))
+                    time.sleep(len(un_connected_peers) // 4 + 1)
 
-                if iter_count >= 10:
-                    # reconnect nodes in a single chain
-                    print('!!!!!!!!!!!!!!!!! reconnect')
-                    for i in range(self.node_count):
-                        for j in range(i + 1, self.node_count):
-                            self.nodes[i].add_peer(self.nodes[j].enode, 0)
-                for node in self.nodes:
-                    if node.get_peer_count() == self.node_count - 1:
-                        node_ready_count += 1
-                if node_ready_count <= self.threshold:
-                    time.sleep(1)
-                else:
-                    break
+                #
+                # if node_ready_count != self.node_count:
+                #     time.sleep(1)
+                # else:
+                #     break
             end_time = time.time()
-            print('%.3fs' % (end_time - start_time))
+            print('construction complete: %.3fs' % (end_time - start_time))
 
             # while not all([node.get_peer_count() == self.node_count-1 for node in self.nodes]):
             #     iter_count += 1
@@ -280,7 +315,6 @@ class SingleChain(object):
             #                 print('add peer again')
             #                 node.add_peer(self.nodes[0].enode, 0)
             #         iter_count = 0
-            time.sleep(1)
 
     def get_parent_chain_id(self) -> str:
         """Return chain ID of parent chain."""
@@ -403,7 +437,7 @@ if __name__ == "__main__":
     ip_list.stop_all_containers()
     time.sleep(0.2)
     ip_list.remove_all_containers()
-    node_count = 100
+    node_count = 30
     c = SingleChain('01', 1, node_count, node_count*2//3+1, 121, ip_list)
     c.singlechain_start()
     c.config_consensus_chain()
@@ -423,4 +457,4 @@ if __name__ == "__main__":
         if count != node_count - 1:
             fail_count += 1
     print("fail count:", fail_count)
-    c.destruct_chain()
+    # c.destruct_chain()

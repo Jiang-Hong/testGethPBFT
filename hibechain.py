@@ -258,7 +258,7 @@ class HIBEChain(object):
                             else:
                                 node.set_id(chain1.chain_id)
                         print('______________true count is', true_count)
-                        if true_count == len(chain1.nodes):
+                        if true_count >= chain1.threshold:
                             break
                         else:
                             time.sleep(2)

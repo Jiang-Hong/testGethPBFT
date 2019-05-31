@@ -3,8 +3,12 @@
 
 from const import CONFIG, IP_CONFIG
 from hibechain import HIBEChain
+from singlechain import SingleChain
+from gethnode import GethNode
 from iplist import IPList
 from conf import load_config_file
+from typing import Optional
+import threading
 import time
 
 ip_list = IPList(IP_CONFIG)
@@ -22,12 +26,22 @@ time.sleep(0.2)
 ip_list.remove_all_containers()
 # -------------------------------------------------------
 
+def get_pf(pf: Optional[list], node: GethNode, pf_list: Optional[list], index: int) -> None:
+    try:
+        result = node.get_transaction_proof_by_proof(pf)
+    except RuntimeError as e:
+        time.sleep(0.05)
+        result = None
+        print(e)
+    pf_list[index] = result
+
+
 start_time = time.time()
 hibe = HIBEChain(id_list, thresh_list, ip_list)
 hibe.construct_hibe_chain()
 connect_time = time.time()
 
-waiting_time = 5 # max([chain.node_count for chain in hibe.structured_chains[0]])
+waiting_time = max([chain.node_count for chain in hibe.structured_chains[0]]) // 5
 print('another %d seconds waiting for addPeer' % waiting_time)
 time.sleep(waiting_time)
 if not hibe.is_connected():
@@ -87,6 +101,7 @@ while not tx_hash:
     time.sleep(0.05)
     tx_hash = leaf_node.get_transaction_by_block_number_and_index(1, 1)
 pf = leaf_node.get_transaction_proof_by_hash(tx_hash)
+#TODO search in all nodes
 current_chain = leaf_chain
 current_node = leaf_node
 current_pf = pf

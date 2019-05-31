@@ -135,8 +135,10 @@ class IPList(object):
     def __init__(self, ip_file: str, current_ip: int = 0,
                  username: str = USERNAME, password: str = PASSWD) -> None:
         """Read IPs from a file."""
-        self.current_ip = current_ip
+        self._current_ip = current_ip
+        self._available_ip = 0
         self._ips = []
+        self.ip_count = 0
         self.username = username
         self.password = password
         with open(ip_file, 'r') as f:
@@ -154,6 +156,16 @@ class IPList(object):
         """Return a list of IPs."""
         return self._ips
 
+    @property
+    def current_ip(self) -> int:
+        return self._current_ip
+
+    @current_ip.setter
+    def current_ip(self, cur: int) -> None:
+        self._current_ip = cur
+        if self._current_ip >= self.ip_count:
+            self._current_ip = self._available_ip
+
     def get_full_count(self) -> int:
         """Return the number of containers when all servers are full loaded."""
         return len(self.ips) * self.ips[0].max_payload if len(self.ips) else 0
@@ -163,12 +175,13 @@ class IPList(object):
         Get a new rpc_port and a new ethereum_network_port along with the IP addr of a server.
         Return: (ip_address, rpc_port, ethereum_network_port)
         """
-        if self.current_ip >= len(self.ips):
+        if self._available_ip >= len(self.ips):
             raise ValueError("server overload")
         rpc_port, ethereum_network_port = self.ips[self.current_ip].get_new_port()
         current_ip = self.ips[self.current_ip]
         if current_ip.is_full_loaded():
-            self.current_ip += 1
+            self._available_ip = self.current_ip + 1
+        self.current_ip += 1
         return current_ip, rpc_port, ethereum_network_port
 
     def release_all_ports(self) -> None:
@@ -219,7 +232,7 @@ class IPList(object):
         def _set_thread_result(ip: IP, results: dict, index: int) -> None:
             return results.setdefault(str(index), keys.lookup(ip.address))
 
-        length = len(self.ips)
+        self.ip_count = len(self.ips)
         threads = []
         results = {}
         for index, ip in enumerate(self.ips):
@@ -231,7 +244,7 @@ class IPList(object):
             t.join()
 
         # add keys to known_hosts one by one
-        for i in range(length):
+        for i in range(self.ip_count):
             if not results.get(str(i)):
                 print('%s is not in know_hosts. Adding to known_hosts' % self.ips[i])
                 get_key_command = 'ssh-keyscan %s' % self.ips[i].address
@@ -323,6 +336,3 @@ if __name__ == "__main__":
     f.stop_all_containers()
     time.sleep(0.2)
     f.remove_all_containers()
-#    for i in range(10):
-#        print(f.get_new_port())
-#    f.initService()
