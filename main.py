@@ -10,12 +10,12 @@ import threading
 
 #threading.stack_size(300*1024*1024)
 
-#TODO function annotation && docstring
 #TODO logging module
 #TODO class decorators
 #TODO finish benchmark function
-#TODO ports on different ips
-
+#TODO reload module
+#TODO wiki
+#TODO docker push retry & make docker build faster
 failCount = 0
 
 

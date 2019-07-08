@@ -4,7 +4,7 @@
 import requests
 import json
 from iplist import IPList
-from const import USERNAME, PASSWD, IP_CONFIG, SECONDS_IN_A_DAY, SEMAPHORE
+from const import IMAGE, USERNAME, PASSWD, IP_CONFIG, SECONDS_IN_A_DAY, SEMAPHORE
 from typing import Union, Optional, Any
 from time import sleep
 
@@ -57,11 +57,14 @@ class GethNode(object):
         """Return a accounts list of a geth node"""
         return self._accounts
 
+    def __repr__(self) -> str:
+        return self.ip.address + ":" + str(self.rpc_port)
+
     def start(self) -> None:
         """Start a container for geth on remote server and create a new account."""
         # --ulimit nofile=<soft limit>:<hard limit> set the limit for open files
-        docker_run_command = ('docker run --ulimit nofile=65535:65535 -td -p %d:8545 -p %d:30303 --rm --name %s '
-                              'rkdghd/geth-pbft:30' % (self.rpc_port, self.ethereum_network_port, self.name))
+        docker_run_command = ('docker run --ulimit nofile=65535:65535 -td -p %d:8545 -p %d:30303 --rm --name %s %s' %
+                              (self.rpc_port, self.ethereum_network_port, self.name, IMAGE))
         sleep(0.6)
         result = self.ip.exec_command(docker_run_command)
         if result:
@@ -91,18 +94,26 @@ class GethNode(object):
         url = "http://{}:{}".format(self.ip.address, self.rpc_port)
         with SEMAPHORE:
             with requests.Session() as r:
+
                 response = r.post(url=url, data=data, headers=self._headers)
-                content = json.loads(response.content.decode(encoding='utf-8'))
+                if response.headers['Content-Type'] == 'application/json':
+                    content = response.json()
+                else:
+                    print(response.status_code, response.headers['Content-Type'])
+                    print(response.content)
+                    sleep(0.02)
+                    content = r.post(url=url, data=data, headers=self._headers).content.json()
+                    sleep(0.02)
                 print(content)
                 result = content.get('result')
         err = content.get('error')
         if err:
-            raise RuntimeError(err.get('message'))
+            raise RuntimeError(self.ip.address, err.get('message'))
 
         print('%s @%s : %s    %s' % (method, self.ip.address, self.rpc_port, result))
         return result
 
-    def test(self, **kwargs):
+    def test(self, **kwargs) -> Any:
         method = kwargs['method']
         params = kwargs['params']
         return self.rpc_call(method, params)
@@ -213,7 +224,7 @@ class GethNode(object):
         """admin.addPeer()"""
         method = 'admin_addPeer'
         params = list(args)
-        # sleep(0.01)
+        sleep(0.01)
         result = self.rpc_call(method, params)
         return result
 
@@ -293,17 +304,16 @@ class GethNode(object):
         method = 'miner_stop'
         return self.rpc_call(method)
 
-    # def get_block_by_number(self, block_number):
-    #     """eth.getBlock()"""
-    #     # check if index is greater than or equal 0
-    #     if block_number < 0:
-    #         raise ValueError('blockNumber should be non-negative')
-    #
-    #     block_number_hex_string = hex(block_number)
-    #     method = 'eth_getBlockByNumber'
-    #     params = [block_number_hex_string, 'true']
-    #     sleep(0.1)
-    #     return self.rpc_call(method, params)
+    def get_block_by_index(self, block_index: int) -> Any:
+        """eth.getBlock()"""
+        # check if index is greater than or equal 0
+        if block_index < 0:
+            raise ValueError('blockNumber should be non-negative')
+
+        block_index_hex_string = hex(block_index)
+        method = 'eth_getBlockByNumber'
+        params = [block_index_hex_string, True]
+        return self.rpc_call(method, params)
 
     def get_transaction_by_block_number_and_index(self, block_number, index) -> str:
 
@@ -326,6 +336,7 @@ class GethNode(object):
         """eth.getTxProofByProf()"""
         method = 'eth_getTxProofByProof'
         params = [transaction_proof]
+        sleep(0.02)
         result = self.rpc_call(method, params)
         print(result)
         return result
@@ -345,8 +356,9 @@ class GethNode(object):
 
 
 if __name__ == "__main__":
-    IPlist = IPList(IP_CONFIG)
-    n = GethNode(IPlist, 0, 1, 121)
+    ip_list = IPList(IP_CONFIG)
+    ip_list.stop_all_containers()
+    n = GethNode(ip_list, 0, 1, 121)
     n.start()
     print(n.accounts)
     n.stop()

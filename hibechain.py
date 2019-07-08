@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+from typing import Optional
 from const import USERNAME, PASSWD, IP_CONFIG
 from singlechain import SingleChain
 from iplist import IPList
@@ -52,12 +53,12 @@ class HIBEChain(object):
                 t = threading.Thread(target=chain.config_consensus_chain)
                 t.start()
                 threads.append(t)
-        else:    #terminals
+        else:    # terminals
             for chain in self.structured_chains[-2]:
                 print('--------------')
                 print('config leaf chains-----------------------')
                 chain.config_leaf_chain(self.structured_chains[-1])    # config leaf chains
-                # break  # TODO need to be optimized later
+                # break  # TODO need to be optimized
             for chain in self.structured_chains[-1]:
                 print('-----------------')
                 print('----------------------config terminals')
@@ -67,7 +68,7 @@ class HIBEChain(object):
         for t in threads:
             t.join()
 
-        time.sleep(1)
+        time.sleep(3)
 
         threads = []
         for chain in self.chains:
@@ -127,7 +128,7 @@ class HIBEChain(object):
         for t in threads:
             t.join()
 
-    def get_chain(self, chain_id:str) -> SingleChain:
+    def get_chain(self, chain_id: str) -> SingleChain:
         """Return a list of blockchain nodes with a given chain ID(eg. '00010001')."""
         try:
             index = self.chain_id_list.index(chain_id)
@@ -135,7 +136,7 @@ class HIBEChain(object):
         except ValueError or IndexError:
             print("ID %s is not in the HIBEChain" % chain_id)
 
-    def get_parent_chain(self, chain: SingleChain) -> SingleChain:
+    def get_parent_chain(self, chain: SingleChain) -> Optional[SingleChain]:
         """
         Return parent chain.
         Return None if current chain is root chain.
@@ -240,29 +241,58 @@ class HIBEChain(object):
 
             print('waiting for delivering key')
             if index == 0:
-                time.sleep(max([chain.node_count for chain in level])) # *5
+                time.sleep(max([chain.node_count for chain in level])*5)  # *5
                 # sleep_time = max([chain.node_count for chain in level]) * 10
                 # print('root level waiting...%ds' % sleep_time)
                 # time.sleep(sleep_time)
-                while not all([node.key_status() for node in chain.nodes for chain in level]):
+                while not all([node.key_status() for chain in level for node in chain.nodes]):
                     print('root level waiting ')
                     time.sleep(5)
             else:
                 true_count = 0
                 for chain1 in level:
-                    while True:
-                        for node in chain1.nodes:
-                            result = node.key_status()
-                            if result is True:
-                                true_count += 1
-                            else:
-                                node.set_id(chain1.chain_id)
-                        print('______________true count is', true_count)
-                        if true_count >= chain1.threshold:
-                            break
-                        else:
-                            time.sleep(2)
+                    if chain1.is_terminal:  # setting terminal node keys
+                        print('setting terminal keys')
+                        terminal_node = chain1.get_node_by_index(1)
 
+                        node = chain1.nodes[0]
+                        while True:
+                            result = node.key_status()
+                            if result is False:
+                                time.sleep(2)
+                                node.set_id(chain1.chain_id)
+                                time.sleep(3)
+                            else:
+                                break
+                        print('40s waiting for key generation...')
+                        time.sleep(40)
+                        key_count = terminal_node.key_count()
+                        while True:
+                            print('another 10s waiting for key generation...')
+                            time.sleep(10)
+                            tmp_count = terminal_node.key_count()
+                            if tmp_count != 0 and tmp_count == key_count:
+                                break
+                            # if tmp_count == 0:
+                            #     chain1.set_id()
+                            key_count = tmp_count
+
+                        print('terminal keys generated.')
+
+                    else:
+                        while True:
+                            for node in chain1.nodes:
+                                print('%s:%s waiting for key' % (node.ip.address, node.rpc_port))
+                                result = node.key_status()
+                                if result is True:
+                                    true_count += 1
+                                else:
+                                    node.set_id(chain1.chain_id)
+                            print('true count is:', true_count)
+                            if true_count >= chain1.threshold:
+                                break
+                            else:
+                                time.sleep(5)
 
                 # while not all([node.key_status() for node in chain.nodes for chain in level]):
                 #     print('level %d is not ready, waiting...' % index)
@@ -283,6 +313,7 @@ class HIBEChain(object):
 
 if __name__ == "__main__":
     ip_list = IPList(IP_CONFIG)
+    ip_list.stop_all_containers()
     chain_id_list = ["", "01", "02"]
     thresh_list = [(4, 3), (1, 1), (1, 1)]
 
@@ -292,13 +323,5 @@ if __name__ == "__main__":
     hibe.set_number()
     hibe.set_level()
     hibe.set_id()
-    time.sleep(1)
-
-    a = hibe.get_chain("")
-    a1 = a.get_node_by_index(1)
-    print("level 0 key status", a1.key_status())
-    b = hibe.get_chain("01")
-    b1 = b.get_node_by_index(1)
-    print("level 1 key status", b1.key_status())
 
     hibe.destruct_hibe_chain()

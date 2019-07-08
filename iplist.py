@@ -80,16 +80,16 @@ class IP(object):
             result = err
             if result:
                 print('-------------')
-                print(cmd)
+                print(self.address, cmd)
                 print(result)
                 print('-------------')
                 raise RuntimeError("exec command error: %s" % cmd)
 
     def is_docker_running(self) -> bool:
         """Check if docker service is running on specified ip."""
-        command = 'systemctl is-active docker'
+        command = 'hostname -I && systemctl is-active docker'
         result = self.exec_command(command)
-        return True if result == 'active' else False
+        return True if result.split()[-1] == 'active' else False
 
     def stop_containers(self) -> None:
         """Stop all containers on the server."""
@@ -128,6 +128,44 @@ class IP(object):
         time.sleep(0.02)
         subprocess.run(ssh_shutdown_command, stdout=subprocess.PIPE, shell=True)    # necessary to set shell param True
 
+    def restart_network(self) -> None:
+        """Restart networking service of remote server."""
+        restart_network_command = 'echo %s | sshpass -p %s ssh -tt %s@%s sudo systemctl restart NetworkManager.service' % (
+            self.password, self.password, self.username, self.address)
+        print("network of server %s restart" % self.address)
+        time.sleep(0.02)
+        subprocess.run(restart_network_command, stdout=subprocess.PIPE, shell=True)
+
+    def mirror(self) -> None:
+        mirror_cmd = 'sshpass -p %s scp daemon.json %s@%s:daemon.json' % (
+            self.password, self.username, self.address)
+        time.sleep(0.02)
+        subprocess.run(mirror_cmd, stdout=subprocess.PIPE, shell=True)
+        cp_cmd = 'echo %s | sshpass -p %s ssh -tt %s@%s sudo cp daemon.json /etc/docker/daemon.json' % (
+            self.password, self.password, self.username, self.address)
+        subprocess.run(cp_cmd, stdout=subprocess.PIPE, shell=True)
+        time.sleep(0.02)
+        restart_docker_cmd = 'echo %s | sshpass -p %s ssh -tt %s@%s sudo service docker restart' % (
+            self.password, self.password, self.username, self.address)
+        for i in range(3):
+            subprocess.run(restart_docker_cmd, stdout=subprocess.PIPE, shell=True)
+            time.sleep(3)
+
+    def set_limits(self) -> None:
+        set_limits_cmd = 'sshpass -p %s scp limits.conf %s@%s:limits.conf' % (
+            self.password, self.username, self.address)
+        time.sleep(0.02)
+        subprocess.run(set_limits_cmd, stdout=subprocess.PIPE, shell=True)
+        cp_cmd = 'echo %s | sshpass -p %s ssh -tt %s@%s sudo cp limits.conf /etc/security/limits.conf' % (
+            self.password, self.password, self.username, self.address)
+        subprocess.run(cp_cmd, stdout=subprocess.PIPE, shell=True)
+
+    def journalctl_vacuum(self) -> None:
+        vacuum_cmd = 'echo %s | sshpass -p %s ssh -tt %s@%s sudo journalctl --vacuum-size=10M' % (
+            self.password, self.password, self.username, self.address)
+        subprocess.run(vacuum_cmd, stdout=subprocess.PIPE, shell=True)
+
+
 
 class IPList(object):
     """Manage IPs and ports of all servers involved."""
@@ -149,10 +187,10 @@ class IPList(object):
                     self.ips.append(IP(line.strip()))
                 else:
                     break
-        self._init_service()
+        # self._init_service()
 
     @property
-    def ips(self) -> list:
+    def ips(self) -> [IP]:
         """Return a list of IPs."""
         return self._ips
 
@@ -163,7 +201,7 @@ class IPList(object):
     @current_ip.setter
     def current_ip(self, cur: int) -> None:
         self._current_ip = cur
-        if self._current_ip >= self.ip_count:
+        if self._current_ip >= self.ip_count:  #TODO
             self._current_ip = self._available_ip
 
     def get_full_count(self) -> int:
@@ -178,11 +216,13 @@ class IPList(object):
         if self._available_ip >= len(self.ips):
             raise ValueError("server overload")
         rpc_port, ethereum_network_port = self.ips[self.current_ip].get_new_port()
-        current_ip = self.ips[self.current_ip]
-        if current_ip.is_full_loaded():
+        tmp_ip = self.ips[self.current_ip]
+        if tmp_ip.is_full_loaded():
             self._available_ip = self.current_ip + 1
-        self.current_ip += 1
-        return current_ip, rpc_port, ethereum_network_port
+        self._current_ip += 1
+        if self._current_ip >= len(self.ips):
+            self._current_ip = self._available_ip
+        return tmp_ip, rpc_port, ethereum_network_port
 
     def release_all_ports(self) -> None:
         self.current_ip = 0
@@ -246,12 +286,13 @@ class IPList(object):
         # add keys to known_hosts one by one
         for i in range(self.ip_count):
             if not results.get(str(i)):
-                print('%s is not in know_hosts. Adding to known_hosts' % self.ips[i])
+                print('%s is not in know_hosts. Adding to known_hosts.' % self.ips[i])
                 get_key_command = 'ssh-keyscan %s' % self.ips[i].address
                 with open(known_hosts, 'a') as outfile:
                     subprocess.run(get_key_command, stdout=outfile, shell=True)
 
-        start_docker_command = 'echo %s | sudo -S systemctl start docker' % PASSWD
+        # start_docker_command = 'echo %s | sudo -S systemctl start docker' % PASSWD
+        start_docker_command = 'echo %s | sudo -S service docker start' % PASSWD
         print('starting docker service on all services')
         threads = []
         for ip in self.ips:
@@ -276,6 +317,42 @@ class IPList(object):
         threads = []
         for ip in self.ips:
             t = threading.Thread(target=ip.shutdown_server)
+            t.start()
+            threads.append(t)
+        for t in threads:
+            t.join()
+
+    def restart_network(self) -> None:
+        threads = []
+        for ip in self.ips:
+            t = threading.Thread(target=ip.restart_network)
+            t.start()
+            threads.append(t)
+        for t in threads:
+            t.join()
+
+    def mirror(self) -> None:
+        threads = []
+        for ip in self.ips:
+            t = threading.Thread(target=ip.mirror)
+            t.start()
+            threads.append(t)
+        for t in threads:
+            t.join()
+
+    def set_limits(self) -> None:
+        threads = []
+        for ip in self.ips:
+            t = threading.Thread(target=ip.set_limits)
+            t.start()
+            threads.append(t)
+        for t in threads:
+            t.join()
+
+    def journalctl_vacuum(self) -> None:
+        threads = []
+        for ip in self.ips:
+            t = threading.Thread(target=ip.journalctl_vacuum)
             t.start()
             threads.append(t)
         for t in threads:
@@ -333,6 +410,20 @@ def set_ulimit(ip_list: IPList) -> None:
 
 if __name__ == "__main__":
     f = IPList(IP_CONFIG)
-    f.stop_all_containers()
-    time.sleep(0.2)
-    f.remove_all_containers()
+    # f.stop_all_containers()
+    # time.sleep(0.2)
+    # f.remove_all_containers()
+
+    # with open('level0_node1.txt', 'r') as log:
+    #     block_time = {}
+    #     for line in log.readlines():
+    #         line = line.strip()
+    #         arr = line.split()
+    #         if arr[0].startswith('block'):
+    #             tmp = arr[6].split('.')
+    #             tmp[1] = tmp[1][:6]
+    #             arr[6] = '.'.join(tmp)
+    #             arr[5] += ':' + arr[6]
+    #             arr[5] = arr[5][1:]
+    #             block_time.setdefault(arr[1], arr[5])
+    #     print(block_time)

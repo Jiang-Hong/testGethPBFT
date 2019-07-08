@@ -7,8 +7,12 @@ test.py
 docker/0.json.bak
 conf1*.txt
 conf0*.txt
+chain*.txt
 test*.txt
+elapse*.txt
 .idea/*
 *ip.txt
 thresh2latency*.txt
-
+level*.txt
+*.bak
+*(copy).json
