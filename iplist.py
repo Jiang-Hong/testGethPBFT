@@ -166,7 +166,6 @@ class IP(object):
         subprocess.run(vacuum_cmd, stdout=subprocess.PIPE, shell=True)
 
 
-
 class IPList(object):
     """Manage IPs and ports of all servers involved."""
 
@@ -187,7 +186,7 @@ class IPList(object):
                     self.ips.append(IP(line.strip()))
                 else:
                     break
-        # self._init_service()
+        self._init_service()
 
     @property
     def ips(self) -> [IP]:
@@ -290,6 +289,8 @@ class IPList(object):
                 get_key_command = 'ssh-keyscan %s' % self.ips[i].address
                 with open(known_hosts, 'a') as outfile:
                     subprocess.run(get_key_command, stdout=outfile, shell=True)
+            # else:
+            #     print('%s is in know_hosts. Do nothing' % self.ips[i])
 
         # start_docker_command = 'echo %s | sudo -S systemctl start docker' % PASSWD
         start_docker_command = 'echo %s | sudo -S service docker start' % PASSWD
@@ -410,6 +411,7 @@ def set_ulimit(ip_list: IPList) -> None:
 
 if __name__ == "__main__":
     f = IPList(IP_CONFIG)
+    f.stop_all_containers()
     # f.stop_all_containers()
     # time.sleep(0.2)
     # f.remove_all_containers()

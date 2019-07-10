@@ -10,7 +10,7 @@ from aliyunsdkecs.request.v20140526.DeleteInstanceRequest import DeleteInstanceR
 from pprint import pprint
 import json
 
-from const import ACCESS_KEY_ID, ACCESS_SECRET
+from secret import ACCESS_KEY_ID, ACCESS_SECRET
 
 # Describe instances
 client = AcsClient(ACCESS_KEY_ID, ACCESS_SECRET, 'cn-zhangjiakou')

@@ -16,3 +16,5 @@ thresh2latency*.txt
 level*.txt
 *.bak
 *(copy).json
+venv/
+secret.py

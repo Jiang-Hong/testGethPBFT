@@ -264,7 +264,7 @@ class HIBEChain(object):
                                 time.sleep(3)
                             else:
                                 break
-                        print('40s waiting for key generation...')
+                        print('40s waiting for key generation...')    #TODO multiple terminal nodes
                         time.sleep(40)
                         key_count = terminal_node.key_count()
                         while True:

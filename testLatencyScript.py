@@ -112,7 +112,7 @@ for t in threads:
 # for t in threads:
 #         t.join()
 
-time.sleep(hibe.max_level*15)
+time.sleep(hibe.max_level*40)
 
 sent_time = time.time()
 
@@ -132,8 +132,6 @@ pf = leaf_nodes[0].get_transaction_proof_by_hash(tx_hash)
 current_chain = leaf_chains[0]
 current_node = leaf_nodes[0]
 current_pf = pf
-
-# block_index = 1
 
 leaf_chains[0].get_log(leaf_nodes[0].node_index)
 time.sleep(0.5)
@@ -179,7 +177,9 @@ for i in range(hibe.max_level-1):
                 tmp_pf = tmp_pf[:-1]
                 break
         except RuntimeError as e:
-            time.sleep(15)
+            with open('elapsed_time.txt', 'a') as log:
+                log.write('miss\n')
+            time.sleep(20)
             print(e)
     current_pf = tmp_pf
 

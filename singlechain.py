@@ -248,20 +248,20 @@ class SingleChain(object):
         if not self.is_terminal:
             print("constructing single chain")
             start_time = time.time()
-            # threads = []
+            threads = []
 
             # connect nodes in a single chain with each other
             for i in range(self.node_count):
                 for j in range(i+1, self.node_count):
-                    time.sleep(0.01)
-                    self.nodes[i].add_peer(self.nodes[j].enode, 0)
-                    # t1 = threading.Thread(target=self.nodes[j].add_peer, args=(self.nodes[i].enode, 0))
-                    # time.sleep(0.1)  # necessary
-                    # t1.start()
-                    # threads.append(t1)
+                    # self.nodes[i].add_peer(self.nodes[j].enode, 0)
+                    t1 = threading.Thread(target=self.nodes[i].add_peer, args=(self.nodes[j].enode, 0))
+                    time.sleep(0.02)  # necessary
+                    t1.start()
+                    threads.append(t1)
+                # time.sleep(0.1)
                 # break    # in case of too many addPeer requests
-            # for t in threads:
-            #     t.join()
+            for t in threads:
+                t.join()
             # print('active threads:', threading.active_count())
 
             print("-----------chain construction waiting--------------")
@@ -290,25 +290,25 @@ class SingleChain(object):
                     #     peer2connect.add_peer(node.enode, 0)
                     #     time.sleep(0.2)
                     # time.sleep(len(un_connected_peers) // 4 + 2)
-                    print(index)
+                    print('not enough peers', index)
                     threads = []
                     for m in range(index, self.node_count):
                         for n in range(m+1, self.node_count):
                             t = threading.Thread(target=self.nodes[n].add_peer, args=(self.nodes[m].enode, 0))
-                            time.sleep(0.1)
+                            time.sleep(0.01)
                             t.start()
                             threads.append(t)
-                        # break  ###
+                        break  ###
                     for t in threads:
                         t.join()
                         # node.add_peer(other_node.enode, 0)
-                    time.sleep(0.1)
+                    time.sleep(0.5)
                     if node.get_peer_count() != self.node_count - 1:
                         print('waiting for peers')
                         time.sleep(self.node_count-index)
                         # break #TODO delete this line?
                     else:
-                        time.sleep(0.2)
+                        time.sleep(0.5)
                         break
 
             end_time = time.time()
@@ -359,12 +359,12 @@ class SingleChain(object):
             for other in other_chain.nodes:
                 t = threading.Thread(target=other.add_peer, args=(node.enode, 2))    # param 2 means upper peer
                 t.start()
-                time.sleep(0.05)    # if fail. increase this value.
-                t1 = threading.Thread(target=node.add_peer, args=(other.enode, 1))  # param 1 means lower peer
-                t1.start()
-                time.sleep(0.05)
+                time.sleep(0.03)    # if fail. increase this value.
+                # t1 = threading.Thread(target=node.add_peer, args=(other.enode, 1))  # param 1 means lower peer
+                # t1.start()
+                # time.sleep(0.05)
                 threads.append(t)
-                threads.append(t1)
+                # threads.append(t1)
                 # time.sleep(0.3)
 
         for t in threads:

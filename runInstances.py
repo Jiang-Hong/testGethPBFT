@@ -6,7 +6,7 @@ import time
 import datetime
 import traceback
 
-from const import ACCESS_KEY_ID, ACCESS_SECRET
+from secret import ACCESS_KEY_ID, ACCESS_SECRET
 
 from aliyunsdkcore.client import AcsClient
 from aliyunsdkcore.acs_exception.exceptions import ClientException, ServerException
@@ -158,7 +158,7 @@ if __name__ == '__main__':
     需要修改的变量：
     ACCESS_KEY_ID, ACCESS_SECRET
     image_id: 镜像id
-    is_dry_run: 只有设置为 False 才能真正购买服务器，可以设置为 True 来再次获得 ip 列表
+    is_dry_run: 只有设置为 False 才能真正购买服务器，可以设置为 True 来再次获得 ip 列表，建议购买服务器后立即设置为 True
     instance_type: 实例类型
     instance_amount: 实例数量
     ordered_hours: 购买小时数
@@ -183,16 +183,13 @@ if __name__ == '__main__':
     time_now_utc = datetime.datetime.utcnow()
     release_time = time_now_utc + datetime.timedelta(hours=ordered_hours)
     auto_release_time = release_time.strftime('%Y-%m-%dT%H:%M:%SZ')
-
-    # set instance name in order to set
-    instance_name = 'geth-pbft-%s' % datetime.datetime.now().strftime('%Y%m%dT%H%M')
-
+    instance_name = 'geth-pbft-%s' % time_now_utc.strftime('%Y%m%dT%H%M%S')
     instances = AliyunRunInstances(aliyun_region_id[1], image_id, instance_type, instance_amount,
                                    auto_release_time, instance_name, is_dry_run)
     instances.run()
 
-    time.sleep(10)
-
+    print('waiting...')
+    time.sleep(30)
     # ------------------------------------------------------------------
     # write IP addresses of instances to file
     client = AcsClient(ACCESS_KEY_ID, ACCESS_SECRET, 'cn-zhangjiakou')
@@ -201,7 +198,6 @@ if __name__ == '__main__':
     request.set_PageSize(100)
     request.set_InstanceName("geth-pbft*")
     response = client.do_action_with_exception(request)
-    # print(str(response, encoding='utf-8'))
 
     r = json.loads(str(response, encoding='utf-8'))
     instances = (r['Instances']['Instance'])

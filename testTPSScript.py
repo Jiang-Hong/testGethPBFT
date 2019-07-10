@@ -89,7 +89,10 @@ for t in threads:
 
 time.sleep(hibe.max_level)
 
+print('number of terminal nodes:', len(terminal_nodes))
+
 # send transactions
+print('sending transactions...')
 threads = []
 for terminal_node in terminal_nodes:
     t = threading.Thread(target=terminal_node.send_transaction3, args=(5721, 1, 0, 1))
@@ -98,12 +101,28 @@ for terminal_node in terminal_nodes:
 for t in threads:
     t.join()
 
-time.sleep(hibe.max_level * 2)
+time.sleep(hibe.max_level * 15)
+'''
+for index, terminal_node in terminal_nodes:
+    block_index = 0
+    while leaf_nodes[index].get_block_transaction_count(block_index) == 0:
+        block_index += 1
+        time.sleep(0.2)
+    print('-----leaf chain block index is %s-----' % block_index)
 
-# only one terminal node belong to one leaf chain
-for terminal_chain in terminal_chains:
-
-
+    tx_hash = leaf_nodes[index].get_transaction_by_block_number_and_index(block_index, 1)
+    
+    pf = leaf_nodes[0].get_transaction_proof_by_hash(tx_hash)
+    current_chain = leaf_chains[0]
+    current_node = leaf_nodes[0]
+    current_pf = pf
+    
+    leaf_chains[0].get_log(leaf_nodes[0].node_index)
+    time.sleep(0.5)
+    t0 = leaf_chains[0].search_log(leaf_nodes[0].node_index, block_index-1)
+    t1 = leaf_chains[0].search_log(leaf_nodes[0].node_index, block_index)
+    tps = []
+'''
 
 
 

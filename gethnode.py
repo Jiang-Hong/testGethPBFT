@@ -39,7 +39,7 @@ class GethNode(object):
         self.name = 'geth-pbft' + str(self.rpc_port)    # docker container name of this node
         self._enode = ''
         self._accounts = []  # accounts list of a geth node
-        self._headers = {'Content-Type': 'application/json', 'Connection': 'close'}    # for rpc call use
+        self._headers = {'Content-Type': 'application/json'}    # for rpc call use # 'Connection': 'close'?
         self.username = username    # user name of login user of a server
         self.password = password    # password of login user of a server
 
@@ -94,16 +94,17 @@ class GethNode(object):
         url = "http://{}:{}".format(self.ip.address, self.rpc_port)
         with SEMAPHORE:
             with requests.Session() as r:
-
+                # sleep(0.02)
                 response = r.post(url=url, data=data, headers=self._headers)
-                if response.headers['Content-Type'] == 'application/json':
-                    content = response.json()
-                else:
-                    print(response.status_code, response.headers['Content-Type'])
+                # sleep(0.05)
+                while response.headers['Content-Type'] != 'application/json':
+                    print(self.ip.address, self.rpc_port)
+                    print(response.status_code, response.headers)
                     print(response.content)
-                    sleep(0.02)
-                    content = r.post(url=url, data=data, headers=self._headers).content.json()
-                    sleep(0.02)
+                    sleep(0.05)
+                    response = r.post(url=url, data=data, headers=self._headers)
+                content = response.json()
+                # sleep(0.02)
                 print(content)
                 result = content.get('result')
         err = content.get('error')
@@ -224,7 +225,7 @@ class GethNode(object):
         """admin.addPeer()"""
         method = 'admin_addPeer'
         params = list(args)
-        sleep(0.01)
+        # sleep(0.01)
         result = self.rpc_call(method, params)
         return result
 
@@ -361,4 +362,4 @@ if __name__ == "__main__":
     n = GethNode(ip_list, 0, 1, 121)
     n.start()
     print(n.accounts)
-    n.stop()
+    # n.stop()
