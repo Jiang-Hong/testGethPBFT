@@ -23,8 +23,7 @@ print('-----')
 
 # -------------- clear containers -----------------------
 ip_list.stop_all_containers()
-time.sleep(0.2)
-ip_list.remove_all_containers()
+# ip_list.remove_all_containers()
 print('-----')
 print()
 # -------------------------------------------------------
@@ -48,7 +47,7 @@ connect_time = time.time()
 waiting_time = max([chain.node_count for chain in hibe.structured_chains[0]]) // 5
 print('another %d seconds waiting for addPeer' % waiting_time)
 time.sleep(waiting_time)
-if not hibe.is_connected():
+while not hibe.is_connected():
     # raise RuntimeError('connection is not ready')
     print('connection is not ready')
     time.sleep(10)
@@ -65,6 +64,7 @@ end_time = time.time()
 print("connect time %.3fs" % (connect_time-start_time))
 set_up_time = end_time - start_time
 print("set up time %.3fs" % set_up_time)
+
 
 root_chain = hibe.get_chain('')
 root = root_chain.get_node_by_index(1)
@@ -97,7 +97,7 @@ time.sleep(2)
 valid_keys = terminal_nodes[0].key_count()
 threads = []
 for terminal_node in terminal_nodes:
-    t = threading.Thread(target=terminal_node.send_transaction3, args=(30, 1, 0, 1))
+    t = threading.Thread(target=terminal_node.send_transaction3, args=(30, 1, 0, 1, 10))
     t.start()
     threads.append(t)
 for t in threads:
@@ -112,22 +112,26 @@ for t in threads:
 # for t in threads:
 #         t.join()
 
-time.sleep(hibe.max_level*40)
+print('waiting...')
+time.sleep(hibe.max_level*60)
+print('start')
 
 sent_time = time.time()
 
 block_index = 0
+tx_index = 0
 while leaf_nodes[0].get_block_transaction_count(block_index) == 0:
     block_index += 1
-    time.sleep(0.5)
+    time.sleep(0.2)
 print('-----leaf chain block index is %s-----' % block_index)
-tx_hash = leaf_nodes[0].get_transaction_by_block_number_and_index(block_index, 1)
+tx_count = leaf_nodes[0].get_block_transaction_count(block_index)
+tx_hash = leaf_nodes[0].get_transaction_by_block_number_and_index(block_index, tx_index)
 
-# while not tx_hash:
-#     block_index += 1
-#     print('waiting tx hash')
-#     time.sleep(0.05)
-#     tx_hash = leaf_nodes[0].get_transaction_by_block_number_and_index(block_index, 1)
+while not tx_hash and tx_index < tx_count:
+    tx_index += 1
+    print('waiting tx hash')
+    time.sleep(0.05)
+    tx_hash = leaf_nodes[0].get_transaction_by_block_number_and_index(block_index, tx_index)
 pf = leaf_nodes[0].get_transaction_proof_by_hash(tx_hash)
 current_chain = leaf_chains[0]
 current_node = leaf_nodes[0]
@@ -161,27 +165,29 @@ for i in range(hibe.max_level-1):
     #         break
     while True:
         try:
-            search_index = randint(1, current_chain.node_count)
-            print(search_index)
-            current_node = current_chain.get_node_by_index(search_index)
-            tmp_pf = current_node.get_transaction_proof_by_proof(current_pf)
-            if tmp_pf:
-                block_index = int(tmp_pf[-1], 16)
-                print('block index is %d.' % block_index)
+            for search_index in range(1, current_chain.node_count+1):
+                # search_index = randint(1, current_chain.node_count)
+                print(search_index)
+                current_node = current_chain.get_node_by_index(search_index)
+                tmp_pf = current_node.get_transaction_proof_by_proof(current_pf)
+                if tmp_pf:
+                    block_index = int(tmp_pf[-1], 16)
+                    print('block index is %d.' % block_index)
 
-                current_chain.get_log(current_node.node_index)
-                time.sleep(0.5)
-                current_chain.search_log(current_node.node_index, block_index)
+                    current_chain.get_log(current_node.node_index)
+                    time.sleep(0.5)
+                    current_chain.search_log(current_node.node_index, block_index)
 
-                timestamp_current = current_node.get_block_by_index(block_index)['timestamp']
-                tmp_pf = tmp_pf[:-1]
-                break
+                    timestamp_current = current_node.get_block_by_index(block_index)['timestamp']
+                    tmp_pf = tmp_pf[:-1]
+            current_pf = tmp_pf
+            break
+
         except RuntimeError as e:
-            with open('elapsed_time.txt', 'a') as log:
+            with open('data/elapsed_time.txt', 'a') as log:
                 log.write('miss\n')
             time.sleep(20)
             print(e)
-    current_pf = tmp_pf
 
 end_time = time.time()
 
@@ -191,12 +197,12 @@ latency = (datetime.fromtimestamp(timestamp_root) - datetime.fromtimestamp(times
 
 
 # hibe.destruct_hibe_chain()
-print(current_pf)
+# print(current_pf)
 print(current_chain.chain_id)
 search_time = end_time - sent_time
 print('search time: ', search_time)
 print('latency:', latency)
-with open('elapsed_time.txt', 'a') as log:
+with open('data/elapsed_time.txt', 'a') as log:
     log.write(time.asctime())
     log.write(', '.join(id_list))
     log.write('\n')
@@ -205,6 +211,8 @@ with open('elapsed_time.txt', 'a') as log:
     log.write('set up time: %.6f\n' % set_up_time)
     log.write('search time: %.6f\n' % search_time)
     log.write('latency: %d\n\n' % latency)
+
+
 
 # ----------------test latency end --------------------
 

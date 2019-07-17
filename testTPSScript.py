@@ -24,8 +24,7 @@ print('-----')
 
 # -------------- clear containers -----------------------
 ip_list.stop_all_containers()
-time.sleep(0.2)
-ip_list.remove_all_containers()
+# ip_list.remove_all_containers()
 # -------------------------------------------------------
 
 
@@ -95,7 +94,7 @@ print('number of terminal nodes:', len(terminal_nodes))
 print('sending transactions...')
 threads = []
 for terminal_node in terminal_nodes:
-    t = threading.Thread(target=terminal_node.send_transaction3, args=(5721, 1, 0, 1))
+    t = threading.Thread(target=terminal_node.send_transaction3, args=(5721, 1, 0, 1, 10))
     t.start()
     threads.append(t)
 for t in threads:

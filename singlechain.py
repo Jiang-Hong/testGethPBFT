@@ -10,6 +10,8 @@ import time
 from datetime import datetime
 import subprocess
 import threading
+import json
+from collections import defaultdict
 
 
 # class SetGenesis():
@@ -91,6 +93,9 @@ class SingleChain(object):
             self.accounts.append(self.nodes[index].accounts[0])
 #        print(self.accounts)
 
+    def __str__(self) -> str:
+        return ', '.join([chain_node.__repr__() for chain_node in self._nodes])
+
     def __repr__(self) -> str:
         return self.chain_id if self.chain_id else 'root chain'
 
@@ -117,7 +122,7 @@ class SingleChain(object):
     def config_genesis(self) -> None:
         """Copy genesis.json file into a container."""
         for server_ip in self.ips:
-            subprocess.run(['sshpass -p %s scp docker/%s %s@%s:%s' % (self.password, self.config_file,
+            subprocess.run(['sshpass -p %s scp config/%s %s@%s:%s' % (self.password, self.config_file,
                            self.username, server_ip.address, self.config_file)], stdout=subprocess.PIPE, shell=True)
             time.sleep(self.node_count/50)
             threads = []
@@ -254,12 +259,16 @@ class SingleChain(object):
             for i in range(self.node_count):
                 for j in range(i+1, self.node_count):
                     # self.nodes[i].add_peer(self.nodes[j].enode, 0)
-                    t1 = threading.Thread(target=self.nodes[i].add_peer, args=(self.nodes[j].enode, 0))
-                    time.sleep(0.02)  # necessary
+                    t = threading.Thread(target=self.nodes[i].add_peer, args=(self.nodes[j].enode, 0))
+                    t.start()
+                    threads.append(t)
+                    time.sleep(0.05)
+                    t1 = threading.Thread(target=self.nodes[j].add_peer, args=(self.nodes[i].enode, 0))
+                    # time.sleep(0.02)  # necessary
                     t1.start()
                     threads.append(t1)
-                # time.sleep(0.1)
-                # break    # in case of too many addPeer requests
+                    time.sleep(0.05)
+                break    # in case of too many addPeer requests
             for t in threads:
                 t.join()
             # print('active threads:', threading.active_count())
@@ -353,19 +362,20 @@ class SingleChain(object):
 
     def connect_lower_chain(self, other_chain: 'SingleChain') -> None:
         """Connect to a lower level single chain."""
-        time.sleep(0.02)
+        time.sleep(0.01)
         threads = []
         for node in self.nodes:
             for other in other_chain.nodes:
                 t = threading.Thread(target=other.add_peer, args=(node.enode, 2))    # param 2 means upper peer
                 t.start()
-                time.sleep(0.03)    # if fail. increase this value.
-                # t1 = threading.Thread(target=node.add_peer, args=(other.enode, 1))  # param 1 means lower peer
-                # t1.start()
-                # time.sleep(0.05)
+                time.sleep(0.05)    # if fail. increase this value.
                 threads.append(t)
-                # threads.append(t1)
+                t1 = threading.Thread(target=node.add_peer, args=(other.enode, 1))  # param 1 means lower peer
+                t1.start()
+                time.sleep(0.05)
+                threads.append(t1)
                 # time.sleep(0.3)
+            break
 
         for t in threads:
             t.join()
@@ -452,36 +462,48 @@ class SingleChain(object):
             for t in threads:
                 t.join()
 
-    def get_log(self, node_index: int) -> Any:
-        time.sleep(1)
-        node = self.nodes[node_index - 1]
+    def get_log(self, node_index: int) -> None:
+        time.sleep(2)
+        node = self.get_node_by_index(node_index)
         filename = 'chain%s_node%d.txt' % (self.chain_id, node_index)
         node.ip.exec_command('docker cp %s:/root/result%d ./%s' % (node.name, node_index, filename))
         time.sleep(0.3)
-        copy_command = 'sshpass -p %s scp %s@%s:%s ./' % (self.password, self.username, node.ip.address, filename)
+        copy_command = 'sshpass -p %s scp %s@%s:%s ./data/' % (self.password, self.username, node.ip.address, filename)
         subprocess.run(copy_command, stdout=subprocess.PIPE, shell=True)
 
-    def search_log(self, node_index: int, block_index: int) -> datetime:
-        time.sleep(1)
-        filename = 'chain%s_node%d.txt' % (self.chain_id, node_index)
-        block_time = {} # map of (block index, block sealed time)
+    def search_log(self, node_index: int, block_index: int, if_get_block_tx_count: bool = True) -> None:
+        node = self.get_node_by_index(node_index)
+        filename = 'data/chain%s_node%d.txt' % (self.chain_id, node_index)
+        # map of (block index, {block prepare time: t1, block consensus confirm time: t2, block written time: t3})
+        block_time = defaultdict(dict)
         with open(filename, 'r') as log:
             for line in log.readlines():
                 line = line.strip()
                 arr = line.split()
                 if arr[0].startswith('block'):
-                    tmp = arr[6].split('.')
+                    tmp = arr[-4].split('.')
                     tmp[1] = tmp[1][:6]
-                    arr[6] = '.'.join(tmp)
-                    arr[5] += '-' + arr[6]
-                    arr[5] = arr[5][1:]
-                    block_time.setdefault(arr[1], arr[5])
-        print(block_time)
-        seal_time_str = block_time.get(str(block_index))
-        seal_time = datetime.strptime(seal_time_str, '%Y-%m-%d-%H:%M:%S.%f')
-        with open('elapsed_time.txt', 'a') as log:
-            log.write('%s block index: %d, time: %s\n' % (filename, block_index, seal_time))
-        return seal_time
+                    arr[-4] = '.'.join(tmp)
+                    arr[-5] = arr[-5][1:]
+                    arr[-5] += '-' + arr[-4]
+                    block_time[arr[1]][arr[2]] = arr[-5]
+        # print(block_time)
+        if if_get_block_tx_count:
+            for index_str in block_time.keys():
+                index = int(index_str)
+                tx_count = node.get_block_transaction_count(index)
+                block_time[index_str]['tx_count'] = tx_count
+
+        json_name = 'data/chain%s_node%d.json' % (self.chain_id, node_index)
+        json_str = json.dumps(block_time, indent=2)
+        with open(json_name, 'w') as f:
+            print(json_str, file=f)
+
+        written_time_str = block_time[str(block_index)]['written']
+        written_time = datetime.strptime(written_time_str, '%Y-%m-%d-%H:%M:%S.%f')    # type: datetime
+        tx_count = block_time[str(block_index)]['tx_count']
+        with open('data/elapsed_time.txt', 'a') as log:
+            log.write('%s block index: %d, time: %s  TX count:%d\n' % (filename, block_index, written_time, tx_count))
 
 
 if __name__ == "__main__":

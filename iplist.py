@@ -415,17 +415,3 @@ if __name__ == "__main__":
     # f.stop_all_containers()
     # time.sleep(0.2)
     # f.remove_all_containers()
-
-    # with open('level0_node1.txt', 'r') as log:
-    #     block_time = {}
-    #     for line in log.readlines():
-    #         line = line.strip()
-    #         arr = line.split()
-    #         if arr[0].startswith('block'):
-    #             tmp = arr[6].split('.')
-    #             tmp[1] = tmp[1][:6]
-    #             arr[6] = '.'.join(tmp)
-    #             arr[5] += ':' + arr[6]
-    #             arr[5] = arr[5][1:]
-    #             block_time.setdefault(arr[1], arr[5])
-    #     print(block_time)

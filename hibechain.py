@@ -27,6 +27,7 @@ class HIBEChain(object):
         self.username = username
         self.password = password
         self.chains = []
+        self.structured_chains = []
         self.chain_id_list = chain_id_list
         self.thresh_list = thresh_list
         self.ip_list = ip_list
@@ -34,7 +35,6 @@ class HIBEChain(object):
         self.if_set_number = False
         self.if_set_level = False
         self.if_set_id = False
-        self.structured_chains = []
 
         self.init_chains()
 
@@ -95,12 +95,18 @@ class HIBEChain(object):
                 t = threading.Thread(target=parent_chain.connect_lower_chain, args=(chain,))
                 t.start()
                 threads.append(t)
-                # time.sleep(1)
+                time.sleep(1)
         # print('active threads:', threading.active_count())
         for t in threads:
             t.join()
         time.sleep(1)
         # TODO check peer count
+
+    def __repr__(self) -> str:
+        return ' '.join([str(chain.chain_id) for chain in self.chains])
+
+    def __str__(self) -> str:
+        return '\n'.join([chain.__str__() for chain in self.chains])
 
     def is_connected(self) -> bool:
         for level in self.structured_chains:

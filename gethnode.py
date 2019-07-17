@@ -7,6 +7,8 @@ from iplist import IPList
 from const import IMAGE, USERNAME, PASSWD, IP_CONFIG, SECONDS_IN_A_DAY, SEMAPHORE
 from typing import Union, Optional, Any
 from time import sleep
+from datetime import datetime
+
 
 # class GethNode0(object):
 #     """data structure for geth client running in a docker container"""
@@ -63,6 +65,7 @@ class GethNode(object):
     def start(self) -> None:
         """Start a container for geth on remote server and create a new account."""
         # --ulimit nofile=<soft limit>:<hard limit> set the limit for open files
+        # with SEMAPHORE:
         docker_run_command = ('docker run --ulimit nofile=65535:65535 -td -p %d:8545 -p %d:30303 --rm --name %s %s' %
                               (self.rpc_port, self.ethereum_network_port, self.name, IMAGE))
         sleep(0.6)
@@ -80,6 +83,8 @@ class GethNode(object):
         sleep(0.3)
         if len(account) == 40:    # check if the account is valid
             self.accounts.append(account)
+        else:
+            print('invalid account')
 
     def rpc_call(self, method: str, params: Optional[list] = None) -> Any:
         """Make a rpc call to this geth node."""
@@ -94,9 +99,7 @@ class GethNode(object):
         url = "http://{}:{}".format(self.ip.address, self.rpc_port)
         with SEMAPHORE:
             with requests.Session() as r:
-                # sleep(0.02)
                 response = r.post(url=url, data=data, headers=self._headers)
-                # sleep(0.05)
                 while response.headers['Content-Type'] != 'application/json':
                     print(self.ip.address, self.rpc_port)
                     print(response.status_code, response.headers)
@@ -109,7 +112,7 @@ class GethNode(object):
                 result = content.get('result')
         err = content.get('error')
         if err:
-            raise RuntimeError(self.ip.address, err.get('message'))
+            raise RuntimeError(self.ip.address, self.rpc_port, err.get('message'))
 
         print('%s @%s : %s    %s' % (method, self.ip.address, self.rpc_port, result))
         return result
@@ -122,7 +125,6 @@ class GethNode(object):
     def get_peer_count(self) -> int:
         """net.peerCount"""
         method = 'net_peerCount'
-        sleep(0.02)
         result = self.rpc_call(method)
         return int(result, 16) if result else 0  # change hex number to dec
 
@@ -137,7 +139,6 @@ class GethNode(object):
         method = 'personal_newAccount'
         params = [password]
         account = self.rpc_call(method, params)
-        sleep(0.05)
         self.accounts.append(account[2:])
 
     def key_status(self) -> bool:
@@ -168,17 +169,20 @@ class GethNode(object):
             value = hex(value)
         params = [{"toid": to_id, "toindex": to_index, "value": value}]
         method = 'eth_sendTransaction2'
-        sleep(0.2)
+        # sleep(0.2)
         return self.rpc_call(method, params)
 
-    def send_transaction3(self, terminal_number: int, iter_round: int, nonce: Union[str, int] = '0x0', value='0x1'):
+    def send_transaction3(self, terminal_number: int, iter_round: int, nonce: Union[str, int] = '0x0',
+                          value: Union[str, int] = '0x1', speed: int = 10000):
         """eth.sendTransaction3()"""
         if isinstance(value, int):  # if value is int, change it to hex str
             value = hex(value)
         if isinstance(nonce, int):
             nonce = hex(nonce)
-        params = [{"terminal": terminal_number, "round": iter_round, "nonce": nonce, "value": value}]
+        params = [{"terminal": terminal_number, "round": iter_round, "nonce": nonce, "value": value, "speed": speed}]
         method = 'eth_sendTransaction3'
+        print('sending transactions...')
+        print('UTC time is', datetime.utcnow())
         return self.rpc_call(method, params)
 
     def test_send_transaction(self, to_id: str, to_index: int, value: Union[str, int], interval: int, period: int):
@@ -187,7 +191,7 @@ class GethNode(object):
             value = hex(value)
         params = [{"toid": to_id, "toindex": to_index, "value": value, "txinterval": interval, "txperiod": period}]
         method = 'eth_testSendTransaction2'
-        sleep(0.2)
+        # sleep(0.2)
         return self.rpc_call(method, params)
 
     def get_transaction(self, transaction_id: str):
@@ -257,7 +261,7 @@ class GethNode(object):
 
         method = 'admin_setNumber'
         params = [node_count, thresh]
-        sleep(0.1)
+        # sleep(0.1)
         return self.rpc_call(method, params)
 
     def set_level(self, level, max_level) -> bool:
@@ -270,7 +274,7 @@ class GethNode(object):
 
         method = 'admin_setLevel'
         params = [max_level, level]
-        sleep(0.1)
+        # sleep(0.1)
         return self.rpc_call(method, params)
 
     def set_id(self, chain_id):
@@ -290,7 +294,7 @@ class GethNode(object):
         """txpool.status"""
         method = 'txpool_status'
         result = self.rpc_call(method)
-        sleep(0.1)
+        # sleep(0.1)
         print("txpool.status pending:%d, queued:%d" % (int(result['pending'], 16),
                                                        int(result['queued'], 16)))
         return int(result['pending'], 16) + int(result['queued'], 16)
@@ -337,7 +341,7 @@ class GethNode(object):
         """eth.getTxProofByProf()"""
         method = 'eth_getTxProofByProof'
         params = [transaction_proof]
-        sleep(0.02)
+        # sleep(0.02)
         result = self.rpc_call(method, params)
         print(result)
         return result
@@ -362,4 +366,4 @@ if __name__ == "__main__":
     n = GethNode(ip_list, 0, 1, 121)
     n.start()
     print(n.accounts)
-    # n.stop()
+    n.stop()

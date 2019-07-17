@@ -177,7 +177,7 @@ if __name__ == '__main__':
     # keep this variable True in case of mis-operation
     is_dry_run = True  # change this variable to False to run instances in effect
     instance_type = 'ecs.r5.xlarge'  # change this value to instance type you need
-    instance_amount = 20
+    instance_amount = 5
 
     ordered_hours = 1  # generate auto release time according to ordered hours
     time_now_utc = datetime.datetime.utcnow()
@@ -203,6 +203,6 @@ if __name__ == '__main__':
     instances = (r['Instances']['Instance'])
     ips = [ins['PublicIpAddress']['IpAddress'][0] + '\n' for ins in instances]
     print(len(ips), ips)
-    with open('my_ip.txt', 'w') as ip_file:
+    with open('config/my_ip.txt', 'w') as ip_file:
         ip_file.writelines(ips)
 

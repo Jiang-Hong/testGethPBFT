@@ -18,3 +18,5 @@ level*.txt
 *(copy).json
 venv/
 secret.py
+data/
+config/
