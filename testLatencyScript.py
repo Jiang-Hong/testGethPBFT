@@ -11,6 +11,7 @@ from random import randint
 from datetime import datetime
 import threading
 import time
+import subprocess
 
 ip_list = IPList(IP_CONFIG)
 id_list, thresh_list = load_config_file(CONFIG)
@@ -47,7 +48,7 @@ connect_time = time.time()
 waiting_time = max([chain.node_count for chain in hibe.structured_chains[0]]) // 5
 print('another %d seconds waiting for addPeer' % waiting_time)
 time.sleep(waiting_time)
-while not hibe.is_connected():
+if not hibe.is_connected():
     # raise RuntimeError('connection is not ready')
     print('connection is not ready')
     time.sleep(10)
@@ -74,7 +75,7 @@ terminal_chains = hibe.structured_chains[-1]
 terminal_nodes = [terminal_chain.get_node_by_index(1) for terminal_chain in terminal_chains]
 leaf_chains = {hibe.get_chain(terminal_chain.get_parent_chain_id()) for terminal_chain in terminal_chains}
 leaf_chains = list(leaf_chains)
-leaf_nodes = [leaf_chain.get_node_by_index(1) for leaf_chain in leaf_chains]
+# leaf_nodes = [leaf_chain.get_node_by_index(1) for leaf_chain in leaf_chains]
 
 key_count = [terminal_node.key_count() for terminal_node in terminal_nodes]
 
@@ -103,46 +104,43 @@ for terminal_node in terminal_nodes:
 for t in threads:
     t.join()
 
-# threads = []
-# for chain in leaf_chains:
-#     for node in chain.nodes:
-#         t = threading.Thread(target=node.start_miner)
-#         t.start()
-#         threads.append(t)
-# for t in threads:
-#         t.join()
-
 print('waiting...')
 time.sleep(hibe.max_level*60)
 print('start')
 
+# clear data folder
+subprocess.run('rm data/*', stdout=subprocess.PIPE, shell=True)
+
 sent_time = time.time()
 
-block_index = 0
-tx_index = 0
-while leaf_nodes[0].get_block_transaction_count(block_index) == 0:
-    block_index += 1
-    time.sleep(0.2)
-print('-----leaf chain block index is %s-----' % block_index)
-tx_count = leaf_nodes[0].get_block_transaction_count(block_index)
-tx_hash = leaf_nodes[0].get_transaction_by_block_number_and_index(block_index, tx_index)
+for leaf_chain in leaf_chains:
+    block_index = 0
+    tx_index = 0
+    n0 = leaf_chain.get_node_by_index(1)    # n0 is the node in leaf chain with index 1
+    while n0.get_block_transaction_count(block_index) == 0:
+        block_index += 1
+        time.sleep(0.2)
+    print('-----leaf chain block index is %s-----' % block_index)
+    tx_count = n0.get_block_transaction_count(block_index)
+    tx_hash = n0.get_transaction_by_block_number_and_index(block_index, tx_index)
 
-while not tx_hash and tx_index < tx_count:
-    tx_index += 1
-    print('waiting tx hash')
-    time.sleep(0.05)
-    tx_hash = leaf_nodes[0].get_transaction_by_block_number_and_index(block_index, tx_index)
-pf = leaf_nodes[0].get_transaction_proof_by_hash(tx_hash)
-current_chain = leaf_chains[0]
-current_node = leaf_nodes[0]
-current_pf = pf
+    while not tx_hash and tx_index < tx_count:
+        tx_index += 1
+        print('waiting tx hash')
+        time.sleep(0.05)
+        tx_hash = n0.get_transaction_by_block_number_and_index(block_index, tx_index)
+    pf = n0.get_transaction_proof_by_hash(tx_hash)
+    current_chain = leaf_chain
+    current_node = n0
+    current_pf = pf
 
-leaf_chains[0].get_log(leaf_nodes[0].node_index)
-time.sleep(0.5)
-leaf_chains[0].search_log(leaf_nodes[0].node_index, block_index-1)
-leaf_chains[0].search_log(leaf_nodes[0].node_index, block_index)
+    for leaf_node in leaf_chain.nodes:
+        leaf_node.get_log(leaf_node.node_index)
+        time.sleep(0.5)
+        leaf_node.search_log(leaf_node.node_index, block_index-1)
+        leaf_node.search_log(leaf_node.node_index, block_index)
 
-timestamp_leaf = int(leaf_nodes[0].get_block_by_index(1)['timestamp'], 16)
+# timestamp_leaf = int(n0.get_block_by_index(1)['timestamp'], 16)
 for i in range(hibe.max_level-1):
     current_chain = hibe.get_chain(current_chain.get_parent_chain_id())
     # threads = []
@@ -211,8 +209,6 @@ with open('data/elapsed_time.txt', 'a') as log:
     log.write('set up time: %.6f\n' % set_up_time)
     log.write('search time: %.6f\n' % search_time)
     log.write('latency: %d\n\n' % latency)
-
-
 
 # ----------------test latency end --------------------
 

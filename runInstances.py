@@ -160,7 +160,7 @@ if __name__ == '__main__':
     image_id: 镜像id
     is_dry_run: 只有设置为 False 才能真正购买服务器，可以设置为 True 来再次获得 ip 列表，建议购买服务器后立即设置为 True
     instance_type: 实例类型
-    instance_amount: 实例数量
+    instance_amount: 实例数量q
     ordered_hours: 购买小时数
     instance_name: 按需修改
     instances: 确认 AliyunRunInstances 实例化的参数
@@ -172,12 +172,12 @@ if __name__ == '__main__':
     # set parameters for instances
     aliyun_region_id = {1: 'cn-zhangjiakou', 2: 'cn-beijing', 3: 'cn-qingdao', 4: 'cn-shanghai', 5: 'cn-shenzhen',
                         6: 'cn-hangzhou', 7: 'cn-huhehaote'}
-    image_id = 'm-8vba7bhgbhrapq2fwxrr'
+    image_id = 'm-8vbakk9gu0d9hze5apvz'
 
     # keep this variable True in case of mis-operation
     is_dry_run = True  # change this variable to False to run instances in effect
     instance_type = 'ecs.r5.xlarge'  # change this value to instance type you need
-    instance_amount = 5
+    instance_amount = 1
 
     ordered_hours = 1  # generate auto release time according to ordered hours
     time_now_utc = datetime.datetime.utcnow()
@@ -189,7 +189,7 @@ if __name__ == '__main__':
     instances.run()
 
     print('waiting...')
-    time.sleep(30)
+    time.sleep(20)
     # ------------------------------------------------------------------
     # write IP addresses of instances to file
     client = AcsClient(ACCESS_KEY_ID, ACCESS_SECRET, 'cn-zhangjiakou')

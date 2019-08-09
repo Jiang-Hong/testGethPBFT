@@ -2,7 +2,8 @@
 # -*- coding: utf-8 -*-
 
 from typing import Optional
-from const import USERNAME, PASSWD, IP_CONFIG
+from const import USERNAME, PASSWD, IP_CONFIG, CONFIG
+from conf import load_config_file
 from singlechain import SingleChain
 from iplist import IPList
 import threading
@@ -120,7 +121,9 @@ class HIBEChain(object):
                     for child in children:
                         peer_count += child.node_count
                 for node in chain.nodes:
-                    if node.get_peer_count() != peer_count:
+                    tmp_count = node.get_peer_count()
+                    if tmp_count != peer_count:
+                        print('peer count is %d, should be %d' % (tmp_count, peer_count))
                         return False
         return True
 
@@ -255,54 +258,61 @@ class HIBEChain(object):
                     print('root level waiting ')
                     time.sleep(5)
             else:
-                true_count = 0
-                for chain1 in level:
-                    if chain1.is_terminal:  # setting terminal node keys
-                        print('setting terminal keys')
-                        terminal_node = chain1.get_node_by_index(1)
+                threads = []
+                for chain in level:
+                    t = threading.Thread(target=self.has_key, args=(chain, ))
+                    t.start()
+                    threads.append(t)
+                for t in threads:
+                    t.join()
 
-                        node = chain1.nodes[0]
-                        while True:
-                            result = node.key_status()
-                            if result is False:
-                                time.sleep(2)
-                                node.set_id(chain1.chain_id)
-                                time.sleep(3)
-                            else:
-                                break
-                        print('40s waiting for key generation...')    #TODO multiple terminal nodes
-                        time.sleep(40)
-                        key_count = terminal_node.key_count()
-                        while True:
-                            print('another 10s waiting for key generation...')
-                            time.sleep(10)
-                            tmp_count = terminal_node.key_count()
-                            if tmp_count != 0 and tmp_count == key_count:
-                                break
-                            # if tmp_count == 0:
-                            #     chain1.set_id()
-                            key_count = tmp_count
-
-                        print('terminal keys generated.')
-
-                    else:
-                        while True:
-                            for node in chain1.nodes:
-                                print('%s:%s waiting for key' % (node.ip.address, node.rpc_port))
-                                result = node.key_status()
-                                if result is True:
-                                    true_count += 1
-                                else:
-                                    node.set_id(chain1.chain_id)
-                            print('true count is:', true_count)
-                            if true_count >= chain1.threshold:
-                                break
-                            else:
-                                time.sleep(5)
-
-                # while not all([node.key_status() for node in chain.nodes for chain in level]):
-                #     print('level %d is not ready, waiting...' % index)
-                #     time.sleep(5)
+                # for chain1 in level:
+                #     true_count = 0
+                #     if chain1.is_terminal:  # setting terminal node keys
+                #         print('setting terminal keys')
+                #         terminal_node = chain1.get_node_by_index(1)
+                #
+                #         while True:
+                #             result = terminal_node.key_status()
+                #             if result is False:
+                #                 time.sleep(2)
+                #                 terminal_node.set_id(chain1.chain_id)
+                #                 time.sleep(3)
+                #             else:
+                #                 break
+                #         print('40s waiting for key generation...')
+                #         time.sleep(40)
+                #         key_count = terminal_node.key_count()
+                #         while True:
+                #             print('another 10s waiting for key generation...')
+                #             time.sleep(10)
+                #             tmp_count = terminal_node.key_count()
+                #             if tmp_count != 0 and tmp_count == key_count:
+                #                 break
+                #             # if tmp_count == 0:
+                #             #     chain1.set_id()
+                #             key_count = tmp_count
+                #
+                #         print('terminal keys generated.')
+                #
+                #     else:
+                #         while True:
+                #             for node in chain1.nodes:
+                #                 print('%s:%s waiting for key' % (node.ip.address, node.rpc_port))
+                #                 result = node.key_status()
+                #                 if result is True:
+                #                     true_count += 1
+                #                 else:
+                #                     node.set_id(chain1.chain_id)
+                #             print('true count is:', true_count)
+                #             if true_count >= chain1.threshold:
+                #                 break
+                #             else:
+                #                 time.sleep(5)
+                #
+                # # while not all([node.key_status() for node in chain.nodes for chain in level]):
+                # #     print('level %d is not ready, waiting...' % index)
+                # #     time.sleep(5)
                 time.sleep(2)
         self.if_set_id = True
         print("------setID finished----------------")
@@ -316,12 +326,58 @@ class HIBEChain(object):
             for chain in level:
                 chain.start_miner()
 
+    @staticmethod
+    def has_key(single_chain: SingleChain) -> None:
+        if single_chain.is_terminal:  # setting terminal node keys
+            print('setting terminal keys for chain', single_chain.chain_id)
+            terminal_node = single_chain.get_node_by_index(1)
+            while True:
+                result = terminal_node.key_status()
+                if result is False:
+                    time.sleep(2)
+                    terminal_node.set_id(single_chain.chain_id)
+                    time.sleep(3)
+                else:
+                    break
+            print('40s waiting for key generation...')
+            time.sleep(40)
+            key_count = terminal_node.key_count()
+            while True:
+                print('another 10s waiting for key generation...')
+                time.sleep(10)
+                tmp_count = terminal_node.key_count()
+                if tmp_count != 0 and tmp_count == key_count:
+                    break
+                # if tmp_count == 0:
+                #     chain1.set_id()
+                key_count = tmp_count
+
+            print(key_count, 'terminal keys generated.')
+
+        else:
+            true_count = 0
+            while True:
+                for node in single_chain.nodes:
+                    print('~~~~***************~~~~~')
+                    print('%s:%s waiting for key' % (node.ip.address, node.rpc_port))
+                    result = node.key_status()
+                    if result is True:
+                        true_count += 1
+                    else:
+                        node.set_id(single_chain.chain_id)
+                print('true count is:', true_count)
+                if true_count >= single_chain.threshold:
+                    break
+                else:
+                    time.sleep(5)
+
 
 if __name__ == "__main__":
     ip_list = IPList(IP_CONFIG)
     ip_list.stop_all_containers()
-    chain_id_list = ["", "01", "02"]
-    thresh_list = [(4, 3), (1, 1), (1, 1)]
+    chain_id_list, thresh_list = load_config_file(CONFIG)
+    # chain_id_list = ["", "01", "02"]
+    # thresh_list = [(4, 3), (1, 1), (1, 1)]
 
     hibe = HIBEChain(chain_id_list, thresh_list, ip_list)
     hibe.construct_hibe_chain()

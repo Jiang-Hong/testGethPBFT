@@ -12,7 +12,7 @@ import subprocess
 import threading
 import json
 from collections import defaultdict
-
+import os
 
 # class SetGenesis():
 #     """Decorator. Set genesis.json file for a chain."""
@@ -466,10 +466,14 @@ class SingleChain(object):
         time.sleep(2)
         node = self.get_node_by_index(node_index)
         filename = 'chain%s_node%d.txt' % (self.chain_id, node_index)
-        node.ip.exec_command('docker cp %s:/root/result%d ./%s' % (node.name, node_index, filename))
-        time.sleep(0.3)
-        copy_command = 'sshpass -p %s scp %s@%s:%s ./data/' % (self.password, self.username, node.ip.address, filename)
-        subprocess.run(copy_command, stdout=subprocess.PIPE, shell=True)
+        # check if the log file exists, if True, do nothing
+        if os.path.exists('data/%s' % filename):
+            print('log exists')
+        else:
+            node.ip.exec_command('docker cp %s:/root/result%d ./%s' % (node.name, node_index, filename))
+            time.sleep(0.3)
+            copy_command = 'sshpass -p %s scp %s@%s:%s ./data/' % (self.password, self.username, node.ip.address, filename)
+            subprocess.run(copy_command, stdout=subprocess.PIPE, shell=True)
 
     def search_log(self, node_index: int, block_index: int, if_get_block_tx_count: bool = True) -> None:
         node = self.get_node_by_index(node_index)
