@@ -7,7 +7,6 @@ from gethnode import GethNode
 from iplist import IPList
 from conf import load_config_file
 from typing import Optional
-from random import randint
 from datetime import datetime
 import threading
 import time
@@ -116,7 +115,7 @@ sent_time = time.time()
 for leaf_chain in leaf_chains:
     block_index = 0
     tx_index = 0
-    n0 = leaf_chain.get_node_by_index(1)    # n0 is the node in leaf chain with index 1
+    n0 = leaf_chain.get_node_by_index(1)    # n0 is the node in leaf chain with index 1gggg
     while n0.get_block_transaction_count(block_index) == 0:
         block_index += 1
         time.sleep(0.2)
@@ -135,11 +134,13 @@ for leaf_chain in leaf_chains:
     current_pf = pf
 
     for leaf_node in leaf_chain.nodes:
-        leaf_node.get_log(leaf_node.node_index)
+        leaf_chain.get_log(leaf_node.node_index)
         time.sleep(0.5)
-        leaf_node.search_log(leaf_node.node_index, block_index-1)
-        leaf_node.search_log(leaf_node.node_index, block_index)
+        leaf_chain.search_log(leaf_node.node_index, block_index-1)
+        leaf_chain.search_log(leaf_node.node_index, block_index)
 
+
+'''
 # timestamp_leaf = int(n0.get_block_by_index(1)['timestamp'], 16)
 for i in range(hibe.max_level-1):
     current_chain = hibe.get_chain(current_chain.get_parent_chain_id())
@@ -209,6 +210,7 @@ with open('data/elapsed_time.txt', 'a') as log:
     log.write('set up time: %.6f\n' % set_up_time)
     log.write('search time: %.6f\n' % search_time)
     log.write('latency: %d\n\n' % latency)
+'''
 
 # ----------------test latency end --------------------
 
