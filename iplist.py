@@ -3,13 +3,15 @@
 #
 # This file is about manipulation of servers.
 
-from const import USERNAME, PASSWD, MAXPAYLOAD, IP_CONFIG, SEMAPHORE
+from const import USERNAME, PASSWD, KEY_FILE, MAXPAYLOAD, IP_CONFIG, SEMAPHORE
 import paramiko
 import threading
 import time
-import subprocess
 import os
 from typing import Any
+
+KEY: paramiko.rsakey.RSAKey = paramiko.RSAKey.from_private_key_file(KEY_FILE)
+paramiko.util.log_to_file('/tmp/paramiko.log')
 
 
 class IP(object):
@@ -17,8 +19,7 @@ class IP(object):
     Create an IP object with a list of rpc ports and a list of listener ports.
     """
 
-    def __init__(self, ip_address: str, current_port: int = 0,
-                 username: str = USERNAME, password: str = PASSWD) -> None:
+    def __init__(self, ip_address: str, current_port: int = 0) -> None:
         if len(ip_address.split('.')) < 4:
             print("ip is", ip_address)
             raise ValueError('format of ip is not correct')
@@ -28,8 +29,6 @@ class IP(object):
         self.address = ip_address
         self.rpc_ports = range(8515, 8515 + self.max_payload * 10, 10)
         self.ethereum_network_ports = range(30313, 30313 + self.max_payload * 10, 10)
-        self.username = username
-        self.password = password
 
     def __repr__(self) -> str:
         return self.address
@@ -67,8 +66,17 @@ class IP(object):
         with SEMAPHORE:    # use semaphore to limit the maximum running threads
             with paramiko.SSHClient() as client:
                 client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-                client.connect(self.address, port, self.username, self.password)
-                stdin, stdout, stderr = client.exec_command(cmd, get_pty=True)
+                client.connect(self.address, port, username=USERNAME, pkey=KEY)
+                # TODO sftp = client.open_sftp()
+                # sftp.get()
+                # sftp.put()
+
+                if USERNAME != 'root' and cmd.startswith('sudo'):
+                    stdin, stdout, stderr = client.exec_command(cmd, get_pty=True)
+                    stdin.write(PASSWD + '\n')
+                    stdin.flush()
+                else:
+                    stdin, stdout, stderr = client.exec_command(cmd)
                 out = stdout.read().strip().decode(encoding='utf-8')
                 err = stderr.read().strip().decode(encoding='utf-8')
         if not err:
@@ -84,6 +92,30 @@ class IP(object):
                 print(result)
                 print('-------------')
                 raise RuntimeError("exec command error: %s" % cmd)
+
+    def put_file(self, local_path: str, remote_path: str, port: int = 22) -> None:
+        """
+        Transfer files from local to remote server using sftp.
+        """
+        with SEMAPHORE:
+            with paramiko.SSHClient() as client:
+                client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+                client.connect(self.address, port, username=USERNAME, pkey=KEY)
+                sftp = client.open_sftp()
+                sftp.put(local_path, remote_path)
+                sftp.close()
+
+    def get_file(self, remote_path: str, local_path: str, port: int = 22) -> None:
+        """
+        Transfer files from remote server to local using sftp.
+        """
+        with SEMAPHORE:
+            with paramiko.SSHClient() as client:
+                client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+                client.connect(self.address, port, username=USERNAME, pkey=KEY)
+                sftp = client.open_sftp()
+                sftp.get(remote_path, local_path)
+                sftp.close()
 
     def is_docker_running(self) -> bool:
         """Check if docker service is running on specified ip."""
@@ -114,74 +146,52 @@ class IP(object):
         print('-----------')
 
     def reboot_server(self) -> None:
-        """Reboot remote server with SSH connection."""
-        ssh_reboot_command = 'echo %s | sshpass -p %s ssh -tt %s@%s sudo reboot' % (
-            self.password, self.password, self.username, self.address)
-        print("server %s reboot" % self.address)
-        subprocess.run(ssh_reboot_command, stdout=subprocess.PIPE, shell=True)
+        """Reboot remote server."""
+        self.exec_command('sudo reboot')
 
     def shutdown_server(self) -> None:
-        """Shutdown remote server with SSH connection."""
-        ssh_shutdown_command = 'echo %s | sshpass -p %s ssh -tt %s@%s sudo shutdown now' % (
-            self.password, self.password, self.username, self.address)
-        print("server %s shutdown" % self.address)
-        time.sleep(0.02)
-        subprocess.run(ssh_shutdown_command, stdout=subprocess.PIPE, shell=True)    # necessary to set shell param True
-
-    def restart_network(self) -> None:
-        """Restart networking service of remote server."""
-        restart_network_command = 'echo %s | sshpass -p %s ssh -tt %s@%s sudo systemctl restart NetworkManager.service' % (
-            self.password, self.password, self.username, self.address)
-        print("network of server %s restart" % self.address)
-        time.sleep(0.02)
-        subprocess.run(restart_network_command, stdout=subprocess.PIPE, shell=True)
+        """Shutdown remote server."""
+        self.exec_command('sudo shutdown now')
+        # # -*- alternative approach -*-
+        # ssh_shutdown_command = 'echo %s | sshpass -p %s ssh -tt %s@%s sudo shutdown now' % (
+        #     self.password, self.password, self.username, self.address)
+        # print("server %s shutdown" % self.address)
+        # time.sleep(0.02)
+        # subprocess.run(ssh_shutdown_command, stdout=subprocess.PIPE, shell=True)  # necessary to set shell param True
 
     def mirror(self) -> None:
-        mirror_cmd = 'sshpass -p %s scp daemon.json %s@%s:daemon.json' % (
-            self.password, self.username, self.address)
-        time.sleep(0.02)
-        subprocess.run(mirror_cmd, stdout=subprocess.PIPE, shell=True)
-        cp_cmd = 'echo %s | sshpass -p %s ssh -tt %s@%s sudo cp daemon.json /etc/docker/daemon.json' % (
-            self.password, self.password, self.username, self.address)
-        subprocess.run(cp_cmd, stdout=subprocess.PIPE, shell=True)
-        time.sleep(0.02)
-        restart_docker_cmd = 'echo %s | sshpass -p %s ssh -tt %s@%s sudo service docker restart' % (
-            self.password, self.password, self.username, self.address)
-        for i in range(3):
-            subprocess.run(restart_docker_cmd, stdout=subprocess.PIPE, shell=True)
-            time.sleep(3)
+        self.put_file('daemon.json', 'daemon.json')
+        self.exec_command('sudo cp daemon.json /etc/docker/daemon.json && sudo systemctl restart docker')
 
     def set_limits(self) -> None:
-        set_limits_cmd = 'sshpass -p %s scp limits.conf %s@%s:limits.conf' % (
-            self.password, self.username, self.address)
-        time.sleep(0.02)
-        subprocess.run(set_limits_cmd, stdout=subprocess.PIPE, shell=True)
-        cp_cmd = 'echo %s | sshpass -p %s ssh -tt %s@%s sudo cp limits.conf /etc/security/limits.conf' % (
-            self.password, self.password, self.username, self.address)
-        subprocess.run(cp_cmd, stdout=subprocess.PIPE, shell=True)
+        self.put_file('limits.conf', 'limits.conf')
+        self.exec_command('sudo cp limits.conf /etc/security/limits.conf')
+        # # -*- alternative approach -*-
+        # set_limits_cmd = 'sshpass -p %s scp limits.conf %s@%s:limits.conf' % (
+        #     self.password, self.username, self.address)
+        # time.sleep(0.02)
+        # subprocess.run(set_limits_cmd, stdout=subprocess.PIPE, shell=True)
+        # cp_cmd = 'echo %s | sshpass -p %s ssh -tt %s@%s sudo cp limits.conf /etc/security/limits.conf' % (
+        #     self.password, self.password, self.username, self.address)
+        # subprocess.run(cp_cmd, stdout=subprocess.PIPE, shell=True)
 
     def journalctl_vacuum(self) -> None:
-        vacuum_cmd = 'echo %s | sshpass -p %s ssh -tt %s@%s sudo journalctl --vacuum-size=10M' % (
-            self.password, self.password, self.username, self.address)
-        subprocess.run(vacuum_cmd, stdout=subprocess.PIPE, shell=True)
+        self.exec_command('sudo journalctl --vacuum-size=10M')
 
 
 class IPList(object):
     """Manage IPs and ports of all servers involved."""
 
-    def __init__(self, ip_file: str, current_ip: int = 0,
-                 username: str = USERNAME, password: str = PASSWD) -> None:
+    def __init__(self, ip_file: str, current_ip: int = 0) -> None:
         """Read IPs from a file."""
         self._current_ip = current_ip
         self._available_ip = 0
         self._ips = []
         self.ip_count = 0
-        self.username = username
-        self.password = password
-        with open(ip_file, 'r') as f:
+        with open(ip_file, 'r') as file:
             # read servers' IPs from an IP config file
-            # stop at an empty line
-            for line in f.readlines():
+            # stop at empty line
+            for line in file.readlines():
                 if line.strip():
                     self.ips.append(IP(line.strip()))
                 else:
@@ -224,6 +234,8 @@ class IPList(object):
         return tmp_ip, rpc_port, ethereum_network_port
 
     def release_all_ports(self) -> None:
+        for ip in self.ips:
+            ip.current_port = 0
         self.current_ip = 0
 
     def exec_commands(self, cmd: str, port: int = 22) -> None:
@@ -261,7 +273,9 @@ class IPList(object):
         Add key to know_hosts file &&
         start docker service on all servers.
         """
+
         start_time = time.time()
+        """
         known_hosts = os.path.expanduser('~/.ssh/known_hosts')
         keys = paramiko.hostkeys.HostKeys(filename=known_hosts)
 
@@ -283,17 +297,16 @@ class IPList(object):
             t.join()
 
         # add keys to known_hosts one by one
-        for i in range(self.ip_count):
-            if not results.get(str(i)):
-                print('%s is not in know_hosts. Adding to known_hosts.' % self.ips[i])
-                get_key_command = 'ssh-keyscan %s' % self.ips[i].address
-                with open(known_hosts, 'a') as outfile:
-                    subprocess.run(get_key_command, stdout=outfile, shell=True)
-            # else:
-            #     print('%s is in know_hosts. Do nothing' % self.ips[i])
+        # for i in range(self.ip_count):
+        #     if not results.get(str(i)):
+        #         print('%s is not in know_hosts. Adding to known_hosts.' % self.ips[i])
+        #         get_key_command = 'ssh-keyscan %s' % self.ips[i].address
+        #         with open(known_hosts, 'a') as outfile:
+        #             subprocess.run(get_key_command, stdout=outfile, shell=True)
 
         # start_docker_command = 'echo %s | sudo -S systemctl start docker' % PASSWD
-        start_docker_command = 'echo %s | sudo -S service docker start' % PASSWD
+        """
+        start_docker_command = 'sudo systemctl start docker'
         print('starting docker service on all services')
         threads = []
         for ip in self.ips:
@@ -385,23 +398,24 @@ def shutdown_server(ip_list: IPList, username: str = USERNAME, password: str = P
     Note: Set param shell=True
     """
     for ip in ip_list.ips:
-        shutdown_command = 'echo %s | sshpass -p %s ssh -tt %s@%s sudo shutdown now' \
-                           % (password, password, username, IP)
-        print("server %s shutdown" % ip.address)
-        subprocess.run(shutdown_command, stdout=subprocess.PIPE, shell=True)
+        ip.shutdown_server()
+        # shutdown_command = 'echo %s | sshpass -p %s ssh -tt %s@%s sudo shutdown now' \
+        #                    % (password, password, username, IP)
+        # print("server %s shutdown" % ip.address)
+        # subprocess.run(shutdown_command, stdout=subprocess.PIPE, shell=True)
 
 
-def set_ulimit(ip_list: IPList) -> None:
-    """Change ulimit for servers."""
-    for ip in ip_list.ips:
-        subprocess.run(['sshpass -p %s scp setUlimit.sh %s@%s:' % (ip.password, ip.username, ip.address)],
-                       stdout=subprocess.PIPE, shell=True)
-        chmod_command = 'sshpass -p %s ssh -tt %s@%s chmod +x setUlimit.sh' % (ip.password, ip.username, ip.address)
-        exec_script_command = 'echo %s | sshpass -p %s ssh -tt %s@%s sudo ./setUlimit.sh' % (
-            ip.password, ip.password, ip.username, ip.address)
-        print('set noproc and nofile')
-        subprocess.run(chmod_command, stdout=subprocess.PIPE, shell=True)
-        subprocess.run(exec_script_command, stdout=subprocess.PIPE, shell=True)
+# def set_ulimit(ip_list: IPList) -> None:
+#     """Change ulimit for servers."""
+#     for ip in ip_list.ips:
+#         subprocess.run(['sshpass -p %s scp setUlimit.sh %s@%s:' % (ip.password, ip.username, ip.address)],
+#                        stdout=subprocess.PIPE, shell=True)
+#         chmod_command = 'sshpass -p %s ssh -tt %s@%s chmod +x setUlimit.sh' % (ip.password, ip.username, ip.address)
+#         exec_script_command = 'echo %s | sshpass -p %s ssh -tt %s@%s sudo ./setUlimit.sh' % (
+#             ip.password, ip.password, ip.username, ip.address)
+#         print('set noproc and nofile')
+#         subprocess.run(chmod_command, stdout=subprocess.PIPE, shell=True)
+#         subprocess.run(exec_script_command, stdout=subprocess.PIPE, shell=True)
 
 
 # def test(IPlist, username=USERNAME, password=PASSWD):
@@ -415,3 +429,10 @@ if __name__ == "__main__":
     # f.stop_all_containers()
     # time.sleep(0.2)
     # f.remove_all_containers()
+    # TODO subprocess try except timeout
+
+    # TODO 1. optimize writing known_hosts  paramiko paramiko.Transport()
+    # TODO 2. ssh use key pair instead of password
+    # TODO 3. use Logging module
+
+    # TODO multiprocessing? partly
