@@ -358,7 +358,6 @@ class HIBEChain(object):
             true_count = 0
             while True:
                 for node in single_chain.nodes:
-                    print('~~~~***************~~~~~')
                     print('%s:%s waiting for key' % (node.ip.address, node.rpc_port))
                     result = node.key_status()
                     if result is True:
