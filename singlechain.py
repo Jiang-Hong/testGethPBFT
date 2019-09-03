@@ -264,7 +264,6 @@ class SingleChain(object):
                     threads.append(t)
                     time.sleep(0.05)
                     t1 = threading.Thread(target=self.nodes[j].add_peer, args=(self.nodes[i].enode, 0))
-                    # time.sleep(0.02)  # necessary
                     t1.start()
                     threads.append(t1)
                     time.sleep(0.05)
@@ -341,6 +340,12 @@ class SingleChain(object):
     #         for node in self.nodes:
     #             enodes.append(node.enode)
     #         pass
+
+    def static_construct_chain(self) -> None:
+        pass
+
+    def static_connect_lower_chain(self, other_chain: 'SingleChain') -> None:
+        pass
 
     def get_parent_chain_id(self) -> str:
         """Return chain ID of parent chain."""
@@ -513,7 +518,7 @@ class SingleChain(object):
 if __name__ == "__main__":
     ip_list = IPList(IP_CONFIG)
     ip_list.stop_all_containers()
-    node_count = 4
+    node_count = 20
     c = SingleChain('01', 1, node_count, node_count*2//3+1, 121, ip_list)
     c.singlechain_start()
     c.config_consensus_chain()

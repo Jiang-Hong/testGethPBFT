@@ -11,7 +11,7 @@ import os
 from typing import Any
 
 KEY: paramiko.rsakey.RSAKey = paramiko.RSAKey.from_private_key_file(KEY_FILE)
-paramiko.util.log_to_file('/tmp/paramiko.log')
+# paramiko.util.log_to_file('/tmp/paramiko.log')
 
 
 class IP(object):
@@ -67,10 +67,6 @@ class IP(object):
             with paramiko.SSHClient() as client:
                 client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
                 client.connect(self.address, port, username=USERNAME, pkey=KEY)
-                # TODO sftp = client.open_sftp()
-                # sftp.get()
-                # sftp.put()
-
                 if USERNAME != 'root' and cmd.startswith('sudo'):
                     stdin, stdout, stderr = client.exec_command(cmd, get_pty=True)
                     stdin.write(PASSWD + '\n')
@@ -429,10 +425,5 @@ if __name__ == "__main__":
     # f.stop_all_containers()
     # time.sleep(0.2)
     # f.remove_all_containers()
-    # TODO subprocess try except timeout
-
-    # TODO 1. optimize writing known_hosts  paramiko paramiko.Transport()
-    # TODO 2. ssh use key pair instead of password
-    # TODO 3. use Logging module
-
-    # TODO multiprocessing? partly
+    # TODO 2. use Logging module
+    # TODO 1. multiprocessing? partly
