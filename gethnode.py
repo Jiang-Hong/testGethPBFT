@@ -99,6 +99,7 @@ class GethNode(object):
         url = "http://{}:{}".format(self.ip.address, self.rpc_port)
         with SEMAPHORE:
             with requests.Session() as r:
+                sleep(0.01)  ###
                 response = r.post(url=url, data=data, headers=self._headers)
                 while response.headers['Content-Type'] != 'application/json':
                     print(self.ip.address, self.rpc_port)
@@ -229,7 +230,7 @@ class GethNode(object):
         """admin.addPeer()"""
         method = 'admin_addPeer'
         params = list(args)
-        # sleep(0.01)
+        sleep(0.02)   ###
         result = self.rpc_call(method, params)
         return result
 
@@ -242,7 +243,7 @@ class GethNode(object):
                                 "--exec \"admin.addPeer%s\"" % (self.name, args))
             self.ip.exec_command(add_peer_command)
         except Exception as e:
-            raise RuntimeError('%s:%s %s %s' % (self.ip, self.ethereum_network_port, self.rpc_port, e))
+            raise RuntimeError('%s:%s %s %s %s' % (self.ip, self.ethereum_network_port, self.rpc_port, 'addPeer', e))
 
     def set_enode(self) -> None:
         """Set enode info of a node."""

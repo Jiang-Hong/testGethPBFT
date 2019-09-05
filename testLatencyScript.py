@@ -115,7 +115,7 @@ sent_time = time.time()
 for leaf_chain in leaf_chains:
     block_index = 0
     tx_index = 0
-    n0 = leaf_chain.get_node_by_index(1)    # n0 is the node in leaf chain with index 1gggg
+    n0 = leaf_chain.get_node_by_index(1)    # n0 is the node in leaf chain with index 1
     while n0.get_block_transaction_count(block_index) == 0:
         block_index += 1
         time.sleep(0.2)
@@ -138,7 +138,6 @@ for leaf_chain in leaf_chains:
         time.sleep(0.5)
         leaf_chain.search_log(leaf_node.node_index, block_index-1)
         leaf_chain.search_log(leaf_node.node_index, block_index)
-
 
 '''
 # timestamp_leaf = int(n0.get_block_by_index(1)['timestamp'], 16)

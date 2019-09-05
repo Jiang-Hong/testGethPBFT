@@ -135,11 +135,11 @@ class IP(object):
         """Remove all containers on the server."""
         get_names_command = "docker ps -a --format '{{.Names}}'"
         result = self.exec_command(get_names_command).split()
-        print('-----------')
+        print('--removing nodes--')
         stop_all_containers_command = 'docker rm %s' % ' '.join(result)
         self.exec_command(stop_all_containers_command)
         print("all nodes at %s removed" % self.address)
-        print('-----------')
+        print('---removed---')
 
     def reboot_server(self) -> None:
         """Reboot remote server."""

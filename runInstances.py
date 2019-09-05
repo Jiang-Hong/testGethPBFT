@@ -172,12 +172,12 @@ if __name__ == '__main__':
     # set parameters for instances
     aliyun_region_id = {1: 'cn-zhangjiakou', 2: 'cn-beijing', 3: 'cn-qingdao', 4: 'cn-shanghai', 5: 'cn-shenzhen',
                         6: 'cn-hangzhou', 7: 'cn-huhehaote'}
-    image_id = 'm-8vbakk9gu0d9hze5apvz'
+    image_id = 'm-8vb3i5iaiyul8xshx9w3'
 
     # keep this variable True in case of mis-operation
     is_dry_run = True  # change this variable to False to run instances in effect
     instance_type = 'ecs.r5.xlarge'  # change this value to instance type you need
-    instance_amount = 1
+    instance_amount = 3
 
     ordered_hours = 1  # generate auto release time according to ordered hours
     time_now_utc = datetime.datetime.utcnow()

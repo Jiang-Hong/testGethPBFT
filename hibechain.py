@@ -123,7 +123,7 @@ class HIBEChain(object):
                 for node in chain.nodes:
                     tmp_count = node.get_peer_count()
                     if tmp_count != peer_count:
-                        print('peer count is %d, should be %d' % (tmp_count, peer_count))
+                        print('%s %s peer count is %d, should be %d' % (chain, node, tmp_count, peer_count))
                         return False
         return True
 
