@@ -266,42 +266,42 @@ class IPList(object):
 
     def _init_service(self) -> None:
         """
-        Add key to know_hosts file &&
+        # Add key to know_hosts file &&
         start docker service on all servers.
         """
 
         start_time = time.time()
-        """
-        known_hosts = os.path.expanduser('~/.ssh/known_hosts')
-        keys = paramiko.hostkeys.HostKeys(filename=known_hosts)
-
-        # get results from multi-threading
-        # def _set_thread_result(IP, results, index):
-        #     results[index] = keys.lookup(ip.address)
-        def _set_thread_result(ip: IP, results: dict, index: int) -> None:
-            return results.setdefault(str(index), keys.lookup(ip.address))
-
-        self.ip_count = len(self.ips)
-        threads = []
-        results = {}
-        for index, ip in enumerate(self.ips):
-            # use multi-threading to lookup keys
-            t = threading.Thread(target=_set_thread_result, args=(ip, results, str(index)))
-            t.start()
-            threads.append(t)
-        for t in threads:
-            t.join()
-
-        # add keys to known_hosts one by one
-        # for i in range(self.ip_count):
-        #     if not results.get(str(i)):
-        #         print('%s is not in know_hosts. Adding to known_hosts.' % self.ips[i])
-        #         get_key_command = 'ssh-keyscan %s' % self.ips[i].address
-        #         with open(known_hosts, 'a') as outfile:
-        #             subprocess.run(get_key_command, stdout=outfile, shell=True)
-
-        # start_docker_command = 'echo %s | sudo -S systemctl start docker' % PASSWD
-        """
+        # """
+        # known_hosts = os.path.expanduser('~/.ssh/known_hosts')
+        # keys = paramiko.hostkeys.HostKeys(filename=known_hosts)
+        #
+        # # get results from multi-threading
+        # # def _set_thread_result(IP, results, index):
+        # #     results[index] = keys.lookup(ip.address)
+        # def _set_thread_result(ip: IP, results: dict, index: int) -> None:
+        #     return results.setdefault(str(index), keys.lookup(ip.address))
+        #
+        # self.ip_count = len(self.ips)
+        # threads = []
+        # results = {}
+        # for index, ip in enumerate(self.ips):
+        #     # use multi-threading to lookup keys
+        #     t = threading.Thread(target=_set_thread_result, args=(ip, results, str(index)))
+        #     t.start()
+        #     threads.append(t)
+        # for t in threads:
+        #     t.join()
+        #
+        # # add keys to known_hosts one by one
+        # # for i in range(self.ip_count):
+        # #     if not results.get(str(i)):
+        # #         print('%s is not in know_hosts. Adding to known_hosts.' % self.ips[i])
+        # #         get_key_command = 'ssh-keyscan %s' % self.ips[i].address
+        # #         with open(known_hosts, 'a') as outfile:
+        # #             subprocess.run(get_key_command, stdout=outfile, shell=True)
+        #
+        # # start_docker_command = 'echo %s | sudo -S systemctl start docker' % PASSWD
+        # """
         start_docker_command = 'sudo systemctl start docker'
         print('starting docker service on all services')
         threads = []
