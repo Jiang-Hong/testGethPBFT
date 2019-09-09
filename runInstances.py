@@ -177,7 +177,7 @@ if __name__ == '__main__':
     # keep this variable True in case of mis-operation
     is_dry_run = True  # change this variable to False to run instances in effect
     instance_type = 'ecs.r5.xlarge'  # change this value to instance type you need
-    instance_amount = 3
+    instance_amount = 1
 
     ordered_hours = 1  # generate auto release time according to ordered hours
     time_now_utc = datetime.datetime.utcnow()

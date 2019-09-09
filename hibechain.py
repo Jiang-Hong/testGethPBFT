@@ -137,7 +137,7 @@ class HIBEChain(object):
         for t in threads:
             t.join()
 
-    def get_chain(self, chain_id: str) -> SingleChain:
+    def get_chain(self, chain_id: str = '') -> SingleChain:
         """Return a list of blockchain nodes with a given chain ID(eg. '00010001')."""
         try:
             index = self.chain_id_list.index(chain_id)
@@ -385,4 +385,4 @@ if __name__ == "__main__":
     hibe.set_level()
     hibe.set_id()
 
-    hibe.destruct_hibe_chain()
+    # hibe.destruct_hibe_chain()

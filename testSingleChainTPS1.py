@@ -14,10 +14,11 @@ import json
 import subprocess
 
 
-for i0 in range(16, 17):
-    thresh_list = [(i0*3+1, i0*2+1), (1, 1)]
+for i0 in range(1, 11):
+    SEND_TX_SPEED = i0 * 5
     for _ in range(3):
         ip_list = IPList(IP_CONFIG)
+        thresh_list = [(19, 13), (1, 1)]
         # id_list, thresh_list = load_config_file(CONFIG)
         id_list = ["", "01"]
 
@@ -107,10 +108,11 @@ for i0 in range(16, 17):
         # --------------------------------------------------------
         transaction_sent_number = valid_keys
         transaction_sent_speed = SEND_TX_SPEED
+        iter_round = valid_keys // SEND_TX_SPEED
 
         threads = []
         for terminal_node in terminal_nodes:
-            t = threading.Thread(target=terminal_node.send_transaction3, args=(transaction_sent_number, 1,
+            t = threading.Thread(target=terminal_node.send_transaction3, args=(transaction_sent_number, iter_round,
                                                                                0, 1, transaction_sent_speed))
             t.start()
             threads.append(t)
@@ -172,9 +174,10 @@ for i0 in range(16, 17):
                     time2 = datetime.strptime(block_data[str(int(block_number)-1)]['written'], '%Y-%m-%d-%H:%M:%S.%f')
                     period = (time1 - time2).total_seconds()
                     tps = tx_count / period
-                with open('single_chain_tps0905.txt', 'a') as tps_file:
-                    tps_file.write('%s,%.2f,%s,%d,%s,%.3f\n' % (','.join((map(str, thresh_list[0]))), tps, block_number,
-                                                                tx_count, file, (finish_time-start_time)))
+                with open('single_chain_tps0906.txt', 'a') as tps_file:
+                    tps_file.write('%s,%.2f,%s,%d,%s,%.3f,%d\n' % (','.join((map(str, thresh_list[0]))), tps,
+                                                                   block_number, tx_count, file,
+                                                                   (finish_time-start_time), SEND_TX_SPEED))
         hibe.destruct_hibe_chain()
         time.sleep(10)
 

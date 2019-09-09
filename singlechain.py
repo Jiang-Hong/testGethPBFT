@@ -8,34 +8,11 @@ from conf import generate_genesis, generate_leaf_genesis
 from typing import Any
 import time
 from datetime import datetime
-import subprocess
 import threading
 import json
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
 import os
-
-# class SetGenesis():
-#     """Decorator. Set genesis.json file for a chain."""
-#     def __init__(self, func):
-#         self.func = func
-#     def __call__(self, *args):
-#         pass
-#     def __repr__(self):
-#         """Return the function's docstring."""
-#         return self.func.__doc__
-#     def __get__(self, obj, objtype):
-#         """Support instance methods."""
-#         return functools.partial(self.__call__, obj)
-
-
-# def add_peer(node1: GethNode, node2: GethNode, label: int):
-#     # Use semaphore to limit number of concurrent threads
-#     SEMAPHORE.acquire()
-#     node1.add_peer(node2.enode, label)
-#     # time.sleep(0.5)
-#     SEMAPHORE.release()
-#     # print(threading.active_count())
 
 
 class SingleChain(object):
@@ -64,8 +41,7 @@ class SingleChain(object):
         self.is_terminal = False
         self.config_file = None
         self.accounts = []
-        self.all_ip_port = set() # set of (ip_address, port)
-        self.map = {} # map of (ip_address, port) to node
+        self.map = defaultdict(dict)  # map of {tag: {enode: node}}
 
     def singlechain_start(self) -> None:
         """Start all containers for a single chain."""
@@ -74,9 +50,6 @@ class SingleChain(object):
             pbft_id = index
             node_index = index + 1
             tmp = GethNode(self.ip_list, pbft_id, node_index, self.blockchain_id, self.username, self.password)
-            ip_port = (tmp.ip.address, tmp.ethereum_network_port)
-            self.all_ip_port.add(ip_port)
-            self.map.setdefault(ip_port, tmp)
             self.ips.add(tmp.ip)
             self.nodes.append(tmp)
             # xq start a thread， target stand for a function that you want to run ,args stand for the parameters
@@ -204,13 +177,6 @@ class SingleChain(object):
                                   '--txpool.globalqueue 81920 --syncmode full '
                                   '--nodiscover >> %s.log 2>&1') % (node.pbft_id, node.node_index,
                                                      node.blockchain_id, node.accounts[0], node.name)
-            # start_geth_command = ('/usr/bin/geth --datadir abc --cache 1024 --port 30303 --rpcport 8545 --rpcapi '
-            #                       'admin,eth,miner,web3,net,personal,txpool --rpc --rpcaddr 0.0.0.0 '
-            #                       '--pbftid %d --nodeindex %d --blockchainid %d --unlock %s --password '
-            #                       'passfile --maxpeers 1024 --maxpendpeers 1024 --txpool.globalslots 81920 '
-            #                       '--txpool.globalqueue 81920 --syncmode full '
-            #                       '--nodiscover') % (node.pbft_id, node.node_index,
-            #                                                         node.blockchain_id, node.accounts[0])
             command = 'docker exec -td %s bash -c  \"%s\" ' % (node.name, start_geth_command)
             print(start_geth_command)
             t = threading.Thread(target=node.ip.exec_command, args=(command,))
@@ -226,6 +192,7 @@ class SingleChain(object):
             time.sleep(1)
         print()
 
+        # set enode for every node
         threads = []
         for node in self.nodes:
             t = threading.Thread(target=node.set_enode)
@@ -236,6 +203,11 @@ class SingleChain(object):
             t.join()
         time.sleep(2)
 
+        # set enode map
+        for node in self.nodes:
+            enode_value = node.enode.split('@')[0][8:]
+            self.map[0].setdefault(enode_value, node)
+
     def is_root_chain(self):
         """Check if chain is root chain."""
         return self.chain_id == ""
@@ -244,7 +216,7 @@ class SingleChain(object):
         """Return the primer node of the set of Geth-pbft clients."""
         return self.nodes[0]
 
-    def get_node_by_index(self, node_index: int) -> GethNode:
+    def get_node_by_index(self, node_index: int = 1) -> GethNode:
         """Return the node of a given index."""
         if node_index <= 0 or node_index > len(self.nodes):
             raise ValueError("node index out of range")
@@ -265,10 +237,6 @@ class SingleChain(object):
                     t.start()
                     threads.append(t)
                     time.sleep(0.2)
-                    t1 = threading.Thread(target=self.nodes[j].ipc_add_peer, args=(self.nodes[i].enode, 0))
-                    t1.start()
-                    threads.append(t1)
-                    time.sleep(0.2)
                 break    # in case of too many addPeer requests
             for t in threads:
                 t.join()
@@ -281,67 +249,128 @@ class SingleChain(object):
             #             executor.submit(self.connect(self.nodes[i], self.nodes[j], 0))
 
             print("-----------chain construction waiting--------------")
-            time.sleep(self.node_count//4 + 2)  #
+            time.sleep(self.node_count / 4)  #
 
-            for index, node in enumerate(self.nodes):
-                while node.get_peer_count() != self.node_count - 1:
-                    # node_peers_info = node.get_peers()
-                    # peers = {tuple(item['network']['remoteAddress'].split(':')) for item in node_peers_info}
-                    # node_peers = {(ip_address, int(port)) for ip_address, port in peers}
-                    # node_peers.add((node.ip.address, node.ethereum_network_port))
-                    # print('node peers', node_peers)
-                    # un_connected_peers = self.all_ip_port.difference(node_peers)
-                    # print('~~~~~~~~~~~~~~')
-                    # print('all', self.all_ip_port)
-                    # print('unconnected', un_connected_peers)
-                    # print('~~~~~~~~~~~~~~')
-                    # print('unconnected peers: %d' % len(un_connected_peers))
-                    # print('------------------')
-                    # print(index, un_connected_peers)
-                    # print('------------------')
-                    # for ip_port in un_connected_peers:
-                    #     peer2connect = self.map[ip_port]
-                    #     node.add_peer(peer2connect.enode, 0)
-                    #     time.sleep(0.3)
-                    #     peer2connect.add_peer(node.enode, 0)
-                    #     time.sleep(0.2)
-                    # time.sleep(len(un_connected_peers) // 4 + 2)
-                    print('not enough peers', index)
-                    time.sleep(1)
-                    threads = []
-                    for m in range(index, self.node_count):
-                        for n in range(m+1, self.node_count):
-                            t = threading.Thread(target=self.nodes[n].add_peer, args=(self.nodes[m].enode, 0))
+            # connect all nodes to each other
+            un_connected_nodes = set(self.nodes)
+            while True:
+                print('-------------------------')
+                print(un_connected_nodes)
+                connected_nodes = set()
+                threads = []
+                for node in un_connected_nodes:
+                    if node.get_peer_count() != self.node_count - 1:
+                        print('not enough peers', node.node_index)
+                        node_peers_info = node.get_peers()
+                        peers = {peer['id'] for peer in node_peers_info}
+                        peers.add(node.enode.split('@')[0][8:])
+                        un_connected_peers = set(self.map[0].keys()).difference(peers)
+                        # print('~~~~~~~~~~~~~~')
+                        # print('unconnected peers: %d' % len(un_connected_peers))
+                        # print('------------------')
+                        # print(node.node_index, un_connected_peers)
+                        # print('------------------')
+                        for enode_value in un_connected_peers:
+                            t = threading.Thread(target=node.ipc_add_peer, args=(self.map[0][enode_value].enode, 0))
                             t.start()
                             threads.append(t)
-                            time.sleep(0.1)
-                            t1 = threading.Thread(target=self.nodes[m].add_peer, args=(self.nodes[n].enode, 0))
-                            t1.start()
-                            threads.append(t1)
-                        break  ###
-                    for t in threads:
-                        t.join()
-                    time.sleep(0.2)
-                    if node.get_peer_count() != self.node_count - 1:
+                            time.sleep(0.2)
                         print('waiting for peers')
-                        time.sleep(self.node_count-index)
-                        # break #TODO delete this line?
                     else:
-                        time.sleep(0.2)
-                        break
+                        connected_nodes.add(node)
+                for t in threads:
+                    t.join()
+                un_connected_nodes = un_connected_nodes.difference(connected_nodes)
+                if not un_connected_nodes:
+                    break
+                else:
+                    time.sleep(len(un_connected_nodes) / 4)
 
             end_time = time.time()
             print('construction complete: %.3fs' % (end_time - start_time))
 
-            # while not all([node.get_peer_count() == self.node_count-1 for node in self.nodes]):
-            #     iter_count += 1
-            #     print('waiting time: %f, waiting round is %d' % (0.5 * iter_count, iter_count))
-            #     if iter_count == 10:
-            #         for node in self.nodes[1:]:
-            #             if node.get_peer_count() != self.nodes[0].get_peer_count():
-            #                 print('add peer again')
-            #                 node.add_peer(self.nodes[0].enode, 0)
-            #         iter_count = 0
+    def connect_lower_chain(self, other_chain: 'SingleChain') -> None:
+        """Connect to a lower level single chain."""
+        threads = []
+        for node in self.nodes:
+            for other in other_chain.nodes:
+                t = threading.Thread(target=other.ipc_add_peer, args=(node.enode, 2))    # param 2 means upper peer
+                t.start()
+                time.sleep(0.2)    # if fail. increase this value.
+                threads.append(t)
+                # t1 = threading.Thread(target=node.ipc_add_peer, args=(other.enode, 1))  # param 1 means lower peer
+                # t1.start()
+                # time.sleep(0.1)
+                # threads.append(t1)
+                # time.sleep(0.3)
+            # break
+
+        for t in threads:
+            t.join()
+        time.sleep(self.node_count//5+1)
+
+        self.map[1].update(other_chain.map[0])
+        other_chain.map[2].update(self.map[0])
+
+        upper_chain_un_connected_nodes = set(self.nodes)
+        lower_chain_un_connected_nodes = set(other_chain.nodes)
+        while True:
+            print('--------------------')
+            connected_upper = set()
+            connected_lower = set()
+            threads = []
+            for node in upper_chain_un_connected_nodes:
+                upper_node_all_peers_info = node.get_peers()  # all peers connected to upper chain node
+                # current lower chain nodes connected to upper chain node
+                upper_chain_current_peers = {peer['id'] for peer in upper_node_all_peers_info
+                                             if peer['flag'] == 'Low Level Peer, child'}
+                un_connected_peers = set(other_chain.map[0].keys()).difference(upper_chain_current_peers)
+                if not un_connected_peers:
+                    connected_upper.add(node)
+                for enode_value in un_connected_peers:
+                    print("enode is", enode_value)
+                    t = threading.Thread(target=node.ipc_add_peer, args=(self.map[1][enode_value].enode, 1))
+                    t.start()
+                    print('connecting to lower node again')
+                    threads.append(t)
+                    time.sleep(0.2)
+            for node in lower_chain_un_connected_nodes:
+                lower_node_all_peers_info = node.get_peers()  # all peers connected to lower chain node
+                # current upper chain nodes connected to lower chain node
+                lower_chain_current_peers = {peer['id'] for peer in lower_node_all_peers_info
+                                             if peer['flag'] == 'Upper Level Peer, parent'}
+                un_connected_peers = set(self.map[0].keys()).difference(lower_chain_current_peers)
+                if not un_connected_peers:
+                    connected_lower.add(node)
+                for enode_value in un_connected_peers:
+                    print("enode is", enode_value)
+                    t = threading.Thread(target=node.ipc_add_peer, args=(other_chain.map[2][enode_value].enode, 2))
+                    t.start()
+                    print('connecting to upper node again')
+                    threads.append(t)
+                    time.sleep(0.2)
+            upper_chain_un_connected_nodes = upper_chain_un_connected_nodes.difference(connected_upper)
+            lower_chain_un_connected_nodes = lower_chain_un_connected_nodes.difference(connected_lower)
+            if upper_chain_un_connected_nodes or lower_chain_un_connected_nodes:
+                time.sleep((len(upper_chain_un_connected_nodes)+len(lower_chain_un_connected_nodes)) / 4)
+            else:
+                break
+
+    def connect_upper_chain(self, other_chain: 'SingleChain') -> None:
+        """Connect to an upper level single chain."""
+        pass
+        time.sleep(0.01)
+        threads = []
+        for node in self.nodes:
+            for other in other_chain.nodes:
+                ep = other.enode
+                t = threading.Thread(target=node.add_peer, args=(ep, 2))    # param 2 means upper peer
+                t.start()
+                threads.append(t)
+                time.sleep(0.05)
+        for t in threads:
+            t.join()
+        time.sleep(self.node_count//5+1)
 
     # def static_construct_chain(self) -> None:
     #     """Use static-nodes.json to construct single chain."""
@@ -369,42 +398,6 @@ class SingleChain(object):
             threads.append(t)
         for t in threads:
             t.join()
-
-    def connect_lower_chain(self, other_chain: 'SingleChain') -> None:
-        """Connect to a lower level single chain."""
-        time.sleep(0.01)
-        threads = []
-        for node in self.nodes:
-            for other in other_chain.nodes:
-                t = threading.Thread(target=other.ipc_add_peer, args=(node.enode, 2))    # param 2 means upper peer
-                t.start()
-                time.sleep(0.1)    # if fail. increase this value.
-                threads.append(t)
-                t1 = threading.Thread(target=node.ipc_add_peer, args=(other.enode, 1))  # param 1 means lower peer
-                t1.start()
-                time.sleep(0.1)
-                threads.append(t1)
-                # time.sleep(0.3)
-            break
-
-        for t in threads:
-            t.join()
-        time.sleep(self.node_count//5+1)
-
-    def connect_upper_chain(self, other_chain: 'SingleChain') -> None:
-        """Connect to an upper level single chain."""
-        time.sleep(0.01)
-        threads = []
-        for node in self.nodes:
-            for other in other_chain.nodes:
-                ep = other.enode
-                t = threading.Thread(target=node.add_peer, args=(ep, 2))    # param 2 means upper peer
-                t.start()
-                threads.append(t)
-                time.sleep(0.05)
-        for t in threads:
-            t.join()
-        time.sleep(self.node_count//5+1)
 
     def get_node_count(self) -> int:
         """Return the number of nodes of the blockchain."""
@@ -483,9 +476,6 @@ class SingleChain(object):
             node.ip.exec_command('docker cp %s:/root/result%d ./%s' % (node.name, node_index, filename))
             time.sleep(0.3)
             node.ip.get_file(filename, 'data/'+filename)
-            # copy_command = 'sshpass -p %s scp %s@%s:%s ./data/' % (self.password, self.username,
-            #                                                        node.ip.address, filename)
-            # subprocess.run(copy_command, stdout=subprocess.PIPE, shell=True)
 
     def search_log(self, node_index: int, block_index: int, if_get_block_tx_count: bool = True) -> None:
         node = self.get_node_by_index(node_index)
