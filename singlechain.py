@@ -49,7 +49,7 @@ class SingleChain(object):
         for index in range(self.node_count):
             pbft_id = index
             node_index = index + 1
-            tmp = GethNode(self.ip_list, pbft_id, node_index, self.blockchain_id, self.username, self.password)
+            tmp = GethNode(self.ip_list, pbft_id, node_index, self.blockchain_id, self.username)
             self.ips.add(tmp.ip)
             self.nodes.append(tmp)
             # xq start a thread， target stand for a function that you want to run ,args stand for the parameters
@@ -62,7 +62,6 @@ class SingleChain(object):
             # xq threads must run the join function, because the resources of main thread is needed
             t.join()
 
-        time.sleep(0.1)
         for index in range(self.node_count):
             self.accounts.append(self.nodes[index].accounts[0])
 #        print(self.accounts)
@@ -95,23 +94,27 @@ class SingleChain(object):
 
     def config_genesis(self) -> None:
         """Copy genesis.json file into a container."""
+        threads = []
         for server_ip in self.ips:
-            # subprocess.run(['sshpass -p %s scp config/%s %s@%s:%s' % (self.password, self.config_file,
-            #                self.username, server_ip.address, self.config_file)], stdout=subprocess.PIPE, shell=True)
-            server_ip.put_file('config/%s' % self.config_file, self.config_file)
-            time.sleep(self.node_count/50)
-            threads = []
-            for node in self.nodes:
-                if node.ip == server_ip:
-                    command = 'docker cp %s %s:/root/%s' % (self.config_file, node.name, self.config_file)
-                    t = threading.Thread(target=server_ip.exec_command, args=(command,))
-                    t.start()
-                    threads.append(t)
-                    print('copying genesis file')
-                    time.sleep(0.1)
-            for t in threads:
-                t.join()
+            t = threading.Thread(target=server_ip.put_file, args=('config/%s' % self.config_file, self.config_file))
+            t.start()
+            threads.append(t)
+            time.sleep(0.02)
+        time.sleep(self.node_count/25)
+        for t in threads:
+            t.join()
+
+        threads = []
+        for node in self.nodes:
+            command = 'docker cp %s %s:/root/%s' % (self.config_file, node.name, self.config_file)
+            t = threading.Thread(target=node.ip.exec_command, args=(command,))
+            t.start()
+            threads.append(t)
+            print('copying genesis file')
+            time.sleep(0.1)
         time.sleep(1)
+        for t in threads:
+            t.join()
 
     def config_consensus_chain(self) -> None:
         """Set genesis.json for a blockchain & init with genesis.json."""
@@ -352,7 +355,7 @@ class SingleChain(object):
             upper_chain_un_connected_nodes = upper_chain_un_connected_nodes.difference(connected_upper)
             lower_chain_un_connected_nodes = lower_chain_un_connected_nodes.difference(connected_lower)
             if upper_chain_un_connected_nodes or lower_chain_un_connected_nodes:
-                time.sleep((len(upper_chain_un_connected_nodes)+len(lower_chain_un_connected_nodes)) / 4)
+                time.sleep((len(upper_chain_un_connected_nodes)+len(lower_chain_un_connected_nodes)) / 3)
             else:
                 break
 
@@ -435,7 +438,6 @@ class SingleChain(object):
             raise RuntimeError("number and level info should be set previously")
         if len(self.chain_id) // 2 != self.level:
             raise ValueError("length of id should match level number")
-        time.sleep(0.05)
         if not self.if_set_id:
             if self.level == 0:
                 p = self.get_primer_node()
@@ -446,9 +448,10 @@ class SingleChain(object):
                     t = threading.Thread(target=node.set_id, args=(self.chain_id,))
                     t.start()
                     threads.append(t)
-                    time.sleep(0.3)
+                    time.sleep(0.02)     ###
                 for t in threads:
                     t.join()
+                time.sleep(0.5)
             self.if_set_id = True
         else:
             raise RuntimeError("ID of chain %s already set" % self.chain_id)
@@ -466,7 +469,7 @@ class SingleChain(object):
                 t.join()
 
     def get_log(self, node_index: int) -> None:
-        time.sleep(2)
+        # time.sleep(2)   #
         node = self.get_node_by_index(node_index)
         filename = 'chain%s_node%d.txt' % (self.chain_id, node_index)
         # check if the log file exists, if True, do nothing
@@ -474,7 +477,7 @@ class SingleChain(object):
             print('log exists')
         else:
             node.ip.exec_command('docker cp %s:/root/result%d ./%s' % (node.name, node_index, filename))
-            time.sleep(0.3)
+            time.sleep(0.2)
             node.ip.get_file(filename, 'data/'+filename)
 
     def search_log(self, node_index: int, block_index: int, if_get_block_tx_count: bool = True) -> None:
@@ -511,10 +514,10 @@ class SingleChain(object):
         with open('data/elapsed_time.txt', 'a') as log:
             log.write('%s block index: %d, time: %s  TX count:%d\n' % (filename, block_index, written_time, tx_count))
 
-    @staticmethod
-    def connect(node1: 'GethNode', node2: 'GethNode', tag: int):
-        node1.ipc_add_peer(node2.enode, tag)
-        time.sleep(0.2)
+    # @staticmethod
+    # def connect(node1: 'GethNode', node2: 'GethNode', tag: int):
+    #     node1.ipc_add_peer(node2.enode, tag)
+    #     time.sleep(0.2)
 
 
 if __name__ == "__main__":

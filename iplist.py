@@ -269,8 +269,6 @@ class IPList(object):
         # Add key to know_hosts file &&
         start docker service on all servers.
         """
-
-        start_time = time.time()
         # """
         # known_hosts = os.path.expanduser('~/.ssh/known_hosts')
         # keys = paramiko.hostkeys.HostKeys(filename=known_hosts)
@@ -302,15 +300,10 @@ class IPList(object):
         #
         # # start_docker_command = 'echo %s | sudo -S systemctl start docker' % PASSWD
         # """
+        start_time = time.time()
         start_docker_command = 'sudo systemctl start docker'
         print('starting docker service on all services')
-        threads = []
-        for ip in self.ips:
-            t = threading.Thread(target=ip.exec_command, args=(start_docker_command,))
-            threads.append(t)
-            t.start()
-        for t in threads:
-            t.join()
+        self.exec_commands(start_docker_command)
         end_time = time.time()
         print('initService elapsed time: %.3fs' % (end_time - start_time))
 

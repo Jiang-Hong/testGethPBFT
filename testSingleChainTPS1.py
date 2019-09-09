@@ -55,13 +55,6 @@ for i0 in range(1, 11):
         waiting_time = max([chain.node_count for chain in hibe.structured_chains[0]]) // 5
         print('another %d seconds waiting for addPeer' % waiting_time)
         time.sleep(waiting_time)
-        if not hibe.is_connected():
-            # raise RuntimeError('connection is not ready')
-            print('connection is not ready')
-            time.sleep(10)
-        else:
-            print('connected')
-            time.sleep(0.5)
 
         hibe.set_number()
         hibe.set_level()
@@ -72,10 +65,8 @@ for i0 in range(1, 11):
         set_up_time = setup_end_time - start_time
         print("set up time %.3fs" % set_up_time)
 
-
         root_chain = hibe.get_chain('')
         root = root_chain.get_node_by_index(1)
-
 
         terminal_chains = hibe.structured_chains[-1]
         terminal_nodes = [terminal_chain.get_node_by_index(1) for terminal_chain in terminal_chains]

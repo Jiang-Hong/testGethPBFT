@@ -260,7 +260,7 @@ class HIBEChain(object):
             else:
                 threads = []
                 for chain in level:
-                    t = threading.Thread(target=self.has_key, args=(chain, ))
+                    t = threading.Thread(target=self.gen_key, args=(chain, ))
                     t.start()
                     threads.append(t)
                 for t in threads:
@@ -327,7 +327,7 @@ class HIBEChain(object):
                 chain.start_miner()
 
     @staticmethod
-    def has_key(single_chain: SingleChain) -> None:
+    def gen_key(single_chain: SingleChain) -> None:
         if single_chain.is_terminal:  # setting terminal node keys
             print('setting terminal keys for chain', single_chain.chain_id)
             terminal_node = single_chain.get_node_by_index(1)

@@ -32,7 +32,7 @@ class GethNode(object):
     """Data structure for Geth-pbft client."""
 
     def __init__(self, ip_list: IPList, pbft_id: int, node_index: int, blockchain_id: int,
-                 username: str = USERNAME, password: str = PASSWD) -> None:
+                 username: str = USERNAME) -> None:
         self.id = node_index    # used in rpc call
         self.ip, self.rpc_port, self.ethereum_network_port = ip_list.get_new_port()
         self.pbft_id = pbft_id
@@ -43,7 +43,6 @@ class GethNode(object):
         self._accounts = []  # accounts list of a geth node
         self._headers = {'Content-Type': 'application/json'}    # for rpc call use # 'Connection': 'close'?
         self.username = username    # user name of login user of a server
-        self.password = password    # password of login user of a server
 
     @property
     def enode(self) -> str:
@@ -65,7 +64,6 @@ class GethNode(object):
     def start(self) -> None:
         """Start a container for geth on remote server and create a new account."""
         # --ulimit nofile=<soft limit>:<hard limit> set the limit for open files
-        # with SEMAPHORE:
         docker_run_command = ('docker run --ulimit nofile=65535:65535 -td -p %d:8545 -p %d:30303 --rm --name %s %s' %
                               (self.rpc_port, self.ethereum_network_port, self.name, IMAGE))
         sleep(0.6)
