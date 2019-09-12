@@ -171,6 +171,7 @@ class IP(object):
         # subprocess.run(cp_cmd, stdout=subprocess.PIPE, shell=True)
 
     def journalctl_vacuum(self) -> None:
+        """Removes archived journal files until the disk space they use falls below 10M"""
         self.exec_command('sudo journalctl --vacuum-size=10M')
 
 
@@ -238,6 +239,24 @@ class IPList(object):
         threads = []
         for ip in self.ips:
             t = threading.Thread(target=ip.exec_command, args=(cmd,), kwargs={'port': port})
+            t.start()
+            threads.append(t)
+        for t in threads:
+            t.join()
+
+    def put_files(self, local_path: str, remote_path: str, port: int = 22) -> None:
+        threads = []
+        for ip in self.ips:
+            t = threading.Thread(target=ip.put_file, args=(local_path, remote_path), kwargs={'port': port})
+            t.start()
+            threads.append(t)
+        for t in threads:
+            t.join()
+
+    def get_files(self, remote_path: str, local_path: str, port: int = 22) -> None:
+        threads = []
+        for ip in self.ips:
+            t = threading.Thread(target=ip.get_file, args=(remote_path, local_path), kwargs={'port': port})
             t.start()
             threads.append(t)
         for t in threads:
@@ -324,15 +343,6 @@ class IPList(object):
         for t in threads:
             t.join()
 
-    def restart_network(self) -> None:
-        threads = []
-        for ip in self.ips:
-            t = threading.Thread(target=ip.restart_network)
-            t.start()
-            threads.append(t)
-        for t in threads:
-            t.join()
-
     def mirror(self) -> None:
         threads = []
         for ip in self.ips:
@@ -352,6 +362,7 @@ class IPList(object):
             t.join()
 
     def journalctl_vacuum(self) -> None:
+        """Removes archived journal files until the disk space they use falls below 10M"""
         threads = []
         for ip in self.ips:
             t = threading.Thread(target=ip.journalctl_vacuum)
