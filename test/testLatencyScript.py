@@ -94,7 +94,7 @@ time.sleep(hibe.max_level*60)
 print('start')
 
 # clear data folder
-subprocess.run('rm data/*', shell=True)
+subprocess.run('rm ../data/*', shell=True)
 
 sent_time = time.time()
 

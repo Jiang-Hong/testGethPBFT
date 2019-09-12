@@ -529,19 +529,13 @@ if __name__ == "__main__":
     c.singlechain_start()
     c.config_consensus_chain()
     c.run_nodes()
-#    p = c.get_primer_node()
-#    print(p.get_peer_count())
-
     time.sleep(node_count//3)
     fail_count = 0
     for i in range(1, node_count + 1):
         node = c.get_node_by_index(i)
-        #        acc = node.getAccounts()[0]
-        #        print(acc)
-        #        print(node.getBalance(acc))
         count = node.get_peer_count()
         print(count)
         if count != node_count - 1:
             fail_count += 1
     print("fail count:", fail_count)
-    # c.destruct_chain()
+    c.destruct_chain()

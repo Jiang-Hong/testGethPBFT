@@ -52,17 +52,6 @@ for i0 in range(1, 2):
         hibe.construct_hibe_chain()
         connect_time = time.time()
 
-        waiting_time = max([chain.node_count for chain in hibe.structured_chains[0]]) // 5
-        print('another %d seconds waiting for addPeer' % waiting_time)
-        time.sleep(waiting_time)
-        if not hibe.is_connected():
-            # raise RuntimeError('connection is not ready')
-            print('connection is not ready')
-            time.sleep(10)
-        else:
-            print('connected')
-            time.sleep(0.5)
-
         hibe.set_number()
         hibe.set_level()
         hibe.set_id()
@@ -155,7 +144,7 @@ for i0 in range(1, 2):
                 leaf_chain.search_log(leaf_node.node_index, block_index)
 
         # calculate TPS
-        json_files = subprocess.run('ls data/*.json', capture_output=True, shell=True)
+        json_files = subprocess.run('ls ../data/*.json', capture_output=True, shell=True)
         files = json_files.stdout.decode(encoding='utf-8').split()
 
         finish_time = time.time()
@@ -173,7 +162,7 @@ for i0 in range(1, 2):
                     time2 = datetime.strptime(block_data[str(int(block_number)-1)]['written'], '%Y-%m-%d-%H:%M:%S.%f')
                     period = (time1 - time2).total_seconds()
                     tps = tx_count / period
-                with open('single_chain_tps0905.txt', 'a') as tps_file:
+                with open('../result/single_chain_tps'+str(datetime.utcnow().date()), 'a') as tps_file:
                     tps_file.write('%s,%.2f,%s,%d,%s,%.3f\n' % (','.join((map(str, thresh_list[0]))), tps, block_number,
                                                                 tx_count, file, (finish_time-start_time)))
         hibe.destruct_hibe_chain()

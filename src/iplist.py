@@ -414,8 +414,3 @@ def shutdown_server(ip_list: IPList, username: str = USERNAME, password: str = P
 if __name__ == "__main__":
     f = IPList(IP_CONFIG)
     f.stop_all_containers()
-    # f.stop_all_containers()
-    # time.sleep(0.2)
-    # f.remove_all_containers()
-    # TODO 2. use Logging module
-    # TODO 1. multiprocessing? partly

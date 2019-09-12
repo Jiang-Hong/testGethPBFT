@@ -385,4 +385,4 @@ if __name__ == "__main__":
     hibe.set_level()
     hibe.set_id()
 
-    # hibe.destruct_hibe_chain()
+    hibe.destruct_hibe_chain()

@@ -18,7 +18,7 @@ for i0 in range(7, 11):
     SEND_TX_SPEED = i0 * 5
     for _ in range(2):
         ip_list = IPList(IP_CONFIG)
-        thresh_list = [(19, 13), (1, 1)]
+        thresh_list = [(4, 3), (1, 1)]
         # id_list, thresh_list = load_config_file(CONFIG)
         id_list = ["", "01"]
 
@@ -97,7 +97,7 @@ for i0 in range(7, 11):
         print('start')
 
         # clear data folder
-        subprocess.run('rm data/*', shell=True)
+        subprocess.run('rm ../data/*', shell=True)
 
         sent_time = time.time()
 
@@ -129,7 +129,7 @@ for i0 in range(7, 11):
                 leaf_chain.search_log(leaf_node.node_index, block_index)
 
         # calculate TPS
-        json_files = subprocess.run('ls data/*.json', capture_output=True, shell=True)
+        json_files = subprocess.run('ls ../data/*.json', capture_output=True, shell=True)
         files = json_files.stdout.decode(encoding='utf-8').split()
 
         finish_time = time.time()
@@ -153,7 +153,7 @@ for i0 in range(7, 11):
                 time2 = datetime.strptime(block_data[str(int(block_number)+2)]['written'], '%Y-%m-%d-%H:%M:%S.%f')
                 period = (time2 - time1).total_seconds()
                 tps = tx_count / period
-                with open('single_chain_tps0910.txt', 'a') as tps_file:
+                with open('../result/single_chain_tps0910.txt', 'a') as tps_file:
                     tps_file.write('%s,%.2f,%s,%d,%s,%.3f,%d\n' % (','.join((map(str, thresh_list[0]))), tps,
                                                                    block_number, tx_count, file,
                                                                    (finish_time-start_time), SEND_TX_SPEED))
