@@ -2,7 +2,6 @@ FROM debian:stretch-slim
 WORKDIR /root
 COPY geth /usr/bin/geth
 COPY passfile core.yaml config.yaml /root/
-COPY ./badproxy /etc/apt/apt.conf.d/99fixbadproxy
 RUN echo "deb http://mirrors.tuna.tsinghua.edu.cn/debian/ stretch main non-free contrib" > /etc/apt/sources.list \
     && echo "deb http://mirrors.tuna.tsinghua.edu.cn/debian/ stretch-updates main non-free contrib" >> /etc/apt/sources.list \
     && echo "deb http://mirrors.tuna.tsinghua.edu.cn/debian/ stretch-backports main non-free contrib" >> /etc/apt/sources.list \
