@@ -3,11 +3,8 @@ docker/*.json
 __pycache__/
 .vscode/
 *.pyc
-test.py
 .idea/*
-*ip.txt
 venv/
 data/
-config/
 result/
 testScript/*.bak
