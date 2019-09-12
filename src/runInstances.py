@@ -6,7 +6,7 @@ import time
 import datetime
 import traceback
 
-from secret import ACCESS_KEY_ID, ACCESS_SECRET
+from src.secret import ACCESS_KEY_ID, ACCESS_SECRET
 
 from aliyunsdkcore.client import AcsClient
 from aliyunsdkcore.acs_exception.exceptions import ClientException, ServerException

@@ -1,6 +1,8 @@
 # !/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+from src.secret import ACCESS_KEY_ID, ACCESS_SECRET
+
 from aliyunsdkcore.client import AcsClient
 from aliyunsdkcore.acs_exception.exceptions import ClientException
 from aliyunsdkcore.acs_exception.exceptions import ServerException
@@ -9,8 +11,6 @@ from aliyunsdkecs.request.v20140526.DeleteInstanceRequest import DeleteInstanceR
 
 from pprint import pprint
 import json
-
-from secret import ACCESS_KEY_ID, ACCESS_SECRET
 
 # Describe instances
 client = AcsClient(ACCESS_KEY_ID, ACCESS_SECRET, 'cn-zhangjiakou')

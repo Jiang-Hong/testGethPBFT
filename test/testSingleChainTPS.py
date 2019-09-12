@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from const import CONFIG, IP_CONFIG, SEND_TX_SPEED
-from hibechain import HIBEChain
-from gethnode import GethNode
-from iplist import IPList
-from conf import load_config_file
+from src.const import CONFIG, IP_CONFIG
+from src.hibechain import HIBEChain
+from src.gethnode import GethNode
+from src.iplist import IPList
+from src.conf import load_config_file
 from typing import Optional
 from datetime import datetime
 import threading
@@ -13,8 +13,9 @@ import time
 import json
 import subprocess
 
+SEND_TX_SPEED = 120
 
-for i0 in range(16, 17):
+for i0 in range(1, 2):
     thresh_list = [(i0*3+1, i0*2+1), (1, 1)]
     for _ in range(3):
         ip_list = IPList(IP_CONFIG)
@@ -122,7 +123,7 @@ for i0 in range(16, 17):
         print('start')
 
         # clear data folder
-        subprocess.run('rm data/*', shell=True)
+        subprocess.run('rm ../data/*', shell=True)
 
         sent_time = time.time()
 

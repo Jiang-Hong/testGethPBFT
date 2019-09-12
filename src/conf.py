@@ -50,7 +50,7 @@ def generate_test_config(level: int = 4, terminal_count: int = 2, config_file: s
     tmp_thresh = ' '.join('%s,%s' % tup for tup in thresh_list)
     lines.append(tmp_id)
     lines.append(tmp_thresh)
-    with open(config_file, 'w') as file:
+    with open('../config/'+config_file, 'w') as file:
         file.write('\n'.join(lines))
 
 
@@ -96,15 +96,15 @@ def generate__tri_test_config(level: int = 3, terminal_count: int = 8, config_fi
     tmp_thresh = ' '.join('%s,%s' % tup for tup in thresh_list)
     lines.append(tmp_id)
     lines.append(tmp_thresh)
-    with open(config_file, 'w') as file:
+    with open('../config/'+config_file, 'w') as file:
         file.write('\n'.join(lines))
 
 
-def load_config_file(config_file: str = 'config/conf0.txt') -> tuple:
+def load_config_file(config_file: str = 'conf0.txt') -> tuple:
     """Get id_list & thresh_list from a config file."""
     id_list = ['']
     thresh_list = []
-    with open(config_file) as file:
+    with open('../config/'+config_file) as file:
         lines = file.readlines()
         while not lines[-1].split():
             lines.pop(-1)
@@ -126,7 +126,7 @@ def load_config_file(config_file: str = 'config/conf0.txt') -> tuple:
 
 def generate_genesis(chain_id: int, accounts: list, config_file: str) -> None:
     """Generate a genesis file."""
-    with open('docker/120.json', 'rb') as f:
+    with open('../docker/120.json', 'rb') as f:
         genesis = json.load(f)
     genesis['config']['chainId'] = chain_id
 
@@ -137,14 +137,14 @@ def generate_genesis(chain_id: int, accounts: list, config_file: str) -> None:
     genesis['extraData'] = extra_data
 
     new_genesis = json.dumps(genesis, indent=2)
-    with open('config/%s' % config_file, 'w') as f:
+    with open('../config/%s' % config_file, 'w') as f:
         print(new_genesis, file=f)
     time.sleep(0.05)
 
 
 def generate_leaf_genesis(config_file: str, leaves: list) -> None:
     """Generate a genesis file for leaf chains and terminals."""
-    with open('config/%s' % config_file, 'rb') as f:
+    with open('../config/%s' % config_file, 'rb') as f:
         genesis = json.load(f)
 
     for chain in leaves:
@@ -166,7 +166,7 @@ def generate_leaf_genesis(config_file: str, leaves: list) -> None:
                     raise ValueError('length of account should be 40')
                 genesis['alloc'][terminal_account] = {'balance': "0x200000000000000000000000000000000000000000000000000000000000000"}
         new_genesis = json.dumps(genesis, indent=2)
-        with open('config/%s' % config_file, 'w') as f:
+        with open('../config/%s' % config_file, 'w') as f:
             print(new_genesis, file=f)
         time.sleep(0.05)
 
@@ -191,7 +191,7 @@ def generate_leaf_genesis(config_file: str, leaves: list) -> None:
 
 
 if __name__ == '__main__':
+    generate_test_config()
     id_list, thresh_list = load_config_file()
     print(id_list)
     print(thresh_list)
-    generate_test_config()

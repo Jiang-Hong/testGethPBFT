@@ -1,17 +1,15 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from const import IP_CONFIG, USERNAME, PASSWD
-from gethnode import GethNode
-from iplist import IPList
-from conf import generate_genesis, generate_leaf_genesis
-from typing import Any
+from src.const import IP_CONFIG, USERNAME, PASSWD
+from src.gethnode import GethNode
+from src.iplist import IPList
+from src.conf import generate_genesis, generate_leaf_genesis
 import time
 from datetime import datetime
 import threading
 import json
 from collections import defaultdict
-from concurrent.futures import ThreadPoolExecutor
 import os
 
 
@@ -96,7 +94,7 @@ class SingleChain(object):
         """Copy genesis.json file into a container."""
         threads = []
         for server_ip in self.ips:
-            t = threading.Thread(target=server_ip.put_file, args=('config/%s' % self.config_file, self.config_file))
+            t = threading.Thread(target=server_ip.put_file, args=('../config/%s' % self.config_file, self.config_file))
             t.start()
             threads.append(t)
             time.sleep(0.02)
@@ -473,16 +471,16 @@ class SingleChain(object):
         node = self.get_node_by_index(node_index)
         filename = 'chain%s_node%d.txt' % (self.chain_id, node_index)
         # check if the log file exists, if True, do nothing
-        if os.path.exists('data/%s' % filename):
+        if os.path.exists('../data/%s' % filename):
             print('log exists')
         else:
             node.ip.exec_command('docker cp %s:/root/result%d ./%s' % (node.name, node_index, filename))
             time.sleep(0.2)
-            node.ip.get_file(filename, 'data/'+filename)
+            node.ip.get_file(filename, '../data/'+filename)
 
     def search_log(self, node_index: int, block_index: int, if_get_block_tx_count: bool = True) -> None:
         node = self.get_node_by_index(node_index)
-        filename = 'data/chain%s_node%d.txt' % (self.chain_id, node_index)
+        filename = '../data/chain%s_node%d.txt' % (self.chain_id, node_index)
         # map of (block index, {block prepare time: t1, block consensus confirm time: t2, block written time: t3})
         block_time = defaultdict(dict)
         with open(filename, 'r') as log:
@@ -503,7 +501,7 @@ class SingleChain(object):
                 tx_count = node.get_block_transaction_count(index)
                 block_time[index_str]['tx_count'] = tx_count
 
-        json_name = 'data/chain%s_node%d.json' % (self.chain_id, node_index)
+        json_name = '../data/chain%s_node%d.json' % (self.chain_id, node_index)
         json_str = json.dumps(block_time, indent=2)
         with open(json_name, 'w') as f:
             print(json_str, file=f)
@@ -512,7 +510,7 @@ class SingleChain(object):
             written_time_str = block_time[str(block_index)]['written']
             written_time = datetime.strptime(written_time_str, '%Y-%m-%d-%H:%M:%S.%f')    # type: datetime
             tx_count = block_time[str(block_index)]['tx_count']
-            with open('data/elapsed_time.txt', 'a') as log:
+            with open('../data/elapsed_time.txt', 'a') as log:
                 log.write('%s block index: %d, time: %s  TX count:%d\n' % (filename, block_index, written_time, tx_count))
         except KeyError as e:
             print(e)

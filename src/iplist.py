@@ -3,11 +3,10 @@
 #
 # This file is about manipulation of servers.
 
-from const import USERNAME, PASSWD, KEY_FILE, MAXPAYLOAD, IP_CONFIG, SEMAPHORE
+from src.const import USERNAME, PASSWD, KEY_FILE, MAXPAYLOAD, IP_CONFIG, SEMAPHORE
 import paramiko
 import threading
 import time
-import os
 from typing import Any
 
 KEY: paramiko.rsakey.RSAKey = paramiko.RSAKey.from_private_key_file(KEY_FILE)

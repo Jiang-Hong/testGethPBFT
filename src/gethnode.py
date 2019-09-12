@@ -3,8 +3,8 @@
 
 import requests
 import json
-from iplist import IPList
-from const import IMAGE, USERNAME, PASSWD, IP_CONFIG, SECONDS_IN_A_DAY, SEMAPHORE
+from src.iplist import IPList
+from src.const import IMAGE, USERNAME, IP_CONFIG, SECONDS_IN_A_DAY, SEMAPHORE
 from typing import Union, Optional, Any
 from time import sleep
 from datetime import datetime
