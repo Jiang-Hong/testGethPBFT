@@ -10,4 +10,4 @@ venv/
 data/
 config/
 result/
-test/*.bak
+testScript/*.bak
