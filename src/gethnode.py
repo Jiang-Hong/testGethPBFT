@@ -97,7 +97,7 @@ class GethNode(object):
         url = "http://{}:{}".format(self.ip.address, self.rpc_port)
         with SEMAPHORE:
             with requests.Session() as r:
-                sleep(0.01)  ###
+                # sleep(0.01)  ###
                 response = r.post(url=url, data=data, headers=self._headers)
                 while response.headers['Content-Type'] != 'application/json':
                     print(self.ip.address, self.rpc_port)

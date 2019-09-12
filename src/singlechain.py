@@ -508,11 +508,14 @@ class SingleChain(object):
         with open(json_name, 'w') as f:
             print(json_str, file=f)
 
-        written_time_str = block_time[str(block_index)]['written']
-        written_time = datetime.strptime(written_time_str, '%Y-%m-%d-%H:%M:%S.%f')    # type: datetime
-        tx_count = block_time[str(block_index)]['tx_count']
-        with open('data/elapsed_time.txt', 'a') as log:
-            log.write('%s block index: %d, time: %s  TX count:%d\n' % (filename, block_index, written_time, tx_count))
+        try:
+            written_time_str = block_time[str(block_index)]['written']
+            written_time = datetime.strptime(written_time_str, '%Y-%m-%d-%H:%M:%S.%f')    # type: datetime
+            tx_count = block_time[str(block_index)]['tx_count']
+            with open('data/elapsed_time.txt', 'a') as log:
+                log.write('%s block index: %d, time: %s  TX count:%d\n' % (filename, block_index, written_time, tx_count))
+        except KeyError as e:
+            print(e)
 
     # @staticmethod
     # def connect(node1: 'GethNode', node2: 'GethNode', tag: int):

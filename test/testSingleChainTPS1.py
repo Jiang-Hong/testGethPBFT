@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from const import CONFIG, IP_CONFIG, SEND_TX_SPEED
+from const import CONFIG, IP_CONFIG
 from hibechain import HIBEChain
 from gethnode import GethNode
 from iplist import IPList
@@ -14,9 +14,9 @@ import json
 import subprocess
 
 
-for i0 in range(1, 11):
+for i0 in range(7, 11):
     SEND_TX_SPEED = i0 * 5
-    for _ in range(3):
+    for _ in range(2):
         ip_list = IPList(IP_CONFIG)
         thresh_list = [(19, 13), (1, 1)]
         # id_list, thresh_list = load_config_file(CONFIG)
@@ -37,24 +37,10 @@ for i0 in range(1, 11):
         # -------------------------------------------------------
 
 
-        def get_pf(pf: Optional[list], node: GethNode, pf_list: Optional[list], index: int) -> None:
-            try:
-                result = node.get_transaction_proof_by_proof(pf)
-            except RuntimeError as e:
-                time.sleep(0.2)
-                result = None
-                print(e)
-            pf_list[index] = result
-
-
         start_time = time.time()
         hibe = HIBEChain(id_list, thresh_list, ip_list)
         hibe.construct_hibe_chain()
         connect_time = time.time()
-
-        waiting_time = max([chain.node_count for chain in hibe.structured_chains[0]]) // 5
-        print('another %d seconds waiting for addPeer' % waiting_time)
-        time.sleep(waiting_time)
 
         hibe.set_number()
         hibe.set_level()
@@ -90,16 +76,12 @@ for i0 in range(1, 11):
         for t in threads:
             t.join()
 
-        time.sleep(2)
-
-        valid_keys = terminal_nodes[0].key_count()
-
-        time.sleep(10)
+        time.sleep(1)
 
         # --------------------------------------------------------
-        transaction_sent_number = valid_keys
+        iter_round = 1
+        transaction_sent_number = 60 * SEND_TX_SPEED
         transaction_sent_speed = SEND_TX_SPEED
-        iter_round = valid_keys // SEND_TX_SPEED
 
         threads = []
         for terminal_node in terminal_nodes:
@@ -157,15 +139,21 @@ for i0 in range(1, 11):
                 block_number = "0"
                 block_data = json.load(f)
                 for k in block_data:
-                    if block_data[k]['tx_count'] > tx_count:
+                    if block_data[k]['tx_count'] > 0:
                         block_number = k
-                        tx_count = block_data[k]['tx_count']
-                if tx_count > 0:
-                    time1 = datetime.strptime(block_data[block_number]['written'], '%Y-%m-%d-%H:%M:%S.%f')
-                    time2 = datetime.strptime(block_data[str(int(block_number)-1)]['written'], '%Y-%m-%d-%H:%M:%S.%f')
-                    period = (time1 - time2).total_seconds()
-                    tps = tx_count / period
-                with open('single_chain_tps0906.txt', 'a') as tps_file:
+                        break
+                #         tx_count = block_data[k]['tx_count']
+                # if tx_count > 0:
+                for i in range(int(block_number)+1, int(block_number)+3):
+                    if block_data[str(i)]['tx_count'] > 0:
+                        tx_count += block_data[str(i)]['tx_count']
+                    else:
+                        raise RuntimeError('not enough data')
+                time1 = datetime.strptime(block_data[block_number]['written'], '%Y-%m-%d-%H:%M:%S.%f')
+                time2 = datetime.strptime(block_data[str(int(block_number)+2)]['written'], '%Y-%m-%d-%H:%M:%S.%f')
+                period = (time2 - time1).total_seconds()
+                tps = tx_count / period
+                with open('single_chain_tps0910.txt', 'a') as tps_file:
                     tps_file.write('%s,%.2f,%s,%d,%s,%.3f,%d\n' % (','.join((map(str, thresh_list[0]))), tps,
                                                                    block_number, tx_count, file,
                                                                    (finish_time-start_time), SEND_TX_SPEED))

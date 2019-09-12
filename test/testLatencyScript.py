@@ -23,7 +23,6 @@ print('-----')
 
 # -------------- clear containers -----------------------
 ip_list.stop_all_containers()
-# ip_list.remove_all_containers()
 print('-----')
 print()
 # -------------------------------------------------------
@@ -44,21 +43,9 @@ hibe = HIBEChain(id_list, thresh_list, ip_list)
 hibe.construct_hibe_chain()
 connect_time = time.time()
 
-waiting_time = max([chain.node_count for chain in hibe.structured_chains[0]]) // 5
-print('another %d seconds waiting for addPeer' % waiting_time)
-time.sleep(waiting_time)
-if not hibe.is_connected():
-    # raise RuntimeError('connection is not ready')
-    print('connection is not ready')
-    time.sleep(10)
-else:
-    print('connected')
-    time.sleep(0.5)
-
 hibe.set_number()
 hibe.set_level()
 hibe.set_id()
-
 
 end_time = time.time()
 print("connect time %.3fs" % (connect_time-start_time))
@@ -78,7 +65,6 @@ leaf_chains = list(leaf_chains)
 
 key_count = [terminal_node.key_count() for terminal_node in terminal_nodes]
 
-time.sleep(hibe.max_level*5)
 
 # ----------------test latency ----------------------
 
@@ -97,7 +83,7 @@ time.sleep(2)
 valid_keys = terminal_nodes[0].key_count()
 threads = []
 for terminal_node in terminal_nodes:
-    t = threading.Thread(target=terminal_node.send_transaction3, args=(30, 1, 0, 1, 10))
+    t = threading.Thread(target=terminal_node.send_transaction3, args=(valid_keys, 1, 0, 1, 10))
     t.start()
     threads.append(t)
 for t in threads:
@@ -108,7 +94,7 @@ time.sleep(hibe.max_level*60)
 print('start')
 
 # clear data folder
-subprocess.run('rm data/*', stdout=subprocess.PIPE, shell=True)
+subprocess.run('rm data/*', shell=True)
 
 sent_time = time.time()
 
