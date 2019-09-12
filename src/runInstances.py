@@ -203,6 +203,6 @@ if __name__ == '__main__':
     instances = (r['Instances']['Instance'])
     ips = [ins['PublicIpAddress']['IpAddress'][0] + '\n' for ins in instances]
     print(len(ips), ips)
-    with open('config/my_ip.txt', 'w') as ip_file:
+    with open('../config/my_ip.txt', 'w') as ip_file:
         ip_file.writelines(ips)
 
