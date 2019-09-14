@@ -3,7 +3,7 @@
 
 import threading
 
-CONFIG = '../config/testLatency2.txt'  # config file for HIBEChain
+CONFIG = '../config/conf1.txt'  # config file for HIBEChain
 USERNAME = 'root'  # username of servers
 PASSWD = 'Blockchain17'  # password of servers
 KEY_FILE = '/home/rkd/.ssh/test/id_rsa'

@@ -360,9 +360,9 @@ class GethNode(object):
 
 
 if __name__ == "__main__":
-    ip_list = IPList(IP_CONFIG)
+    ip_list = IPList(ip_file=IP_CONFIG)
     ip_list.stop_all_containers()
-    n = GethNode(ip_list, 0, 1, 121)
+    n = GethNode(ip_list=ip_list, pbft_id=0, node_index=1, blockchain_id=121)
     n.start()
     print(n.accounts)
     n.stop()

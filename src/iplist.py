@@ -423,5 +423,5 @@ def shutdown_server(ip_list: IPList, username: str = USERNAME, password: str = P
 
 
 if __name__ == "__main__":
-    f = IPList(IP_CONFIG)
+    f = IPList(ip_file=IP_CONFIG)
     f.stop_all_containers()

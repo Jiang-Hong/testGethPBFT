@@ -65,7 +65,6 @@ for i0 in range(1, 2):
         root_chain = hibe.get_chain('')
         root = root_chain.get_node_by_index(1)
 
-
         terminal_chains = hibe.structured_chains[-1]
         terminal_nodes = [terminal_chain.get_node_by_index(1) for terminal_chain in terminal_chains]
         leaf_chains = {hibe.get_chain(terminal_chain.get_parent_chain_id()) for terminal_chain in terminal_chains}
@@ -78,15 +77,17 @@ for i0 in range(1, 2):
 
         # ----------------test latency ----------------------
 
-        threads = []
-        for chain in hibe.structured_chains[:-1]:
-            for node in chain:
-                t = threading.Thread(target=node.start_miner)
-                t.start()
-                threads.append(t)
-                time.sleep(0.02)
-        for t in threads:
-            t.join()
+        # threads = []
+        # for chain in hibe.structured_chains[:-1]:
+        #     for node in chain:
+        #         t = threading.Thread(target=node.start_miner)
+        #         t.start()
+        #         threads.append(t)
+        #         time.sleep(0.02)
+        # for t in threads:
+        #     t.join()
+
+        hibe.start_miner()
 
         time.sleep(2)
 

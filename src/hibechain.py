@@ -322,9 +322,15 @@ class HIBEChain(object):
     def start_miner(self) -> None:
         """Start miner for all consensus nodes."""
 
-        for level in self.structured_chains[:-1]:
-            for chain in level:
-                chain.start_miner()
+        threads = []
+        for chain in self.structured_chains[:-1]:
+            for node in chain:
+                t = threading.Thread(target=node.start_miner)
+                t.start()
+                threads.append(t)
+                time.sleep(0.02)
+        for t in threads:
+            t.join()
 
     @staticmethod
     def gen_key(single_chain: SingleChain) -> None:
@@ -365,20 +371,21 @@ class HIBEChain(object):
                     else:
                         node.set_id(single_chain.chain_id)
                 print('true count is:', true_count)
-                if true_count >= single_chain.threshold:
+                if true_count == single_chain.node_count:  # true_count >= single_chain.threshold:
                     break
                 else:
                     time.sleep(5)
 
 
 if __name__ == "__main__":
-    ip_list = IPList(IP_CONFIG)
-    ip_list.stop_all_containers()
-    chain_id_list, thresh_list = load_config_file(CONFIG)
     # chain_id_list = ["", "01", "02"]
     # thresh_list = [(4, 3), (1, 1), (1, 1)]
 
-    hibe = HIBEChain(chain_id_list, thresh_list, ip_list)
+    ip_list = IPList(ip_file=IP_CONFIG)
+    ip_list.stop_all_containers()
+    chain_id_list, thresh_list = load_config_file(config_file=CONFIG)
+
+    hibe = HIBEChain(chain_id_list=chain_id_list, thresh_list=thresh_list, ip_list=ip_list)
     hibe.construct_hibe_chain()
 
     hibe.set_number()

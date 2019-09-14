@@ -522,14 +522,15 @@ class SingleChain(object):
 
 
 if __name__ == "__main__":
-    ip_list = IPList(IP_CONFIG)
+    ip_list = IPList(ip_file=IP_CONFIG)
     ip_list.stop_all_containers()
     node_count = 4
-    c = SingleChain('01', 1, node_count, node_count*2//3+1, 121, ip_list)
+    c = SingleChain(name='01', level=1, node_count=node_count, threshold=node_count*2//3+1,
+                    blockchain_id=121, ip_list=ip_list)
     c.singlechain_start()
     c.config_consensus_chain()
     c.run_nodes()
-    time.sleep(node_count//3)
+
     fail_count = 0
     for i in range(1, node_count + 1):
         node = c.get_node_by_index(i)

@@ -175,9 +175,9 @@ if __name__ == '__main__':
     image_id = 'm-8vb3i5iaiyul8xshx9w3'
 
     # keep this variable True in case of mis-operation
-    is_dry_run = True  # change this variable to False to run instances in effect
-    instance_type = 'ecs.r5.xlarge'  # change this value to instance type you need
-    instance_amount = 2
+    is_dry_run = True # change this variable to False to run instances in effect
+    instance_type = 'ecs.r6.xlarge'  # change this value to instance type you need
+    instance_amount = 5
 
     ordered_hours = 1  # generate auto release time according to ordered hours
     time_now_utc = datetime.datetime.utcnow()
