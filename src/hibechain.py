@@ -238,8 +238,9 @@ class HIBEChain(object):
         if not self.if_set_number and self.if_set_level:
             raise RuntimeError("number and level info should be set previously")
         start_time = time.time()
-        threads = []
+
         for index, level in enumerate(self.structured_chains):
+            threads = []
             # variable level means all chains in the same level
             for chain in level:
                 t = threading.Thread(target=chain.set_id)
@@ -392,4 +393,4 @@ if __name__ == "__main__":
     hibe.set_level()
     hibe.set_id()
 
-    hibe.destruct_hibe_chain()
+    # hibe.destruct_hibe_chain()

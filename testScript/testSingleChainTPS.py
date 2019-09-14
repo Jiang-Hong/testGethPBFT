@@ -37,14 +37,14 @@ for i0 in range(1, 2):
         # -------------------------------------------------------
 
 
-        def get_pf(pf: Optional[list], node: GethNode, pf_list: Optional[list], index: int) -> None:
-            try:
-                result = node.get_transaction_proof_by_proof(pf)
-            except RuntimeError as e:
-                time.sleep(0.2)
-                result = None
-                print(e)
-            pf_list[index] = result
+        # def get_pf(pf: Optional[list], node: GethNode, pf_list: Optional[list], index: int) -> None:
+        #     try:
+        #         result = node.get_transaction_proof_by_proof(pf)
+        #     except RuntimeError as e:
+        #         time.sleep(0.2)
+        #         result = None
+        #         print(e)
+        #     pf_list[index] = result
 
 
         start_time = time.time()
