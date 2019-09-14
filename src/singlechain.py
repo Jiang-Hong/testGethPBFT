@@ -525,7 +525,7 @@ if __name__ == "__main__":
     ip_list = IPList(ip_file=IP_CONFIG)
     ip_list.stop_all_containers()
     node_count = 4
-    c = SingleChain(name='01', level=1, node_count=node_count, threshold=node_count*2//3+1,
+    c = SingleChain(name='01', level=0, node_count=node_count, threshold=node_count*2//3+1,
                     blockchain_id=121, ip_list=ip_list)
     c.singlechain_start()
     c.config_consensus_chain()
@@ -539,4 +539,4 @@ if __name__ == "__main__":
         if count != node_count - 1:
             fail_count += 1
     print("fail count:", fail_count)
-    c.destruct_chain()
+    # c.destruct_chain()
