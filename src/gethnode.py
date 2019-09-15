@@ -85,7 +85,7 @@ class GethNode(object):
             print('invalid account')
 
     def rpc_call(self, method: str, params: Optional[list] = None) -> Any:
-        """Make a rpc call to this geth node."""
+        """Make an rpc call to this geth node."""
         if params is None:
             params = []
         data = json.dumps({    # json string used in HTTP requests

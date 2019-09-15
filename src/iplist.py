@@ -368,57 +368,7 @@ class IPList(object):
             t.join()
 
 
-def exec_command(cmd, ip_address: str, port: int = 22,
-                 username: str = USERNAME, password: str = PASSWD) -> Any:
-    """Exec a command on remote server using SSH connection."""
-    with paramiko.SSHClient() as client:
-        client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        client.connect(ip_address, port, username, password)
-        time.sleep(0.2)
-        stdin, stdout, stderr = client.exec_command(cmd, get_pty=True)
-        time.sleep(0.1)
-        out = stdout.read().strip().decode(encoding='utf-8')
-        err = stderr.read().strip().decode(encoding='utf-8')
-        if not err:
-            result = out
-            print(result)
-        else:
-            result = err
-    return result
-
-
-def shutdown_server(ip_list: IPList, username: str = USERNAME, password: str = PASSWD) -> None:
-    """
-    Shutdown all server on IPlist.
-    Note: Set param shell=True
-    """
-    for ip in ip_list.ips:
-        ip.shutdown_server()
-        # shutdown_command = 'echo %s | sshpass -p %s ssh -tt %s@%s sudo shutdown now' \
-        #                    % (password, password, username, IP)
-        # print("server %s shutdown" % ip.address)
-        # subprocess.run(shutdown_command, stdout=subprocess.PIPE, shell=True)
-
-
-# def set_ulimit(ip_list: IPList) -> None:
-#     """Change ulimit for servers."""
-#     for ip in ip_list.ips:
-#         subprocess.run(['sshpass -p %s scp setUlimit.sh %s@%s:' % (ip.password, ip.username, ip.address)],
-#                        stdout=subprocess.PIPE, shell=True)
-#         chmod_command = 'sshpass -p %s ssh -tt %s@%s chmod +x setUlimit.sh' % (ip.password, ip.username, ip.address)
-#         exec_script_command = 'echo %s | sshpass -p %s ssh -tt %s@%s sudo ./setUlimit.sh' % (
-#             ip.password, ip.password, ip.username, ip.address)
-#         print('set noproc and nofile')
-#         subprocess.run(chmod_command, stdout=subprocess.PIPE, shell=True)
-#         subprocess.run(exec_script_command, stdout=subprocess.PIPE, shell=True)
-
-
-# def test(IPlist, username=USERNAME, password=PASSWD):
-#     for IP in IPlist.ips:
-#         subprocess.run('echo $HOME', shell=True)
-
-
 if __name__ == "__main__":
-    f = IPList(ip_file=IP_CONFIG)
-    f.init_service()
-    f.stop_all_containers()
+    ip_list = IPList(ip_file=IP_CONFIG)
+    ip_list.init_service()
+    ip_list.stop_all_containers()
