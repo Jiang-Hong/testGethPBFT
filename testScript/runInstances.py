@@ -175,7 +175,7 @@ if __name__ == '__main__':
     image_id = 'm-8vb3i5iaiyul8xshx9w3'
 
     # keep this variable True in case of mis-operation
-    is_dry_run = False # change this variable to False to run instances in effect
+    is_dry_run = True  # change this variable to False to run instances in effect
     instance_type = 'ecs.r6.xlarge'  # change this value to instance type you need
     instance_amount = 1
 

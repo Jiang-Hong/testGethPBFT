@@ -321,12 +321,24 @@ class HIBEChain(object):
         print('setID elapsed time %.2f' % (end_time - start_time))
 
     def start_miner(self) -> None:
-        """Start miner for all consensus nodes."""
+        """Start miners for all consensus nodes."""
 
         threads = []
         for chain in self.structured_chains[:-1]:
             for node in chain:
                 t = threading.Thread(target=node.start_miner)
+                t.start()
+                threads.append(t)
+                time.sleep(0.02)
+        for t in threads:
+            t.join()
+
+    def stop_miner(self) -> None:
+        """Stop miners for all consensus nodes."""
+        threads = []
+        for chain in self.structured_chains[:-1]:
+            for node in chain:
+                t = threading.Thread(target=node.stop_miner)
                 t.start()
                 threads.append(t)
                 time.sleep(0.02)
