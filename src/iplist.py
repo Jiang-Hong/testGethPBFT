@@ -90,7 +90,7 @@ class IP(object):
 
     def put_file(self, local_path: str, remote_path: str, port: int = 22) -> None:
         """
-        Transfer files from local to remote server using sftp.
+        Transfer files from local to remote server using SFTP.
         """
         with SEMAPHORE:
             with paramiko.SSHClient() as client:
@@ -102,7 +102,7 @@ class IP(object):
 
     def get_file(self, remote_path: str, local_path: str, port: int = 22) -> None:
         """
-        Transfer files from remote server to local using sftp.
+        Transfer files from remote server to local using SFTP.
         """
         with SEMAPHORE:
             with paramiko.SSHClient() as client:
@@ -134,6 +134,8 @@ class IP(object):
         """Remove all containers on the server."""
         get_names_command = "docker ps -a --format '{{.Names}}'"
         result = self.exec_command(get_names_command).split()
+        if not result:
+            return
         print('--removing nodes--')
         stop_all_containers_command = 'docker rm %s' % ' '.join(result)
         self.exec_command(stop_all_containers_command)
@@ -161,14 +163,6 @@ class IP(object):
     def set_limits(self) -> None:
         self.put_file('limits.conf', 'limits.conf')
         self.exec_command('sudo cp limits.conf /etc/security/limits.conf')
-        # # -*- alternative approach -*-
-        # set_limits_cmd = 'sshpass -p %s scp limits.conf %s@%s:limits.conf' % (
-        #     self.password, self.username, self.address)
-        # time.sleep(0.02)
-        # subprocess.run(set_limits_cmd, stdout=subprocess.PIPE, shell=True)
-        # cp_cmd = 'echo %s | sshpass -p %s ssh -tt %s@%s sudo cp limits.conf /etc/security/limits.conf' % (
-        #     self.password, self.password, self.username, self.address)
-        # subprocess.run(cp_cmd, stdout=subprocess.PIPE, shell=True)
 
     def journalctl_vacuum(self) -> None:
         """Removes archived journal files until the disk space they use falls below 10M"""
@@ -192,7 +186,7 @@ class IPList(object):
                     self.ips.append(IP(line.strip()))
                 else:
                     break
-        self._init_service()
+        # self.init_service()
 
     @property
     def ips(self) -> [IP]:
@@ -245,6 +239,7 @@ class IPList(object):
             t.join()
 
     def put_files(self, local_path: str, remote_path: str, port: int = 22) -> None:
+        """Transfer files from local to remote servers using SFTP."""
         threads = []
         for ip in self.ips:
             t = threading.Thread(target=ip.put_file, args=(local_path, remote_path), kwargs={'port': port})
@@ -254,6 +249,7 @@ class IPList(object):
             t.join()
 
     def get_files(self, remote_path: str, local_path: str, port: int = 22) -> None:
+        """Transfer files from remote servers to local using SFTP."""
         threads = []
         for ip in self.ips:
             t = threading.Thread(target=ip.get_file, args=(remote_path, local_path), kwargs={'port': port})
@@ -282,7 +278,7 @@ class IPList(object):
         for t in threads:
             t.join()
 
-    def _init_service(self) -> None:
+    def init_service(self) -> None:
         """
         # Add key to know_hosts file &&
         start docker service on all servers.
@@ -424,4 +420,5 @@ def shutdown_server(ip_list: IPList, username: str = USERNAME, password: str = P
 
 if __name__ == "__main__":
     f = IPList(ip_file=IP_CONFIG)
+    f.init_service()
     f.stop_all_containers()
