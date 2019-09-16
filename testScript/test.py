@@ -19,7 +19,7 @@ start_time = time.time()
 
 ip_list = IPList(ip_file=IP_CONFIG)
 ip_list.stop_all_containers()
-time.sleep(1)
+time.sleep(0.5)
 chain_id_list, thresh_list = load_config_file(config_file=CONFIG)
 hibe = HIBEChain(chain_id_list=chain_id_list, thresh_list=thresh_list, ip_list=ip_list)
 hibe.construct_hibe_chain()
