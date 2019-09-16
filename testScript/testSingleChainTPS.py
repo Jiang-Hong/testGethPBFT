@@ -93,8 +93,6 @@ for i0 in range(1, 2):
 
         valid_keys = terminal_nodes[0].key_count()
 
-        time.sleep(10)
-
         # --------------------------------------------------------
         transaction_sent_number = valid_keys
         transaction_sent_speed = SEND_TX_SPEED

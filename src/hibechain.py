@@ -21,6 +21,7 @@ class HIBEChain(object):
         if not len(chain_id_list) == len(thresh_list):
             raise ValueError("length of chain_id_list should match length of thresh_list")
         needed_count = sum(node_count for (node_count, _) in thresh_list)
+        print('%d containers needed.' % needed_count)
         containers_count = ip_list.get_full_count()
         if needed_count > containers_count:
             raise ValueError("%d containers needed but only %d containers available" % (needed_count, containers_count))

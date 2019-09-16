@@ -170,8 +170,8 @@ if __name__ == '__main__':
     """
 
     # set parameters for instances
-    aliyun_region_id = {1: 'cn-zhangjiakou', 2: 'cn-beijing', 3: 'cn-qingdao', 4: 'cn-shanghai', 5: 'cn-shenzhen',
-                        6: 'cn-hangzhou', 7: 'cn-huhehaote'}
+    aliyun_region_id = {1: 'cn-zhangjiakou', 2: 'cn-beijing', 3: 'cn-hangzhou', 4: 'cn-shanghai', 5: 'cn-shenzhen',
+                        6: 'cn-qingdao', 7: 'cn-huhehaote'}
     image_id = 'm-8vb3i5iaiyul8xshx9w3'
 
     # keep this variable True in case of mis-operation
@@ -179,7 +179,7 @@ if __name__ == '__main__':
     instance_type = 'ecs.r6.xlarge'  # change this value to instance type you need
     instance_amount = 1
 
-    ordered_hours = 1  # generate auto release time according to ordered hours
+    ordered_hours = 2  # generate auto release time according to ordered hours
     time_now_utc = datetime.datetime.utcnow()
     release_time = time_now_utc + datetime.timedelta(hours=ordered_hours)
     auto_release_time = release_time.strftime('%Y-%m-%dT%H:%M:%SZ')
