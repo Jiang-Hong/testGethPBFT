@@ -130,6 +130,7 @@ class GethNode(object):
     def get_peers(self) -> str:
         """admin.peers"""
         method = 'admin_peers'
+        sleep(0.01)
         peers = self.rpc_call(method)
         return peers
 
@@ -239,6 +240,7 @@ class GethNode(object):
         try:
             add_peer_command = ("docker exec -t %s geth attach ipc://root/abc/geth.ipc "
                                 "--exec \"admin.addPeer%s\"" % (self.name, args))
+            sleep(0.02)
             self.ip.exec_command(add_peer_command)
         except Exception as e:
             raise RuntimeError('%s:%s %s %s %s' % (self.ip, self.ethereum_network_port, self.rpc_port, 'addPeer', e))

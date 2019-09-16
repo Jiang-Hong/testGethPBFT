@@ -66,10 +66,14 @@ class IP(object):
             with paramiko.SSHClient() as client:
                 client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
                 client.connect(self.address, port, username=USERNAME, pkey=KEY)
+                time.sleep(0.01)
                 if USERNAME != 'root' and cmd.startswith('sudo'):
                     stdin, stdout, stderr = client.exec_command(cmd, get_pty=True)  # need to set get_pty=True
                     stdin.write(PASSWD + '\n')    # write password for 'sudo xxxx' commands
                     stdin.flush()
+                elif USERNAME == 'root' and cmd.startswith('sudo'):
+                    cmd = cmd[5:]
+                    stdin, stdout, stderr = client.exec_command(cmd, get_pty=True)
                 else:
                     stdin, stdout, stderr = client.exec_command(cmd)
                 out = stdout.read().strip().decode(encoding='utf-8')
@@ -169,7 +173,8 @@ class IP(object):
         self.exec_command('sudo journalctl --vacuum-size=10M')
 
     def sync_time(self) -> None:
-        self.exec_command('sudo apt install ntpdate -y && sudo ntpdate cn.pool.ntp.org')
+        self.exec_command('sudo apt-get install ntpdate -qqy')
+        self.exec_command('sudo ntpdate cn.pool.ntp.org')
 
 class IPList(object):
     """Manage IPs and ports of all servers involved."""

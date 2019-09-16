@@ -10,12 +10,13 @@ from typing import Optional
 from datetime import datetime
 import threading
 import time
+import json
 import subprocess
 
 # SEND_TX_SPEED = 120
 
-for level in range(1, 2):    # number of levels
-    for round in range(1):    # iter round
+for level in range(5, 6):    # number of levels
+    for _ in range(1):    # iter round
         # generate id_list and thresh_list
         id_list = [""]
         thresh_list = [(1, 1)]
@@ -66,8 +67,8 @@ for level in range(1, 2):    # number of levels
         time.sleep(2)
         valid_keys = terminal_node.key_count()
 
-        terminal_node.send_transaction3(valid_keys, 1, 0, 1, 10)
         sent_time = datetime.utcnow()
+        terminal_node.send_transaction3(valid_keys, 1, 0, 1, 10)
 
         print('waiting...')
         time.sleep(hibe.max_level*60)
@@ -81,9 +82,6 @@ for level in range(1, 2):    # number of levels
         while leaf1.get_block_transaction_count(block_index) == 0:
             block_index += 1
             time.sleep(0.2)
-        with open('../result/path%s.txt' % round, 'a') as search_path:
-            search_path.write('sent_time is %s\n' % sent_time)
-            search_path.write('leaf chain block index is %d\n' % block_index)
 
         tx_index = 1
         tx_count = leaf1.get_block_transaction_count(block_index)
@@ -102,88 +100,63 @@ for level in range(1, 2):    # number of levels
 
         for leaf_node in leaf_chain.nodes:
             leaf_chain.get_log(leaf_node.node_index)
-            time.sleep(0.5)
-            leaf_chain.search_log(leaf_node.node_index, block_index-1)
+            time.sleep(0.2)
             leaf_chain.search_log(leaf_node.node_index, block_index)
+            time.sleep(0.2)
+            with open('../data/chain%s_node%d.json' % (leaf_chain.chain_id, leaf_node.node_index), 'rb') as f:
+                block_data = json.load(f)
+                try:
+                    prepare_time = datetime.strptime(block_data[str(block_index)]['prepare'],
+                                                     '%Y-%m-%d-%H:%M:%S.%f') - sent_time
+                    consensus_time = datetime.strptime(block_data[str(block_index)]['consensus'],
+                                                       '%Y-%m-%d-%H:%M:%S.%f') - sent_time
+                    written_time = datetime.strptime(block_data[str(block_index)]['written'],
+                                                     '%Y-%m-%d-%H:%M:%S.%f') - sent_time
+                except KeyError as e:
+                    with open('../result/elapsed_time.txt', 'a') as log:
+                        log.write('%s chain%s_node%d\n' % (e, current_chain.chain_id, current_node.node_index))
+                    time.sleep(0.5)
 
-'''
+            with open('../result/level2latency.txt'+str(datetime.utcnow().date()), 'a') as f:
+                f.write('%s,%s,%s,%d,%d\n' % (prepare_time, consensus_time, written_time,
+                                              leaf_chain.level, block_index))
 
-# timestamp_leaf = int(n0.get_block_by_index(1)['timestamp'], 16)
-for i in range(hibe.max_level-1):
-    current_chain = hibe.get_chain(current_chain.get_parent_chain_id())
-    # threads = []
-    # pf_list = [None] * current_chain.node_count
-    # while sum([True if pf else False for pf in pf_list]) < current_chain.threshold:
-    #     # if sum([True if pf else False for pf in pf_list]) <= current_chain.threshold // 3:
-    #     #     time.sleep(10)
-    #     # elif sum([True if pf else False for pf in pf_list]) <= current_chain.threshold // 2:
-    #     #     time.sleep(5)
-    #     for index, node in enumerate(current_chain.nodes):
-    #         if not pf_list[index]:
-    #             t = threading.Thread(target=get_pf, args=(current_pf, node, pf_list, index))
-    #             t.start()
-    #             threads.append(t)
-    #     for t in threads:
-    #         t.join()
-    # for i in range(current_chain.node_count):
-    #     if pf_list[i]:
-    #         current_pf = pf_list[i]
-    #         break
-    while True:
-        try:
-            for search_index in range(1, current_chain.node_count+1):
-                # search_index = randint(1, current_chain.node_count)
-                print(search_index)
-                current_node = current_chain.get_node_by_index(search_index)
-                tmp_pf = current_node.get_transaction_proof_by_proof(current_pf)
+        while current_chain.chain_id != '':
+            try:
+                current_chain = hibe.get_chain(current_chain.get_parent_chain_id())
+                tmp_pf = current_chain.get_node_by_index(1).get_transaction_proof_by_proof(current_pf)
                 if tmp_pf:
                     block_index = int(tmp_pf[-1], 16)
                     print('block index is %d.' % block_index)
 
+                for current_node in current_chain.nodes:
                     current_chain.get_log(current_node.node_index)
-                    time.sleep(0.5)
+                    time.sleep(0.2)
                     current_chain.search_log(current_node.node_index, block_index)
+                    time.sleep(0.2)
+                    with open('../data/chain%s_node%d.json' % (current_chain.chain_id, current_node.node_index), 'rb') as f:
+                        block_data = json.load(f)
+                        try:
+                            prepare_time = datetime.strptime(block_data[str(block_index)]['prepare'],
+                                                             '%Y-%m-%d-%H:%M:%S.%f') - sent_time
+                            consensus_time = datetime.strptime(block_data[str(block_index)]['consensus'],
+                                                               '%Y-%m-%d-%H:%M:%S.%f') - sent_time
+                            written_time = datetime.strptime(block_data[str(block_index)]['written'],
+                                                             '%Y-%m-%d-%H:%M:%S.%f') - sent_time
+                        except KeyError as e:
+                            with open('../result/elapsed_time.txt', 'a') as log:
+                                log.write('%s chain%s_node%d\n' % (e, current_chain.chain_id, current_node.node_index))
+                            time.sleep(0.5)
 
-                    timestamp_current = current_node.get_block_by_index(block_index)['timestamp']
-                    tmp_pf = tmp_pf[:-1]
-            current_pf = tmp_pf
-            break
+                    with open('../result/level2latency.txt'+str(datetime.utcnow().date()), 'a') as f:
+                        f.write('%s,%s,%s,%d,%d\n' % (prepare_time, consensus_time, written_time,
+                                                      current_chain.level, block_index))
+                current_pf = tmp_pf[:-1]
+            except RuntimeError as e:
+                with open('../result/elapsed_time.txt', 'a') as log:
+                    log.write('miss\n')
+                time.sleep(2)
+                print(e)
+        hibe.stop_miner()
 
-        except RuntimeError as e:
-            with open('data/elapsed_time.txt', 'a') as log:
-                log.write('miss\n')
-            time.sleep(20)
-            print(e)
-
-end_time = time.time()
-
-timestamp_root = int(root.get_block_by_index(block_index)['timestamp'], 16)
-
-latency = (datetime.fromtimestamp(timestamp_root) - datetime.fromtimestamp(timestamp_leaf)).seconds
-
-
-# hibe.destruct_hibe_chain()
-# print(current_pf)
-print(current_chain.chain_id)
-search_time = end_time - sent_time
-print('search time: ', search_time)
-print('latency:', latency)
-with open('data/elapsed_time.txt', 'a') as log:
-    log.write(time.asctime())
-    log.write(', '.join(id_list))
-    log.write('\n')
-    log.write(', '.join(map(str, thresh_list)))
-    log.write('\n')
-    log.write('set up time: %.6f\n' % set_up_time)
-    log.write('search time: %.6f\n' % search_time)
-    log.write('latency: %d\n\n' % latency)
-'''
-
-# ----------------test latency end --------------------
-
-# ----------------remove all containers ---------------
-#
-# ip_list.stop_all_containers()
-# time.sleep(0.2)
-# ip_list.remove_all_containers()
 

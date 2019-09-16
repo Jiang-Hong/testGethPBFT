@@ -322,11 +322,10 @@ class HIBEChain(object):
 
     def start_miner(self) -> None:
         """Start miners for all consensus nodes."""
-
         threads = []
-        for chain in self.structured_chains[:-1]:
-            for node in chain:
-                t = threading.Thread(target=node.start_miner)
+        for level in self.structured_chains[:-1]:
+            for chain in level:
+                t = threading.Thread(target=chain.start_miner)
                 t.start()
                 threads.append(t)
                 time.sleep(0.02)
@@ -336,9 +335,9 @@ class HIBEChain(object):
     def stop_miner(self) -> None:
         """Stop miners for all consensus nodes."""
         threads = []
-        for chain in self.structured_chains[:-1]:
-            for node in chain:
-                t = threading.Thread(target=node.stop_miner)
+        for level in self.structured_chains[:-1]:
+            for chain in level:
+                t = threading.Thread(target=chain.stop_miner)
                 t.start()
                 threads.append(t)
                 time.sleep(0.02)

@@ -356,6 +356,7 @@ class SingleChain(object):
                 time.sleep((len(upper_chain_un_connected_nodes)+len(lower_chain_un_connected_nodes)) / 3)
             else:
                 break
+        time.sleep(1)
 
     def connect_upper_chain(self, other_chain: 'SingleChain') -> None:
         """Connect to an upper level single chain."""
@@ -466,6 +467,18 @@ class SingleChain(object):
             for t in threads:
                 t.join()
 
+    def stop_miner(self) -> None:
+        """Stop miners of all nodes on the chain."""
+        if not self.is_terminal:
+            threads = []
+            for node in self.nodes:
+                t = threading.Thread(target=node.stop_miner)
+                t.start()
+                threads.append(t)
+                time.sleep(0.02)
+            for t in threads:
+                t.join()
+
     def get_log(self, node_index: int) -> None:
         # time.sleep(2)   #
         node = self.get_node_by_index(node_index)
@@ -488,6 +501,8 @@ class SingleChain(object):
                 line = line.strip()
                 arr = line.split()
                 if arr[0].startswith('block'):
+                    if int(arr[1]) > node_index + 10:  # in case of too many blocks
+                        break
                     tmp = arr[-4].split('.')
                     tmp[1] = tmp[1][:6]
                     arr[-4] = '.'.join(tmp)
@@ -498,6 +513,8 @@ class SingleChain(object):
         if if_get_block_tx_count:
             for index_str in block_time.keys():
                 index = int(index_str)
+                if index > block_index + 10:    # in case of too many blocks
+                    break
                 tx_count = node.get_block_transaction_count(index)
                 block_time[index_str]['tx_count'] = tx_count
 
@@ -506,14 +523,14 @@ class SingleChain(object):
         with open(json_name, 'w') as f:
             print(json_str, file=f)
 
-        try:
-            written_time_str = block_time[str(block_index)]['written']
-            written_time = datetime.strptime(written_time_str, '%Y-%m-%d-%H:%M:%S.%f')    # type: datetime
-            tx_count = block_time[str(block_index)]['tx_count']
-            with open('../data/elapsed_time.txt', 'a') as log:
-                log.write('%s block index: %d, time: %s  TX count:%d\n' % (filename, block_index, written_time, tx_count))
-        except KeyError as e:
-            print(e)
+        # try:
+        #     written_time_str = block_time[str(block_index)]['written']
+        #     written_time = datetime.strptime(written_time_str, '%Y-%m-%d-%H:%M:%S.%f')    # type: datetime
+        #     tx_count = block_time[str(block_index)]['tx_count']
+        #     with open('../data/elapsed_time.txt', 'a') as log:
+        #         log.write('%s block index: %d, time: %s  TX count:%d\n' % (filename, block_index, written_time, tx_count))
+        # except KeyError as e:
+        #     print(e)
 
     # @staticmethod
     # def connect(node1: 'GethNode', node2: 'GethNode', tag: int):
