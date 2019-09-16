@@ -5,7 +5,7 @@ __pycache__/
 *.pyc
 .idea/*
 venv/
-data/
+data*/
 result/
 testScript/*.bak
 config/*.bak

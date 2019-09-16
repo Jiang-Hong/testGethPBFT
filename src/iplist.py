@@ -67,8 +67,8 @@ class IP(object):
                 client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
                 client.connect(self.address, port, username=USERNAME, pkey=KEY)
                 if USERNAME != 'root' and cmd.startswith('sudo'):
-                    stdin, stdout, stderr = client.exec_command(cmd, get_pty=True)
-                    stdin.write(PASSWD + '\n')
+                    stdin, stdout, stderr = client.exec_command(cmd, get_pty=True)  # need to set get_pty=True
+                    stdin.write(PASSWD + '\n')    # write password for 'sudo xxxx' commands
                     stdin.flush()
                 else:
                     stdin, stdout, stderr = client.exec_command(cmd)
@@ -168,6 +168,8 @@ class IP(object):
         """Removes archived journal files until the disk space they use falls below 10M"""
         self.exec_command('sudo journalctl --vacuum-size=10M')
 
+    def sync_time(self) -> None:
+        self.exec_command('sudo apt install ntpdate -y && sudo ntpdate cn.pool.ntp.org')
 
 class IPList(object):
     """Manage IPs and ports of all servers involved."""
@@ -362,6 +364,15 @@ class IPList(object):
         threads = []
         for ip in self.ips:
             t = threading.Thread(target=ip.journalctl_vacuum)
+            t.start()
+            threads.append(t)
+        for t in threads:
+            t.join()
+
+    def sync_time(self) -> None:
+        threads = []
+        for ip in self.ips:
+            t = threading.Thread(target=ip.sync_time)
             t.start()
             threads.append(t)
         for t in threads:
