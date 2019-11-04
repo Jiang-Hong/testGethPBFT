@@ -11,8 +11,11 @@ import time
 from math import ceil
 
 
-def generate_test_config(level: int = 4, terminal_count: int = 2, config_file: str = 'conf0.txt') -> None:
-    """Generate a HIBEChain config file."""
+def generate_test_config(level: int = 3, terminal_count: int = 1, config_file: str = 'conf0.txt') -> None:
+    """
+    Generate a HIBEChain config file.
+    Only one terminal for one leaf chain.
+    """
     if level > 9:    # level starts from 0
         raise ValueError("level number should not exceeds 9")
     chain_count = 2 ** (level + 1) - 1
@@ -155,7 +158,7 @@ def generate_leaf_genesis(config_file: str, leaves: list) -> None:
         for char in terminal_id:
             account_ascii.append(hex(ord(char))[2:])
         tmp_account = ''.join(account_ascii)
-        for i in range(0, 24):
+        for i in range(0, 5):
             for j in range(0, 256):
                 terminal_account = tmp_account
                 terminal_account += hex(i)[2:].zfill(2) + hex(j)[2:].zfill(2)

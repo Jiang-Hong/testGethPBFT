@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from src.const import CONFIG, IP_CONFIG
-from src.hibechain import HIBEChain
-from src.gethnode import GethNode
-from src.iplist import IPList
-from src.conf import load_config_file
+from chain.const import CONFIG, IP_CONFIG
+from chain.hibechain import HIBEChain
+from chain.gethnode import GethNode
+from chain.iplist import IPList
+from chain.conf import load_config_file
 from typing import Optional
 from datetime import datetime
 import threading
@@ -25,9 +25,10 @@ for _ in range(1):    # iter round
     hibe = HIBEChain(chain_id_list=chain_id_list, thresh_list=thresh_list, ip_list=ip_list)
     hibe.construct_hibe_chain()
     connect_time = time.time()
-
+    time.sleep(2)
     hibe.set_number()
     hibe.set_level()
+    time.sleep(3)
     hibe.set_id()
     end_time = time.time()
     print("connect time %.3fs" % (connect_time - start_time))
@@ -72,19 +73,29 @@ for _ in range(1):    # iter round
             with open('../data/chain%s_node%d.json' % (leaf_chain.chain_id, node.node_index), 'rb') as f:
                 block_index_str = str(block_index)
                 block_data = json.load(f)
-                tx_count = block_data[block_index_str]['tx_count']
-                block_index_str = str(block_index+1)
+                try:
+                    tx_count = block_data[block_index_str]['tx_count']
+                    block_index_str = str(block_index+1)
+                except KeyError:
+                    tx_count = 0
                 for k in block_data:
-                    if block_data[k]['tx_count'] > tx_count:
-                        block_index_str = k
-                        tx_count = block_data[k]['tx_count']
+                    try:
+                        if block_data[k]['tx_count'] > tx_count:
+                            block_index_str = k
+                            tx_count = block_data[k]['tx_count']
+                    except KeyError as e:
+                        print(e)
+                        break
                 if tx_count > 0:
-                    time1 = datetime.strptime(block_data[block_index_str]['written'], '%Y-%m-%d-%H:%M:%S.%f')
-                    time2 = datetime.strptime(block_data[str(int(block_index_str) - 1)]['written'],
-                                              '%Y-%m-%d-%H:%M:%S.%f')
-                    period = (time1 - time2).total_seconds()
-                    tps = tx_count / period
+                    try:
+                        time1 = datetime.strptime(block_data[block_index_str]['written'], '%Y-%m-%d-%H:%M:%S.%f')
+                        time2 = datetime.strptime(block_data[str(int(block_index_str) - 1)]['written'],
+                                                  '%Y-%m-%d-%H:%M:%S.%f')
+                        period = (time1 - time2).total_seconds()
+                        tps = tx_count / period
+                    except KeyError:
+                        tps = 0
                 with open('../result/HIBEChain_tps' + str(datetime.utcnow().date()), 'a') as tps_file:
                     tps_file.write('%s,%.2f,%s,%d,%s\n' % (','.join((map(str, thresh_list[0]))), tps, block_index_str,
-                                                                tx_count, leaf_chain.chain_id))
+                                                           tx_count, leaf_chain.chain_id))
 

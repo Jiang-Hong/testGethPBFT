@@ -10,3 +10,4 @@ result/
 testScript/*.bak
 config/*.bak
 config/0*.json
+chain/*.bak

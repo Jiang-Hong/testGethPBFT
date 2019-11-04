@@ -2,10 +2,10 @@
 # -*- coding: utf-8 -*-
 
 from typing import Optional
-from src.const import USERNAME, PASSWD, IP_CONFIG, CONFIG
-from src.conf import load_config_file
-from src.singlechain import SingleChain
-from src.iplist import IPList
+from chain.const import USERNAME, PASSWD, IP_CONFIG, CONFIG
+from chain.conf import load_config_file
+from chain.singlechain import SingleChain
+from chain.iplist import IPList
 import threading
 import time
 
@@ -21,7 +21,6 @@ class HIBEChain(object):
         if not len(chain_id_list) == len(thresh_list):
             raise ValueError("length of chain_id_list should match length of thresh_list")
         needed_count = sum(node_count for (node_count, _) in thresh_list)
-        print('%d containers needed.' % needed_count)
         containers_count = ip_list.get_full_count()
         if needed_count > containers_count:
             raise ValueError("%d containers needed but only %d containers available" % (needed_count, containers_count))
@@ -252,7 +251,7 @@ class HIBEChain(object):
 
             print('waiting for delivering key')
             if index == 0:
-                time.sleep(max([chain.node_count for chain in level])*5)  # *5
+                time.sleep(max([chain.node_count for chain in level])*6)  # *6
                 # sleep_time = max([chain.node_count for chain in level]) * 10
                 # print('root level waiting...%ds' % sleep_time)
                 # time.sleep(sleep_time)
@@ -267,7 +266,7 @@ class HIBEChain(object):
                     threads.append(t)
                 for t in threads:
                     t.join()
-
+                time.sleep(5)
                 # for chain1 in level:
                 #     true_count = 0
                 #     if chain1.is_terminal:  # setting terminal node keys
@@ -315,7 +314,7 @@ class HIBEChain(object):
                 # # while not all([node.key_status() for node in chain.nodes for chain in level]):
                 # #     print('level %d is not ready, waiting...' % index)
                 # #     time.sleep(5)
-                time.sleep(2)
+
         self.if_set_id = True
         print("------setID finished----------------")
         end_time = time.time()
@@ -378,11 +377,14 @@ class HIBEChain(object):
             while True:
                 for node in single_chain.nodes:
                     print('%s:%s waiting for key' % (node.ip.address, node.rpc_port))
+                    time.sleep(2)
                     result = node.key_status()
                     if result is True:
                         true_count += 1
                     else:
+                        time.sleep(3)
                         node.set_id(single_chain.chain_id)
+                        time.sleep(2)
                 print('true count is:', true_count)
                 if true_count == single_chain.node_count:  # true_count >= single_chain.threshold:
                     break

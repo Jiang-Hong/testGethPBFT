@@ -3,7 +3,7 @@
 #
 # This file is about manipulation of servers.
 
-from src.const import USERNAME, PASSWD, KEY_FILE, MAXPAYLOAD, IP_CONFIG, SEMAPHORE
+from chain.const import USERNAME, PASSWD, KEY_FILE, MAXPAYLOAD, IP_CONFIG, SEMAPHORE
 import paramiko
 import threading
 import time
@@ -23,7 +23,7 @@ class IP(object):
             print("ip is", ip_address)
             raise ValueError('format of ip is not correct')
 
-        self._max_payload = MAXPAYLOAD
+        self.max_payload = MAXPAYLOAD
         self.current_port = current_port
         self.address = ip_address
         self.rpc_ports = range(8515, 8515 + self.max_payload * 10, 10)
@@ -39,17 +39,6 @@ class IP(object):
         result = (self.rpc_ports[self.current_port], self.ethereum_network_ports[self.current_port])
         self.current_port += 1
         return result
-
-    @property
-    def max_payload(self) -> int:
-        """Return the maximum containers able to run on the server."""
-        return self._max_payload
-
-    @max_payload.setter
-    def max_payload(self, payload: int) -> None:
-        """Set maximum payload value."""
-        print("set new maximum payload for %s" % self.address)
-        self._max_payload = payload
 
     def is_full_loaded(self) -> bool:
         """Decide whether the server is full loaded."""

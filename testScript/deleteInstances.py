@@ -1,7 +1,7 @@
 # !/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from src.secret import ACCESS_KEY_ID, ACCESS_SECRET
+from chain.secret import ACCESS_KEY_ID, ACCESS_SECRET
 
 from aliyunsdkcore.client import AcsClient
 from aliyunsdkcore.acs_exception.exceptions import ClientException

@@ -179,7 +179,7 @@ if __name__ == '__main__':
     instance_type = 'ecs.r6.xlarge'  # change this value to instance type you need
     instance_amount = 1
 
-    ordered_hours = 2  # generate auto release time according to ordered hours
+    ordered_hours = 1  # generate auto release time according to ordered hours
     time_now_utc = datetime.datetime.utcnow()
     release_time = time_now_utc + datetime.timedelta(hours=ordered_hours)
     auto_release_time = release_time.strftime('%Y-%m-%dT%H:%M:%SZ')

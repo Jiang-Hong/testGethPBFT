@@ -1,16 +1,15 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from src.const import IP_CONFIG, USERNAME, PASSWD
-from src.gethnode import GethNode
-from src.iplist import IPList
-from src.conf import generate_genesis, generate_leaf_genesis
+import os
 import time
-from datetime import datetime
 import threading
 import json
 from collections import defaultdict
-import os
+from chain.const import IP_CONFIG, USERNAME, PASSWD
+from chain.gethnode import GethNode
+from chain.iplist import IPList
+from chain.conf import generate_genesis, generate_leaf_genesis
 
 
 class SingleChain(object):
@@ -25,14 +24,14 @@ class SingleChain(object):
             raise ValueError("not enough IPs")
         self.username = username
         self.password = password
-        self._level = level
-        self._chain_id = name    # chain id
+        self.level = level
+        self.chain_id = name    # chain id
         self.node_count = node_count
         self.threshold = threshold
         self.blockchain_id = blockchain_id
         self.ip_list = ip_list
-        self._nodes = []
-        self._ips = set()
+        self.nodes = []
+        self.ips = set()
         self.if_set_number = False
         self.if_set_level = False
         self.if_set_id = False
@@ -65,30 +64,10 @@ class SingleChain(object):
 #        print(self.accounts)
 
     def __str__(self) -> str:
-        return ', '.join([chain_node.__repr__() for chain_node in self._nodes])
+        return ', '.join([chain_node.__repr__() for chain_node in self.nodes])
 
     def __repr__(self) -> str:
         return self.chain_id if self.chain_id else 'root chain'
-
-    @property
-    def nodes(self) -> [GethNode]:
-        """Return nodes in the chain"""
-        return self._nodes
-
-    @property
-    def ips(self) -> set:
-        """Return a set of IP objects in the chain"""
-        return self._ips
-
-    @property
-    def level(self) -> int:
-        """Return level of the chain in HIBE chain."""
-        return self._level
-
-    @property
-    def chain_id(self) -> str:
-        """return chain id of the chain."""
-        return self._chain_id
 
     def config_genesis(self) -> None:
         """Copy genesis.json file into a container."""
@@ -237,7 +216,7 @@ class SingleChain(object):
                     t = threading.Thread(target=self.nodes[i].ipc_add_peer, args=(self.nodes[j].enode, 0))
                     t.start()
                     threads.append(t)
-                    time.sleep(0.2)
+                    time.sleep(0.1)  # 0.2
                 break    # in case of too many addPeer requests
             for t in threads:
                 t.join()
@@ -275,7 +254,7 @@ class SingleChain(object):
                             t = threading.Thread(target=node.ipc_add_peer, args=(self.map[0][enode_value].enode, 0))
                             t.start()
                             threads.append(t)
-                            time.sleep(0.2)
+                            time.sleep(0.1)  # 0.2
                         print('waiting for peers')
                     else:
                         connected_nodes.add(node)
@@ -292,12 +271,13 @@ class SingleChain(object):
 
     def connect_lower_chain(self, other_chain: 'SingleChain') -> None:
         """Connect to a lower level single chain."""
+        print('level:', self.level)
         threads = []
         for node in self.nodes:
             for other in other_chain.nodes:
                 t = threading.Thread(target=other.ipc_add_peer, args=(node.enode, 2))    # param 2 means upper peer
                 t.start()
-                time.sleep(0.2)    # if fail. increase this value.
+                time.sleep(0.1)    # if fail. increase this value.
                 threads.append(t)
                 # t1 = threading.Thread(target=node.ipc_add_peer, args=(other.enode, 1))  # param 1 means lower peer
                 # t1.start()
@@ -334,7 +314,7 @@ class SingleChain(object):
                     t.start()
                     print('connecting to lower node again')
                     threads.append(t)
-                    time.sleep(0.2)
+                    time.sleep(0.1)  #
             for node in lower_chain_un_connected_nodes:
                 lower_node_all_peers_info = node.get_peers()  # all peers connected to lower chain node
                 # current upper chain nodes connected to lower chain node
@@ -349,7 +329,7 @@ class SingleChain(object):
                     t.start()
                     print('connecting to upper node again')
                     threads.append(t)
-                    time.sleep(0.2)
+                    time.sleep(0.1)  #
             upper_chain_un_connected_nodes = upper_chain_un_connected_nodes.difference(connected_upper)
             lower_chain_un_connected_nodes = lower_chain_un_connected_nodes.difference(connected_lower)
             if upper_chain_un_connected_nodes or lower_chain_un_connected_nodes:

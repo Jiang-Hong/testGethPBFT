@@ -1,13 +1,13 @@
 # !/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import requests
 import json
-from src.iplist import IPList
-from src.const import IMAGE, USERNAME, IP_CONFIG, SECONDS_IN_A_DAY, SEMAPHORE
 from typing import Union, Optional, Any
+import requests
 from time import sleep
 from datetime import datetime
+from chain.iplist import IPList
+from chain.const import IMAGE, USERNAME, IP_CONFIG, SECONDS_IN_A_DAY, SEMAPHORE
 
 
 # class GethNode0(object):
@@ -39,24 +39,10 @@ class GethNode(object):
         self.node_index = node_index
         self.blockchain_id = blockchain_id
         self.name = 'geth-pbft' + str(self.rpc_port)    # docker container name of this node
-        self._enode = ''
-        self._accounts = []  # accounts list of a geth node
+        self.enode = ''
+        self.accounts = []  # accounts list of a geth node
         self._headers = {'Content-Type': 'application/json'}    # for rpc call use # 'Connection': 'close'?
         self.username = username    # user name of login user of a server
-
-    @property
-    def enode(self) -> str:
-        """Return enode information from admin.nodeInfo"""
-        return self._enode
-
-    @enode.setter
-    def enode(self, enode_str: str) -> None:
-        self._enode = enode_str
-
-    @property
-    def accounts(self) -> list:
-        """Return a accounts list of a geth node"""
-        return self._accounts
 
     def __repr__(self) -> str:
         return self.ip.address + ":" + str(self.rpc_port)
@@ -262,7 +248,7 @@ class GethNode(object):
 
         method = 'admin_setNumber'
         params = [node_count, thresh]
-        # sleep(0.1)
+        sleep(0.02)
         return self.rpc_call(method, params)
 
     def set_level(self, level, max_level) -> bool:
@@ -275,7 +261,7 @@ class GethNode(object):
 
         method = 'admin_setLevel'
         params = [max_level, level]
-        # sleep(0.1)
+        sleep(0.02)
         return self.rpc_call(method, params)
 
     def set_id(self, chain_id):
@@ -283,7 +269,7 @@ class GethNode(object):
         method = 'admin_setID'
         params = [chain_id]
         print('id is:', chain_id)
-        # sleep(0.1)
+        sleep(0.02)
         return self.rpc_call(method, params)
 
     def key_count(self):
