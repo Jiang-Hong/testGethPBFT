@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 #
 # This file is about manipulation of servers.
+# Assume authorized keys and docker service are configured in all the servers.
 
 from chain.const import USERNAME, PASSWD, KEY_FILE, MAXPAYLOAD, IP_CONFIG, SEMAPHORE
 import paramiko
@@ -9,13 +10,16 @@ import threading
 import time
 from typing import Any
 
+# TODO use logging
+# username & passwd & pkey for Server
+
 KEY: paramiko.rsakey.RSAKey = paramiko.RSAKey.from_private_key_file(KEY_FILE)
 # paramiko.util.log_to_file('/tmp/paramiko.log')
 
 
-class IP(object):
+class Server(object):
     """
-    Create an IP object with a list of rpc ports and a list of listener ports.
+    Create an Server object with a list of rpc ports and a list of listener ports.
     """
 
     def __init__(self, ip_address: str, current_port: int = 0) -> None:
@@ -47,20 +51,22 @@ class IP(object):
     def release_ports(self) -> None:
         self.current_port = 0
 
-    def exec_command(self, cmd: str, port: int = 22) -> Any:
+    def exec_command(self, cmd: str, port: int = 22,
+                     username: str = USERNAME,
+                     pkey: paramiko.rsakey.RSAKey = KEY) -> Any:
         """
         Exec a command on remote server using SSH connection.
         """
         with SEMAPHORE:    # use semaphore to limit the maximum running threads
             with paramiko.SSHClient() as client:
                 client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-                client.connect(self.address, port, username=USERNAME, pkey=KEY)
+                client.connect(self.address, port, username=username, pkey=pkey)
                 time.sleep(0.01)
-                if USERNAME != 'root' and cmd.startswith('sudo'):
+                if username != 'root' and cmd.startswith('sudo'):
                     stdin, stdout, stderr = client.exec_command(cmd, get_pty=True)  # need to set get_pty=True
-                    stdin.write(PASSWD + '\n')    # write password for 'sudo xxxx' commands
+                    stdin.write(PASSWD + '\n')    # input password for privilege command
                     stdin.flush()
-                elif USERNAME == 'root' and cmd.startswith('sudo'):
+                elif username == 'root' and cmd.startswith('sudo'):
                     cmd = cmd[5:]
                     stdin, stdout, stderr = client.exec_command(cmd, get_pty=True)
                 else:
@@ -106,7 +112,7 @@ class IP(object):
                 sftp.close()
 
     def is_docker_running(self) -> bool:
-        """Check if docker service is running on specified ip."""
+        """Check if docker service is running on server."""
         command = 'hostname -I && systemctl is-active docker'
         result = self.exec_command(command)
         return True if result.split()[-1] == 'active' else False
@@ -150,6 +156,7 @@ class IP(object):
         # subprocess.run(ssh_shutdown_command, stdout=subprocess.PIPE, shell=True)  # necessary to set shell param True
 
     def mirror(self) -> None:
+        """Add a mirror for docker images"""
         self.put_file('daemon.json', 'daemon.json')
         self.exec_command('sudo cp daemon.json /etc/docker/daemon.json && sudo systemctl restart docker')
 
@@ -165,29 +172,25 @@ class IP(object):
         self.exec_command('sudo apt-get install ntpdate -qqy')
         self.exec_command('sudo ntpdate cn.pool.ntp.org')
 
-class IPList(object):
-    """Manage IPs and ports of all servers involved."""
 
+class ServerList(object):
+    """Manage all servers."""
     def __init__(self, ip_file: str, current_ip: int = 0) -> None:
-        """Read IPs from a file."""
+        """Read servers' IP addresses from a file."""
         self._current_ip = current_ip
         self._available_ip = 0
-        self._ips = []
+        self.servers = []
         self.ip_count = 0
-        with open(ip_file, 'r') as file:
-            # read servers' IPs from an IP config file
+        with open(ip_file, 'r') as cfg_file:
+            # read servers' IP addresses from a config file
             # stop at empty line
-            for line in file.readlines():
-                if line.strip():
-                    self.ips.append(IP(line.strip()))
+            for line in cfg_file.readlines():
+                line = line.strip()
+                if line:
+                    self.servers.append(Server(line))
                 else:
                     break
-        # self.init_service()
-
-    @property
-    def ips(self) -> [IP]:
-        """Return a list of IPs."""
-        return self._ips
+        self.length = len(self.servers)
 
     @property
     def current_ip(self) -> int:
@@ -199,45 +202,58 @@ class IPList(object):
         if self._current_ip >= self.ip_count:  #TODO
             self._current_ip = self._available_ip
 
+    def __getitem__(self, position):
+        return self.servers[position]
+
+    def __len__(self):
+        return self.length
+
+    def __repr__(self):
+        return ', '.join(map(str, self.servers))
+
     def get_full_count(self) -> int:
         """Return the number of containers when all servers are full loaded."""
-        return len(self.ips) * self.ips[0].max_payload if len(self.ips) else 0
+        return self.length * self.servers[0].max_payload if self.length else 0
 
     def get_new_port(self) -> tuple:
         """
         Get a new rpc_port and a new ethereum_network_port along with the IP addr of a server.
         Return: (ip_address, rpc_port, ethereum_network_port)
         """
-        if self._available_ip >= len(self.ips):
+        if self._available_ip >= self.length:
             raise ValueError("server overload")
-        rpc_port, ethereum_network_port = self.ips[self.current_ip].get_new_port()
-        tmp_ip = self.ips[self.current_ip]
+        rpc_port, ethereum_network_port = self.servers[self.current_ip].get_new_port()
+        tmp_ip = self.servers[self.current_ip]
         if tmp_ip.is_full_loaded():
             self._available_ip = self.current_ip + 1
         self._current_ip += 1
-        if self._current_ip >= len(self.ips):
+        if self._current_ip >= self.length:
             self._current_ip = self._available_ip
         return tmp_ip, rpc_port, ethereum_network_port
 
     def release_all_ports(self) -> None:
-        for ip in self.ips:
-            ip.current_port = 0
+        for server in self.servers:
+            server.current_port = 0
         self.current_ip = 0
 
     def exec_commands(self, cmd: str, port: int = 22) -> None:
         """Exec an uniform command on all servers"""
         threads = []
-        for ip in self.ips:
+        for ip in self.servers:
             t = threading.Thread(target=ip.exec_command, args=(cmd,), kwargs={'port': port})
             t.start()
             threads.append(t)
         for t in threads:
             t.join()
 
+    def async_exec_commands(self, cmd:str, port: int = 22) -> None:
+        """Async version of exec_commands"""
+        pass
+
     def put_files(self, local_path: str, remote_path: str, port: int = 22) -> None:
         """Transfer files from local to remote servers using SFTP."""
         threads = []
-        for ip in self.ips:
+        for ip in self.servers:
             t = threading.Thread(target=ip.put_file, args=(local_path, remote_path), kwargs={'port': port})
             t.start()
             threads.append(t)
@@ -247,7 +263,7 @@ class IPList(object):
     def get_files(self, remote_path: str, local_path: str, port: int = 22) -> None:
         """Transfer files from remote servers to local using SFTP."""
         threads = []
-        for ip in self.ips:
+        for ip in self.servers:
             t = threading.Thread(target=ip.get_file, args=(remote_path, local_path), kwargs={'port': port})
             t.start()
             threads.append(t)
@@ -257,7 +273,7 @@ class IPList(object):
     def stop_all_containers(self) -> None:
         """Stop all containers running on the servers."""
         threads = []
-        for ip in self.ips:
+        for ip in self.servers:
             t = threading.Thread(target=ip.stop_containers)
             t.start()
             threads.append(t)
@@ -267,14 +283,14 @@ class IPList(object):
     def remove_all_containers(self) -> None:
         """Remove all containers running on the servers."""
         threads = []
-        for ip in self.ips:
+        for ip in self.servers:
             t = threading.Thread(target=ip.remove_containers)
             t.start()
             threads.append(t)
         for t in threads:
             t.join()
 
-    def init_service(self) -> None:
+    def start_docker_service(self) -> None:
         """
         # Add key to know_hosts file &&
         start docker service on all servers.
@@ -289,10 +305,10 @@ class IPList(object):
         # def _set_thread_result(ip: IP, results: dict, index: int) -> None:
         #     return results.setdefault(str(index), keys.lookup(ip.address))
         #
-        # self.ip_count = len(self.ips)
+        # self.ip_count = self.length
         # threads = []
         # results = {}
-        # for index, ip in enumerate(self.ips):
+        # for index, ip in enumerate(self.servers):
         #     # use multi-threading to lookup keys
         #     t = threading.Thread(target=_set_thread_result, args=(ip, results, str(index)))
         #     t.start()
@@ -303,23 +319,20 @@ class IPList(object):
         # # add keys to known_hosts one by one
         # # for i in range(self.ip_count):
         # #     if not results.get(str(i)):
-        # #         print('%s is not in know_hosts. Adding to known_hosts.' % self.ips[i])
-        # #         get_key_command = 'ssh-keyscan %s' % self.ips[i].address
+        # #         print('%s is not in know_hosts. Adding to known_hosts.' % self.servers[i])
+        # #         get_key_command = 'ssh-keyscan %s' % self.servers[i].address
         # #         with open(known_hosts, 'a') as outfile:
         # #             subprocess.run(get_key_command, stdout=outfile, shell=True)
         #
         # # start_docker_command = 'echo %s | sudo -S systemctl start docker' % PASSWD
         # """
-        start_time = time.time()
         start_docker_command = 'sudo systemctl start docker'
         print('starting docker service on all services')
         self.exec_commands(start_docker_command)
-        end_time = time.time()
-        print('initService elapsed time: %.3fs' % (end_time - start_time))
 
-    def reboot_servers(self) -> None:
+    def reboot_servers(self) -> None:  # TODO use asyncio
         threads = []
-        for ip in self.ips:
+        for ip in self.servers:
             t = threading.Thread(target=ip.reboot_server)
             t.start()
             threads.append(t)
@@ -328,7 +341,7 @@ class IPList(object):
 
     def shutdown_servers(self) -> None:
         threads = []
-        for ip in self.ips:
+        for ip in self.servers:
             t = threading.Thread(target=ip.shutdown_server)
             t.start()
             threads.append(t)
@@ -337,7 +350,7 @@ class IPList(object):
 
     def mirror(self) -> None:
         threads = []
-        for ip in self.ips:
+        for ip in self.servers:
             t = threading.Thread(target=ip.mirror)
             t.start()
             threads.append(t)
@@ -346,7 +359,7 @@ class IPList(object):
 
     def set_limits(self) -> None:
         threads = []
-        for ip in self.ips:
+        for ip in self.servers:
             t = threading.Thread(target=ip.set_limits)
             t.start()
             threads.append(t)
@@ -356,7 +369,7 @@ class IPList(object):
     def journalctl_vacuum(self) -> None:
         """Removes archived journal files until the disk space they use falls below 10M"""
         threads = []
-        for ip in self.ips:
+        for ip in self.servers:
             t = threading.Thread(target=ip.journalctl_vacuum)
             t.start()
             threads.append(t)
@@ -365,7 +378,7 @@ class IPList(object):
 
     def sync_time(self) -> None:
         threads = []
-        for ip in self.ips:
+        for ip in self.servers:
             t = threading.Thread(target=ip.sync_time)
             t.start()
             threads.append(t)
@@ -374,6 +387,6 @@ class IPList(object):
 
 
 if __name__ == "__main__":
-    ip_list = IPList(ip_file=IP_CONFIG)
-    ip_list.init_service()
-    ip_list.stop_all_containers()
+    servers = ServerList(ip_file=IP_CONFIG)
+    # ip_list.init_service()
+    # ip_list.stop_all_containers()

@@ -8,8 +8,8 @@ import json
 from collections import defaultdict
 from chain.const import IP_CONFIG, USERNAME, PASSWD
 from chain.gethnode import GethNode
-from chain.iplist import IPList
-from chain.conf import generate_genesis, generate_leaf_genesis
+from chain.server import ServerList
+from chain.utils import generate_genesis, generate_leaf_genesis
 
 
 class SingleChain(object):
@@ -18,9 +18,9 @@ class SingleChain(object):
     """
 
     def __init__(self, name: str, level: int, node_count: int, threshold: int,
-                 blockchain_id: int, ip_list: IPList, username: str = USERNAME, password: str = PASSWD) -> None:
+                 blockchain_id: int, server_list: ServerList, username: str = USERNAME, password: str = PASSWD) -> None:
         # Check if the input params are legal.
-        if node_count > ip_list.get_full_count():
+        if node_count > server_list.get_full_count():
             raise ValueError("not enough IPs")
         self.username = username
         self.password = password
@@ -29,7 +29,7 @@ class SingleChain(object):
         self.node_count = node_count
         self.threshold = threshold
         self.blockchain_id = blockchain_id
-        self.ip_list = ip_list
+        self.server_list = server_list
         self.nodes = []
         self.ips = set()
         self.if_set_number = False
@@ -46,7 +46,7 @@ class SingleChain(object):
         for index in range(self.node_count):
             pbft_id = index
             node_index = index + 1
-            tmp = GethNode(self.ip_list, pbft_id, node_index, self.blockchain_id, self.username)
+            tmp = GethNode(self.server_list, pbft_id, node_index, self.blockchain_id, self.username)
             self.ips.add(tmp.ip)
             self.nodes.append(tmp)
             # xq start a thread， target stand for a function that you want to run ,args stand for the parameters
@@ -519,11 +519,11 @@ class SingleChain(object):
 
 
 if __name__ == "__main__":
-    ip_list = IPList(ip_file=IP_CONFIG)
-    ip_list.stop_all_containers()
+    server_list = ServerList(ip_file=IP_CONFIG)
+    server_list.stop_all_containers()
     node_count = 4
     c = SingleChain(name='01', level=0, node_count=node_count, threshold=node_count*2//3+1,
-                    blockchain_id=121, ip_list=ip_list)
+                    blockchain_id=121, server_list=server_list)
     c.singlechain_start()
     c.config_consensus_chain()
     c.run_nodes()

@@ -6,16 +6,17 @@ from typing import Union, Optional, Any
 import requests
 from time import sleep
 from datetime import datetime
-from chain.iplist import IPList
+from chain.server import ServerList
 from chain.const import IMAGE, USERNAME, IP_CONFIG, SECONDS_IN_A_DAY, SEMAPHORE
 
+# TODO integrate with web3.py
 
 # class GethNode0(object):
 #     """data structure for geth client running in a docker container"""
 #
 #     def __init__(self, userName=USERNAME, passWord=PASSWD):
 #         self.enode = ''
-#         self.ip, self.rpc_port, self.ethereum_network_port = IPlist.getNewPort()
+#         self.ip, self.rpc_port, self.ethereum_network_port = ServerList.getNewPort()
 #         self.name = 'geth-pbft' + str(self.rpc_port)
 #         self._headers = {'Content-Type': 'application/json', 'Connection': 'close'}
 #         self._userName = USERNAME
@@ -31,10 +32,10 @@ from chain.const import IMAGE, USERNAME, IP_CONFIG, SECONDS_IN_A_DAY, SEMAPHORE
 class GethNode(object):
     """Data structure for Geth-pbft client."""
 
-    def __init__(self, ip_list: IPList, pbft_id: int, node_index: int, blockchain_id: int,
+    def __init__(self, server_list: ServerList, pbft_id: int, node_index: int, blockchain_id: int,
                  username: str = USERNAME) -> None:
         self.id = node_index    # used in rpc call
-        self.ip, self.rpc_port, self.ethereum_network_port = ip_list.get_new_port()
+        self.ip, self.rpc_port, self.ethereum_network_port = server_list.get_new_port()
         self.pbft_id = pbft_id
         self.node_index = node_index
         self.blockchain_id = blockchain_id
@@ -348,9 +349,9 @@ class GethNode(object):
 
 
 if __name__ == "__main__":
-    ip_list = IPList(ip_file=IP_CONFIG)
-    ip_list.stop_all_containers()
-    n = GethNode(ip_list=ip_list, pbft_id=0, node_index=1, blockchain_id=121)
+    server_list = ServerList(ip_file=IP_CONFIG)
+    server_list.stop_all_containers()
+    n = GethNode(server_list=server_list, pbft_id=0, node_index=1, blockchain_id=121)
     n.start()
     print(n.accounts)
     n.stop()

@@ -10,6 +10,7 @@ import json
 import time
 from math import ceil
 
+# TODO logging here
 
 def generate_test_config(level: int = 3, terminal_count: int = 1, config_file: str = 'conf0.txt') -> None:
     """

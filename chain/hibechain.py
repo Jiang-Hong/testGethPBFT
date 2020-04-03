@@ -3,9 +3,9 @@
 
 from typing import Optional
 from chain.const import USERNAME, PASSWD, IP_CONFIG, CONFIG
-from chain.conf import load_config_file
+from chain.utils import load_config_file
 from chain.singlechain import SingleChain
-from chain.iplist import IPList
+from chain.server import ServerList
 import threading
 import time
 
@@ -15,13 +15,13 @@ class HIBEChain(object):
     Data structure for an Hierarchical Identity Based Encryption Chain.
     """
 
-    def __init__(self, chain_id_list: [str], thresh_list: [tuple], ip_list: IPList,
+    def __init__(self, chain_id_list: [str], thresh_list: [tuple], server_list: ServerList,
                  username: str = USERNAME, password: str = PASSWD) -> None:
         # Check if the input params are legal
         if not len(chain_id_list) == len(thresh_list):
             raise ValueError("length of chain_id_list should match length of thresh_list")
         needed_count = sum(node_count for (node_count, _) in thresh_list)
-        containers_count = ip_list.get_full_count()
+        containers_count = server_list.get_full_count()
         if needed_count > containers_count:
             raise ValueError("%d containers needed but only %d containers available" % (needed_count, containers_count))
 
@@ -31,7 +31,7 @@ class HIBEChain(object):
         self.structured_chains = []
         self.chain_id_list = chain_id_list
         self.thresh_list = thresh_list
-        self.ip_list = ip_list
+        self.server_list = server_list
         self.max_level = len(chain_id_list[-1]) // 2
         self.if_set_number = False
         self.if_set_level = False
@@ -181,7 +181,7 @@ class HIBEChain(object):
             current_level = len(name) // 2
             node_count, threshold = self.thresh_list[index][0], self.thresh_list[index][1]
             blockchain_id = 120 + index
-            tmp = SingleChain(name, current_level, node_count, threshold, blockchain_id, self.ip_list, self.username,
+            tmp = SingleChain(name, current_level, node_count, threshold, blockchain_id, self.server_list, self.username,
                               self.password)
             self.chains.append(tmp)
             if current_level == level:
@@ -396,11 +396,11 @@ if __name__ == "__main__":
     # chain_id_list = ["", "01", "02"]
     # thresh_list = [(4, 3), (1, 1), (1, 1)]
 
-    ip_list = IPList(ip_file=IP_CONFIG)
-    ip_list.stop_all_containers()
+    server_list = ServerList(ip_file=IP_CONFIG)
+    server_list.stop_all_containers()
     chain_id_list, thresh_list = load_config_file(config_file=CONFIG)
 
-    hibe = HIBEChain(chain_id_list=chain_id_list, thresh_list=thresh_list, ip_list=ip_list)
+    hibe = HIBEChain(chain_id_list=chain_id_list, thresh_list=thresh_list, server_list=server_list)
     hibe.construct_hibe_chain()
 
     hibe.set_number()
