@@ -1,0 +1,6 @@
+echo "dell@2017" | sudo su && 
+apt-get -y install docker.io openssh-server sshpass &&
+usermod -aG docker dell && 
+echo "MaxSessions 3000" >> /etc/ssh/sshd_config &&
+echo "MaxStartups 1000:30:2000" >> /etc/ssh/sshd_config &&
+docker pull rkdghd/geth-pbft:id

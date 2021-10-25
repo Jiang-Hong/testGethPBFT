@@ -1,0 +1,13 @@
+docker/geth*
+docker/*.json
+__pycache__/
+.vscode/
+*.pyc
+.idea/*
+venv/
+data*/
+result/
+testScript/*.bak
+config/*.bak
+config/0*.json
+chain/*.bak
